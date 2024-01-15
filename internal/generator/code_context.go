@@ -1,7 +1,7 @@
 package generator
 
 type CodeContext struct {
-	vars map[string]bool
+	vars map[string]struct{}
 }
 
 func (c CodeContext) IsVariableInScope(varName string) bool {
@@ -10,7 +10,7 @@ func (c CodeContext) IsVariableInScope(varName string) bool {
 }
 
 func (c CodeContext) AddVariableToScope(varName string) {
-	c.vars[varName] = true
+	c.vars[varName] = struct{}{}
 }
 
 func (c CodeContext) RemoveVariableFromScope(varName string) {
@@ -18,7 +18,7 @@ func (c CodeContext) RemoveVariableFromScope(varName string) {
 }
 
 func (c CodeContext) ClearVariablesFromScope() {
-	c.vars = map[string]bool{}
+	c.vars = map[string]struct{}{}
 }
 
 func (c CodeContext) NewLoopVar() string {

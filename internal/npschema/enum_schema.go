@@ -3,12 +3,14 @@ package npschema
 import "nanoc/internal/datatype"
 
 type Enum struct {
-	Name      string
-	ValueType datatype.DataType
-	Members   []EnumMember
+	SchemaPath string
+	Name       string
+	ValueType  datatype.DataType
+	Members    []EnumMember
 }
 
 type PartialEnum struct {
+	SchemaPath    string
 	Name          string
 	ValueTypeName string
 	Members       []EnumMember
@@ -19,5 +21,19 @@ type EnumMember struct {
 	ValueLiteral string
 }
 
-func (e Enum) isSchema()               {}
-func (p PartialEnum) isPartialSchema() {}
+func (e *Enum) SchemaPathAbsolute() string {
+	return e.SchemaPath
+}
+
+func (e *Enum) DataType() datatype.DataType {
+	return datatype.DataType{
+		Identifier: e.Name,
+		Kind:       datatype.Enum,
+		ByteSize:   e.ValueType.ByteSize,
+		Schema:     e,
+		KeyType:    nil,
+		ElemType:   &e.ValueType,
+	}
+}
+
+func (p PartialEnum) IsPartialSchema() {}

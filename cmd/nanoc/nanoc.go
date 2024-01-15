@@ -26,18 +26,22 @@ func main() {
 	}
 
 	inputs := make([]string, flag.NArg())
-	for _, p := range flag.Args() {
+	for i, p := range flag.Args() {
 		abs, err := filepath.Abs(p)
 		if err != nil {
 			log.Fatalln("Invalid input path encountered: " + p)
 		}
-		inputs = append(inputs, abs)
+		inputs[i] = abs
 	}
 
 	opts := nanoc.Options{
 		Language:                  nanoc.SupportedLanguage(language),
 		MessageFactoryAbsFilePath: fout,
 		InputFileAbsolutePaths:    inputs,
+	}
+
+	if opts.CodeFormatterPath == "" {
+		opts.CodeFormatterPath, opts.CodeFormatterArgs = nanoc.DefaultFormatter(opts.Language)
 	}
 
 	err = nanoc.Run(opts)

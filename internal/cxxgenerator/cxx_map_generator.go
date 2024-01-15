@@ -10,37 +10,37 @@ import (
 	"text/template"
 )
 
-type CxxMapGenerator struct {
+type mapGenerator struct {
 	gm generator.MessageCodeGeneratorMap
 }
 
-func (g CxxMapGenerator) TypeDeclaration(dataType datatype.DataType) string {
+func (g mapGenerator) TypeDeclaration(dataType datatype.DataType) string {
 	kg := g.gm[dataType.KeyType.Kind]
 	ig := g.gm[dataType.ElemType.Kind]
 	return fmt.Sprintf("std::unordered_map<%v, %v>", kg.TypeDeclaration(*dataType.KeyType), ig.TypeDeclaration(*dataType.ElemType))
 }
 
-func (g CxxMapGenerator) ReadSizeExpression(dataType datatype.DataType, varName string) string {
+func (g mapGenerator) ReadSizeExpression(dataType datatype.DataType, varName string) string {
 	if dataType.KeyType.ByteSize != datatype.DynamicSize && dataType.ElemType.ByteSize != datatype.DynamicSize {
 		return fmt.Sprintf("%v.size() * %d", varName, dataType.KeyType.ByteSize+dataType.ElemType.ByteSize)
 	}
 	return varName + "_byte_size"
 }
 
-func (g CxxMapGenerator) ConstructorFieldParameter(field npschema.MessageField) string {
+func (g mapGenerator) ConstructorFieldParameter(field npschema.MessageField) string {
 	return g.TypeDeclaration(field.Type) + " " + strcase.ToSnake(field.Name)
 }
 
-func (g CxxMapGenerator) ConstructorFieldInitializer(field npschema.MessageField) string {
+func (g mapGenerator) ConstructorFieldInitializer(field npschema.MessageField) string {
 	s := strcase.ToSnake(field.Name)
 	return fmt.Sprintf("%v(std::move(%v))", s, s)
 }
 
-func (g CxxMapGenerator) FieldDeclaration(field npschema.MessageField) string {
+func (g mapGenerator) FieldDeclaration(field npschema.MessageField) string {
 	return g.TypeDeclaration(field.Type) + " " + strcase.ToSnake(field.Name) + ";"
 }
 
-func (g CxxMapGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
+func (g mapGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
 	s := strcase.ToSnake(field.Name)
 	var l1 string
 	if field.Type.ElemType.ByteSize != datatype.DynamicSize {
@@ -54,7 +54,7 @@ func (g CxxMapGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx ge
 		fmt.Sprintf("this->%v = %v;", s, s))
 }
 
-func (g CxxMapGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
+func (g mapGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
 	i32g := g.gm[datatype.Int32]
 	kg := g.gm[dataType.KeyType.Kind]
 	ig := g.gm[dataType.ElemType.Kind]
@@ -90,7 +90,7 @@ func (g CxxMapGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName
 	return ls
 }
 
-func (g CxxMapGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
+func (g mapGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
 	s := strcase.ToSnake(field.Name)
 
 	if field.Type.ElemType.ByteSize != datatype.DynamicSize && field.Type.KeyType.ByteSize != datatype.DynamicSize {
@@ -124,7 +124,7 @@ func (g CxxMapGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx gen
 		fmt.Sprintf("writer.write_field_size(%d, %v);", field.Number, s+"_byte_size"))
 }
 
-func (g CxxMapGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
+func (g mapGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
 	kg := g.gm[dataType.KeyType.Kind]
 	ig := g.gm[dataType.ElemType.Kind]
 	i32g := g.gm[datatype.Int32]
@@ -180,7 +180,7 @@ func (g CxxMapGenerator) WriteVariableToBuffer(dataType datatype.DataType, varNa
 	return generator.Lines(ls, l8, l9, "}")
 }
 
-func (g CxxMapGenerator) ToFuncMap() template.FuncMap {
+func (g mapGenerator) ToFuncMap() template.FuncMap {
 	//TODO implement me
 	panic("implement me")
 }

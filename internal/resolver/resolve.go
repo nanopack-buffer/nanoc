@@ -5,12 +5,11 @@ import (
 	"errors"
 	"nanoc/internal/datatype"
 	"nanoc/internal/npschema"
+	"nanoc/internal/parser"
 )
 
-type typeMap map[string]npschema.Schema
-
-func Resolve(schemas []npschema.PartialSchema) ([]npschema.Schema, error) {
-	tm := make(typeMap, len(schemas))
+func Resolve(schemas []datatype.PartialSchema) ([]datatype.Schema, error) {
+	sm := make(datatype.SchemaMap, len(schemas))
 
 	// create a type map from all the input schemas
 	// mapping their type names to their incomplete schema
@@ -18,12 +17,14 @@ func Resolve(schemas []npschema.PartialSchema) ([]npschema.Schema, error) {
 	for _, schema := range schemas {
 		switch s := schema.(type) {
 		case *npschema.PartialMessage:
-			tm[s.Name] = &npschema.Message{}
+			sm[s.Name] = &npschema.Message{
+				SchemaPath: s.SchemaPath,
+			}
 
 		case *npschema.PartialEnum:
-			tm[s.Name] = &npschema.Enum{}
+			sm[s.Name] = &npschema.Enum{SchemaPath: s.SchemaPath}
 			// enum schema can be resolved directly, since an enum cannot import other types
-			err := resolveEnumSchema(s, tm)
+			err := resolveEnumSchema(s, sm)
 			if err != nil {
 				return nil, err
 			}
@@ -32,34 +33,34 @@ func Resolve(schemas []npschema.PartialSchema) ([]npschema.Schema, error) {
 
 	for _, schema := range schemas {
 		if pm, ok := schema.(*npschema.PartialMessage); ok {
-			err := resolveMessageSchemaTypeInfo(pm, tm)
+			err := resolveMessageSchemaTypeInfo(pm, sm)
 			if err != nil {
 				return nil, err
 			}
 		}
 	}
 
-	for _, schema := range tm {
+	for _, schema := range sm {
 		if ms, ok := schema.(*npschema.Message); ok {
-			resolveMessageInheritance(ms, tm)
+			resolveMessageInheritance(ms)
 		}
 	}
 
-	ss := make([]npschema.Schema, len(tm))
-	for _, sp := range tm {
+	ss := make([]datatype.Schema, 0, len(sm))
+	for _, sp := range sm {
 		switch s := sp.(type) {
 		case *npschema.Message:
-			ss = append(ss, *s)
+			ss = append(ss, s)
 		case *npschema.Enum:
-			ss = append(ss, *s)
+			ss = append(ss, s)
 		}
 	}
 
 	return ss, nil
 }
 
-func resolveEnumSchema(partialEnum *npschema.PartialEnum, tm typeMap) error {
-	s, ok := tm[partialEnum.Name]
+func resolveEnumSchema(partialEnum *npschema.PartialEnum, sm datatype.SchemaMap) error {
+	s, ok := sm[partialEnum.Name]
 	if !ok {
 		return errors.New("unexpected error when resolving " + partialEnum.Name + ": not found in type map.")
 	}
@@ -72,7 +73,7 @@ func resolveEnumSchema(partialEnum *npschema.PartialEnum, tm typeMap) error {
 	if partialEnum.ValueTypeName == "" {
 		// empty string means that the value type of the enum is not declared
 		// when the value type is not declared, the enum will be implicitly backed by an int8.
-		fullSchema.ValueType = datatype.Int8
+		fullSchema.ValueType = *datatype.FromKind(datatype.Int8)
 	} else if t := datatype.FromIdentifier(partialEnum.ValueTypeName); t != nil {
 		fullSchema.ValueType = *t
 	} else {
@@ -85,8 +86,8 @@ func resolveEnumSchema(partialEnum *npschema.PartialEnum, tm typeMap) error {
 	return nil
 }
 
-func resolveMessageSchemaTypeInfo(partialMsg *npschema.PartialMessage, tm typeMap) error {
-	s, ok := tm[partialMsg.Name]
+func resolveMessageSchemaTypeInfo(partialMsg *npschema.PartialMessage, sm datatype.SchemaMap) error {
+	s, ok := sm[partialMsg.Name]
 	if !ok {
 		return errors.New("unexpected error when resolving " + partialMsg.Name + ": not found in type map.")
 	}
@@ -96,8 +97,11 @@ func resolveMessageSchemaTypeInfo(partialMsg *npschema.PartialMessage, tm typeMa
 		return errors.New("unexpected error when resolving " + partialMsg.Name + ": schema type is not npschema.Message.")
 	}
 
+	fullSchema.Name = partialMsg.Name
+	fullSchema.TypeID = partialMsg.TypeID
+
 	if partialMsg.ParentMessageName != "" {
-		ps, ok := tm[partialMsg.ParentMessageName]
+		ps, ok := sm[partialMsg.ParentMessageName]
 		if !ok {
 			return errors.New("unable to resolve parent type " + partialMsg.ParentMessageName + " used in " + partialMsg.Name)
 		}
@@ -111,48 +115,51 @@ func resolveMessageSchemaTypeInfo(partialMsg *npschema.PartialMessage, tm typeMa
 		fullSchema.ParentMessage = pmsg
 	}
 
+	imported := map[string]struct{}{}
 	for _, f := range partialMsg.DeclaredFields {
 		if f.TypeName == partialMsg.Name {
 			// self-referencing field
 			fullSchema.DeclaredFields = append(fullSchema.DeclaredFields, npschema.MessageField{
-				Name:   f.TypeName,
-				Type:   *datatype.FromSchema(fullSchema),
+				Name:   f.Name,
+				Type:   fullSchema.DataType(),
 				Number: f.Number,
+				Schema: fullSchema,
 			})
 			continue
 		}
 
-		t := datatype.FromIdentifier(f.TypeName)
-		imported := map[string]bool{}
-		if t == nil {
-			s, ok := tm[f.TypeName]
-			if !ok {
-				return errors.New("unable to resolve type " + f.TypeName + " for field " + f.Name + " declared in " + partialMsg.Name)
-			}
-
-			if _, ok := imported[f.TypeName]; !ok {
-				fullSchema.ImportedTypes = append(fullSchema.ImportedTypes, s)
-				imported[f.TypeName] = true
-			}
-
-			fullSchema.DeclaredFields = append(fullSchema.DeclaredFields, npschema.MessageField{
-				Name:   f.Name,
-				Number: f.Number,
-				Type:   *datatype.FromSchema(s),
-			})
-		} else {
-			fullSchema.DeclaredFields = append(fullSchema.DeclaredFields, npschema.MessageField{
-				Name:   f.Name,
-				Type:   *t,
-				Number: f.Number,
-			})
+		t, s, err := parser.ParseType(f.TypeName, sm)
+		if err != nil {
+			return err
 		}
+
+		if s != nil {
+			var name string
+			switch sp := s.(type) {
+			case *npschema.Message:
+				name = sp.Name
+			case *npschema.Enum:
+				name = sp.Name
+			}
+
+			if _, ok := imported[name]; !ok {
+				fullSchema.ImportedTypes = append(fullSchema.ImportedTypes, s)
+				imported[name] = struct{}{}
+			}
+		}
+
+		fullSchema.DeclaredFields = append(fullSchema.DeclaredFields, npschema.MessageField{
+			Name:   f.Name,
+			Number: f.Number,
+			Type:   *t,
+			Schema: fullSchema,
+		})
 	}
 
 	return nil
 }
 
-func resolveMessageInheritance(msgSchema *npschema.Message, tm typeMap) {
+func resolveMessageInheritance(msgSchema *npschema.Message) {
 	if msgSchema.HasParentMessage {
 		ic := list.New()
 		cur := msgSchema
@@ -187,6 +194,7 @@ func resolveMessageInheritance(msgSchema *npschema.Message, tm typeMap) {
 		msgSchema.AllFields = append(msgSchema.AllFields, msgSchema.InheritedFields...)
 		msgSchema.AllFields = append(msgSchema.AllFields, msgSchema.DeclaredFields...)
 	} else {
-		copy(msgSchema.AllFields, msgSchema.InheritedFields)
+		msgSchema.AllFields = make([]npschema.MessageField, len(msgSchema.DeclaredFields))
+		copy(msgSchema.AllFields, msgSchema.DeclaredFields)
 	}
 }

@@ -9,36 +9,36 @@ import (
 	"text/template"
 )
 
-type CxxArrayGenerator struct {
+type arrayGenerator struct {
 	gm generator.MessageCodeGeneratorMap
 }
 
-func (g CxxArrayGenerator) TypeDeclaration(dataType datatype.DataType) string {
+func (g arrayGenerator) TypeDeclaration(dataType datatype.DataType) string {
 	ig := g.gm[dataType.ElemType.Kind]
 	return fmt.Sprintf("std::vector<%v>", ig.TypeDeclaration(dataType))
 }
 
-func (g CxxArrayGenerator) ReadSizeExpression(dataType datatype.DataType, varName string) string {
+func (g arrayGenerator) ReadSizeExpression(dataType datatype.DataType, varName string) string {
 	if dataType.ElemType.ByteSize != datatype.DynamicSize {
 		return fmt.Sprintf("%v.size() * %d", varName, dataType.ElemType.ByteSize)
 	}
 	return fmt.Sprintf("%v_byte_size", varName)
 }
 
-func (g CxxArrayGenerator) ConstructorFieldParameter(field npschema.MessageField) string {
+func (g arrayGenerator) ConstructorFieldParameter(field npschema.MessageField) string {
 	return g.TypeDeclaration(field.Type) + " " + strcase.ToSnake(field.Name)
 }
 
-func (g CxxArrayGenerator) ConstructorFieldInitializer(field npschema.MessageField) string {
+func (g arrayGenerator) ConstructorFieldInitializer(field npschema.MessageField) string {
 	s := strcase.ToSnake(field.Name)
 	return fmt.Sprintf("%v(std::move(%v))", s, s)
 }
 
-func (g CxxArrayGenerator) FieldDeclaration(field npschema.MessageField) string {
+func (g arrayGenerator) FieldDeclaration(field npschema.MessageField) string {
 	return g.TypeDeclaration(field.Type) + " " + strcase.ToSnake(field.Name) + ";"
 }
 
-func (g CxxArrayGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
+func (g arrayGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
 	s := strcase.ToSnake(field.Name)
 	var l1 string
 	if field.Type.ElemType.ByteSize != datatype.DynamicSize {
@@ -52,7 +52,7 @@ func (g CxxArrayGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx 
 		fmt.Sprintf("this->%v = %v;", s, s))
 }
 
-func (g CxxArrayGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
+func (g arrayGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
 	i32g := g.gm[datatype.Int32]
 	ig := g.gm[dataType.ElemType.Kind]
 	vecSizeVar := varName + "_vec_size"
@@ -85,7 +85,7 @@ func (g CxxArrayGenerator) ReadValueFromBuffer(dataType datatype.DataType, varNa
 	return ls
 }
 
-func (g CxxArrayGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
+func (g arrayGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
 	s := strcase.ToSnake(field.Name)
 
 	if field.Type.ElemType.ByteSize != datatype.DynamicSize {
@@ -115,7 +115,7 @@ func (g CxxArrayGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx g
 		fmt.Sprintf("writer.write_field_size(%d, %v);", field.Number, s+"_byte_size"))
 }
 
-func (g CxxArrayGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
+func (g arrayGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
 	ig := g.gm[dataType.ElemType.Kind]
 	i32g := g.gm[datatype.Int32]
 	vecSizeVar := varName + "_vec_size"
@@ -152,7 +152,7 @@ func (g CxxArrayGenerator) WriteVariableToBuffer(dataType datatype.DataType, var
 		"}")
 }
 
-func (g CxxArrayGenerator) ToFuncMap() template.FuncMap {
+func (g arrayGenerator) ToFuncMap() template.FuncMap {
 	return template.FuncMap{
 		generator.FuncMapKeyTypeDeclaration:             g.TypeDeclaration,
 		generator.FuncMapKeyReadSizeExpression:          g.ReadSizeExpression,

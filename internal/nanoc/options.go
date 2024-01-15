@@ -10,6 +10,14 @@ const (
 	LanguageTypeScript SupportedLanguage = "ts"
 )
 
+type Options struct {
+	Language                  SupportedLanguage
+	MessageFactoryAbsFilePath string
+	InputFileAbsolutePaths    []string
+	CodeFormatterPath         string
+	CodeFormatterArgs         []string
+}
+
 func IsLanguageSupported(language string) bool {
 	switch language {
 	case string(LanguageCxx), string(LanguageSwift), string(LanguageTypeScript):
@@ -19,8 +27,12 @@ func IsLanguageSupported(language string) bool {
 	}
 }
 
-type Options struct {
-	Language                  SupportedLanguage
-	MessageFactoryAbsFilePath string
-	InputFileAbsolutePaths    []string
+func DefaultFormatter(lang SupportedLanguage) (string, []string) {
+	switch lang {
+	case LanguageCxx:
+		return "clang-format", []string{"-i", "-style=LLVM"}
+
+	default:
+		return "", nil
+	}
 }

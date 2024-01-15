@@ -5,6 +5,8 @@ import "nanoc/internal/datatype"
 // PartialMessage is a struct that contains partial information of a message schema.
 // After all schemas are parsed, the resolver will be able to resolve the missing information to produce Message.
 type PartialMessage struct {
+	SchemaPath string
+
 	ImportedTypeNames []string
 	Name              string
 	TypeID            int
@@ -15,7 +17,9 @@ type PartialMessage struct {
 }
 
 type Message struct {
-	ImportedTypes []Schema
+	SchemaPath string
+
+	ImportedTypes []datatype.Schema
 	Name          string
 	TypeID        int
 
@@ -43,8 +47,24 @@ type MessageField struct {
 	Name   string
 	Type   datatype.DataType
 	Number int
+
+	// The Message schema that this field is defined in.
+	Schema *Message
 }
 
-func (m Message) isSchema() {}
+func (m *Message) SchemaPathAbsolute() string {
+	return m.SchemaPath
+}
 
-func (p PartialMessage) isPartialSchema() {}
+func (m *Message) DataType() datatype.DataType {
+	return datatype.DataType{
+		Identifier: m.Name,
+		Kind:       datatype.Message,
+		ByteSize:   datatype.DynamicSize,
+		Schema:     m,
+		KeyType:    nil,
+		ElemType:   nil,
+	}
+}
+
+func (p PartialMessage) IsPartialSchema() {}

@@ -3,6 +3,7 @@ package parser
 import (
 	"errors"
 	"nanoc/internal/npschema"
+	"nanoc/internal/symbol"
 	"strings"
 )
 
@@ -12,7 +13,7 @@ func parseEnumSchema(header string, body map[string]interface{}) (*npschema.Part
 		return nil, errors.New("invalid enum header declaration: expected enum EnumName, or enum EnumName::ValueType, received " + header)
 	}
 
-	ps = strings.Split(ps[1], SymbolTypeSeparator)
+	ps = strings.Split(ps[1], symbol.TypeSeparator)
 	if len(ps) > 2 {
 		return nil, errors.New("invalid enum header declaration: expected enum EnumName, or enum EnumName::ValueType, received " + header)
 	}

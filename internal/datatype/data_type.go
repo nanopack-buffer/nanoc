@@ -1,7 +1,7 @@
 package datatype
 
 import (
-	"nanoc/internal/npschema"
+	"nanoc/internal/symbol"
 )
 
 type DataType struct {
@@ -15,14 +15,14 @@ type DataType struct {
 
 	// Schema is the schema for this message type.
 	// Only applies to Enum or Message kind.
-	Schema *npschema.Schema
+	Schema Schema
 
 	// KeyType is the type of the keys stored in this data type.
 	// Only applies to Map kind.
 	KeyType *DataType
 
 	// ElemType is the type of the element stored in this data type.
-	// Only applies to Array and Map kind.
+	// Only applies to Optional, Enum, Array and Map kind.
 	ElemType *DataType
 }
 
@@ -41,6 +41,7 @@ const (
 	Map
 	Enum
 	Message
+	Optional
 )
 
 var (
@@ -80,6 +81,9 @@ var (
 		ByteSize:   DynamicSize,
 	}
 )
+
+// SchemaMap is a map that maps names of schemas to the corresponding Schema definition.
+type SchemaMap map[string]Schema
 
 // FromKind returns the correct instance of DataType from the given Kind.
 // Returns nil for non-string or non-primitive types.
@@ -129,25 +133,35 @@ func FromIdentifier(identifier string) *DataType {
 	}
 }
 
-func FromSchema(schema npschema.Schema) *DataType {
-	switch s := (schema).(type) {
-	case *npschema.Message:
-		return &DataType{
-			Identifier: s.Name,
-			Kind:       Message,
-			ByteSize:   DynamicSize,
-			Schema:     &schema,
-		}
+func NewOptionalType(elemType *DataType) DataType {
+	return DataType{
+		Identifier: elemType.Identifier + symbol.Optional,
+		Kind:       Optional,
+		ByteSize:   DynamicSize,
+		Schema:     nil,
+		KeyType:    nil,
+		ElemType:   elemType,
+	}
+}
 
-	case *npschema.Enum:
-		return &DataType{
-			Identifier: s.Name,
-			Kind:       Enum,
-			ByteSize:   s.ValueType.ByteSize,
-			Schema:     &schema,
-		}
+func NewArrayType(elemType *DataType) DataType {
+	return DataType{
+		Identifier: elemType.Identifier + symbol.Array,
+		Kind:       Array,
+		ByteSize:   DynamicSize,
+		Schema:     nil,
+		KeyType:    nil,
+		ElemType:   elemType,
+	}
+}
 
-	default:
-		return nil
+func NewMapType(keyType *DataType, valueType *DataType) DataType {
+	return DataType{
+		Identifier: symbol.MapBracketStart + keyType.Identifier + symbol.MapKeyValTypeSep + " " + valueType.Identifier + symbol.MapBracketEnd,
+		Kind:       Map,
+		ByteSize:   DynamicSize,
+		Schema:     nil,
+		KeyType:    keyType,
+		ElemType:   valueType,
 	}
 }
