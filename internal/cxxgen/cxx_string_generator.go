@@ -1,4 +1,4 @@
-package cxxgenerator
+package cxxgen
 
 import (
 	"fmt"

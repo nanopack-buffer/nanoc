@@ -1,4 +1,4 @@
-package cxxgenerator
+package cxxgen
 
 import (
 	"fmt"
@@ -10,9 +10,10 @@ import (
 )
 
 var cxxIntTypes = map[datatype.Kind]string{
-	datatype.Int8:  "int8_t",
-	datatype.Int32: "int32_t",
-	datatype.Int64: "int64_t",
+	datatype.Int8:   "int8_t",
+	datatype.Int32:  "int32_t",
+	datatype.Int64:  "int64_t",
+	datatype.Double: "double",
 }
 
 // numberGenerator is a DataTypeMessageCodeGenerator for NanoPack number types.

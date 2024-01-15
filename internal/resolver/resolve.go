@@ -6,6 +6,7 @@ import (
 	"nanoc/internal/datatype"
 	"nanoc/internal/npschema"
 	"nanoc/internal/parser"
+	"sort"
 )
 
 func Resolve(schemas []datatype.PartialSchema) ([]datatype.Schema, error) {
@@ -197,4 +198,8 @@ func resolveMessageInheritance(msgSchema *npschema.Message) {
 		msgSchema.AllFields = make([]npschema.MessageField, len(msgSchema.DeclaredFields))
 		copy(msgSchema.AllFields, msgSchema.DeclaredFields)
 	}
+
+	sort.Slice(msgSchema.AllFields, func(i, j int) bool {
+		return msgSchema.AllFields[i].Number < msgSchema.AllFields[j].Number
+	})
 }

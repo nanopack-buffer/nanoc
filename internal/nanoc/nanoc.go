@@ -2,16 +2,12 @@ package nanoc
 
 import (
 	"errors"
-	"nanoc/internal/cxxgenerator"
 	"nanoc/internal/datatype"
 	"nanoc/internal/npschema"
 	"nanoc/internal/parser"
 	"nanoc/internal/resolver"
-	"reflect"
 	"sync"
 )
-
-type generatorFunc func(schema datatype.Schema, opts Options) error
 
 func Run(opts Options) error {
 	var wg sync.WaitGroup
@@ -49,25 +45,41 @@ func Run(opts Options) error {
 		return err
 	}
 
-	var generator generatorFunc
-	switch opts.Language {
-	case LanguageCxx:
-		generator = runCxxGenerator
-	}
-
+	schemaGenerator := schemaGeneratorMap[opts.Language]
 	for _, s := range schemas {
 		s := s
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			err := generator(s, opts)
-			if err != nil {
+
+			if err := schemaGenerator(s, opts); err != nil {
 				mu.Lock()
 				errs = append(errs, err)
 				mu.Unlock()
 			}
 		}()
 	}
+
+	if opts.MessageFactoryAbsFilePath != "" {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			g := messageFactoryGeneratorMap[opts.Language]
+			var mss []*npschema.Message
+			for _, s := range schemas {
+				if ms, ok := s.(*npschema.Message); ok {
+					mss = append(mss, ms)
+				}
+			}
+			if err := g(mss, opts); err != nil {
+				mu.Lock()
+				errs = append(errs, err)
+				mu.Unlock()
+			}
+		}()
+	}
+
 	wg.Wait()
 
 	if len(errs) > 0 {
@@ -75,17 +87,4 @@ func Run(opts Options) error {
 	}
 
 	return nil
-}
-
-func runCxxGenerator(schema datatype.Schema, opts Options) error {
-	switch s := schema.(type) {
-	case *npschema.Message:
-		return cxxgenerator.GenerateMessageClass(s, cxxgenerator.Options{
-			FormatterPath: opts.CodeFormatterPath,
-			FormatterArgs: opts.CodeFormatterArgs,
-		})
-
-	default:
-		return errors.New("unexpected error. Unsupported schema type " + reflect.TypeOf(schema).Name())
-	}
 }

@@ -20,11 +20,6 @@ func main() {
 		log.Fatalln(language + " is not yet supported by nanoc!")
 	}
 
-	fout, err := filepath.Abs(factoryOut)
-	if err != nil {
-		log.Fatalln("Message factory path is invalid. Received: " + factoryOut)
-	}
-
 	inputs := make([]string, flag.NArg())
 	for i, p := range flag.Args() {
 		abs, err := filepath.Abs(p)
@@ -36,15 +31,23 @@ func main() {
 
 	opts := nanoc.Options{
 		Language:                  nanoc.SupportedLanguage(language),
-		MessageFactoryAbsFilePath: fout,
+		MessageFactoryAbsFilePath: "",
 		InputFileAbsolutePaths:    inputs,
+	}
+
+	if factoryOut != "" {
+		p, err := filepath.Abs(factoryOut)
+		if err != nil {
+			log.Fatalln("Message factory path is invalid. Received: " + factoryOut)
+		}
+		opts.MessageFactoryAbsFilePath = p
 	}
 
 	if opts.CodeFormatterPath == "" {
 		opts.CodeFormatterPath, opts.CodeFormatterArgs = nanoc.DefaultFormatter(opts.Language)
 	}
 
-	err = nanoc.Run(opts)
+	err := nanoc.Run(opts)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -1,4 +1,4 @@
-package cxxgenerator
+package cxxgen
 
 import (
 	"errors"
@@ -19,6 +19,10 @@ import (
 type Options struct {
 	FormatterPath string
 	FormatterArgs []string
+
+	// The absolute path to the directory where the factory file should be put in
+	// This is an empty string when it is not requested.
+	MessageFactoryPath string
 }
 
 func GenerateMessageClass(msgSchema *npschema.Message, opts Options) error {
@@ -27,7 +31,9 @@ func GenerateMessageClass(msgSchema *npschema.Message, opts Options) error {
 		datatype.Int8:    ng,
 		datatype.Int32:   ng,
 		datatype.Int64:   ng,
+		datatype.Double:  ng,
 		datatype.String:  stringGenerator{},
+		datatype.Bool:    boolGenerator{},
 		datatype.Message: messageGenerator{},
 	}
 	gm[datatype.Optional] = optionalGenerator{gm}
@@ -39,28 +45,51 @@ func GenerateMessageClass(msgSchema *npschema.Message, opts Options) error {
 
 	wg.Add(1)
 	go func() {
-		err := generateHeaderFile(msgSchema, gm, opts)
-		errs[0] = err
+		errs[0] = generateMessageHeaderFile(msgSchema, gm, opts)
 		wg.Done()
 	}()
 
 	wg.Add(1)
 	go func() {
-		err := generateImplFile(msgSchema, gm, opts)
-		errs[1] = err
+		errs[1] = generateMessageImplFile(msgSchema, gm, opts)
 		wg.Done()
 	}()
 
 	wg.Wait()
 
-	if len(errs) > 0 {
+	if errs[0] != nil || errs[1] != nil {
 		return errors.Join(errs...)
 	}
 
 	return nil
 }
 
-func generateHeaderFile(msgSchema *npschema.Message, gm generator.MessageCodeGeneratorMap, opts Options) error {
+func GenerateMessageFactory(schemas []*npschema.Message, opts Options) error {
+	var wg sync.WaitGroup
+	errs := make([]error, 2)
+
+	wg.Add(1)
+	go func() {
+		errs[0] = generateMessageFactoryHeaderFile(opts)
+		wg.Done()
+	}()
+
+	wg.Add(1)
+	go func() {
+		errs[1] = generateMessageFactoryImplFile(schemas, opts)
+		wg.Done()
+	}()
+
+	wg.Wait()
+
+	if errs[0] != nil || errs[1] != nil {
+		return errors.Join(errs...)
+	}
+
+	return nil
+}
+
+func generateMessageHeaderFile(msgSchema *npschema.Message, gm generator.MessageCodeGeneratorMap, opts Options) error {
 	info := messageHeaderFileTemplateInfo{
 		MessageName:      msgSchema.Name,
 		TypeID:           msgSchema.TypeID,
@@ -83,7 +112,7 @@ func generateHeaderFile(msgSchema *npschema.Message, gm generator.MessageCodeGen
 			libimp["optional"] = struct{}{}
 
 		case datatype.Message:
-			p, err := resolveImportPath(field.Type.Schema, msgSchema)
+			p, err := resolveSchemaImportPath(field.Type.Schema, msgSchema)
 			if err != nil {
 				return err
 			}
@@ -96,7 +125,7 @@ func generateHeaderFile(msgSchema *npschema.Message, gm generator.MessageCodeGen
 
 	if msgSchema.HasParentMessage {
 		info.ParentMessageName = msgSchema.ParentMessage.Name
-		p, err := resolveImportPath(msgSchema.ParentMessage, msgSchema)
+		p, err := resolveSchemaImportPath(msgSchema.ParentMessage, msgSchema)
 		if err != nil {
 			return err
 		}
@@ -155,7 +184,7 @@ func generateHeaderFile(msgSchema *npschema.Message, gm generator.MessageCodeGen
 	return nil
 }
 
-func generateImplFile(msgSchema *npschema.Message, gm generator.MessageCodeGeneratorMap, opts Options) error {
+func generateMessageImplFile(msgSchema *npschema.Message, gm generator.MessageCodeGeneratorMap, opts Options) error {
 	fname := filepath.Base(msgSchema.SchemaPath)
 	fname = strcase.ToSnake(strings.TrimSuffix(fname, filepath.Ext(fname))) + extImplFile
 
@@ -203,7 +232,7 @@ func generateImplFile(msgSchema *npschema.Message, gm generator.MessageCodeGener
 		info.FieldWriteCodeFragments = append(info.FieldWriteCodeFragments, g.WriteFieldToBuffer(f, ctx))
 	}
 
-	tmpl, err := template.New(templateNameImplFile).
+	tmpl, err := template.New(templateNameMessageImplFile).
 		Funcs(template.FuncMap{
 			"join": strings.Join,
 		}).
@@ -218,7 +247,6 @@ func generateImplFile(msgSchema *npschema.Message, gm generator.MessageCodeGener
 	if err != nil {
 		return err
 	}
-
 	defer f.Close()
 
 	err = tmpl.Execute(f, info)
@@ -234,7 +262,59 @@ func generateImplFile(msgSchema *npschema.Message, gm generator.MessageCodeGener
 	return nil
 }
 
-func resolveImportPath(toSchema datatype.Schema, fromSchema datatype.Schema) (string, error) {
+func generateMessageFactoryHeaderFile(opts Options) error {
+	op := filepath.Join(opts.MessageFactoryPath, fileNameMessageFactory+extHeaderFile)
+	err := os.WriteFile(op, []byte(messageFactoryHeaderFile), 0644)
+	if err != nil {
+		return err
+	}
+	return formatCode(op, opts.FormatterPath, opts.FormatterArgs...)
+}
+
+func generateMessageFactoryImplFile(schemas []*npschema.Message, opts Options) error {
+	op := filepath.Join(opts.MessageFactoryPath, fileNameMessageFactory+extImplFile)
+
+	info := messageFactoryImplFileTemplateInfo{
+		MessageImportPaths: nil,
+		MessageSchemas:     nil,
+	}
+
+	for _, s := range schemas {
+		ip, err := filepath.Rel(filepath.Dir(op), s.SchemaPath)
+		if err != nil {
+			return err
+		}
+		ip = strings.Replace(ip, path.Ext(ip), extHeaderFile, 1)
+		info.MessageImportPaths = append(info.MessageImportPaths, ip)
+	}
+
+	info.MessageSchemas = schemas
+
+	tmpl, err := template.New(templateNameMessageFactoryImplFile).Parse(messageFactoryImplFile)
+	if err != nil {
+		return err
+	}
+
+	f, err := os.Create(op)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	err = tmpl.Execute(f, info)
+	if err != nil {
+		return err
+	}
+
+	err = formatCode(op, opts.FormatterPath, opts.FormatterArgs...)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func resolveSchemaImportPath(toSchema datatype.Schema, fromSchema datatype.Schema) (string, error) {
 	p, err := filepath.Rel(filepath.Dir(fromSchema.SchemaPathAbsolute()), toSchema.SchemaPathAbsolute())
 	if err != nil {
 		return "", err
