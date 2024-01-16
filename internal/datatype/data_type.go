@@ -165,3 +165,12 @@ func NewMapType(keyType *DataType, valueType *DataType) DataType {
 		ElemType:   valueType,
 	}
 }
+
+func IsNumberType(t DataType) bool {
+	switch t.Kind {
+	case Int8, Int32, Int64, Double:
+		return true
+	default:
+		return false
+	}
+}

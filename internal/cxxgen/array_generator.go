@@ -6,7 +6,6 @@ import (
 	"nanoc/internal/datatype"
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
-	"text/template"
 )
 
 type arrayGenerator struct {
@@ -29,7 +28,7 @@ func (g arrayGenerator) ConstructorFieldParameter(field npschema.MessageField) s
 	return g.TypeDeclaration(field.Type) + " " + strcase.ToSnake(field.Name)
 }
 
-func (g arrayGenerator) ConstructorFieldInitializer(field npschema.MessageField) string {
+func (g arrayGenerator) FieldInitializer(field npschema.MessageField) string {
 	s := strcase.ToSnake(field.Name)
 	return fmt.Sprintf("%v(std::move(%v))", s, s)
 }
@@ -150,18 +149,4 @@ func (g arrayGenerator) WriteVariableToBuffer(dataType datatype.DataType, varNam
 		ls,
 		l5,
 		"}")
-}
-
-func (g arrayGenerator) ToFuncMap() template.FuncMap {
-	return template.FuncMap{
-		generator.FuncMapKeyTypeDeclaration:             g.TypeDeclaration,
-		generator.FuncMapKeyReadSizeExpression:          g.ReadSizeExpression,
-		generator.FuncMapKeyConstructorFieldParameter:   g.ConstructorFieldParameter,
-		generator.FuncMapKeyConstructorFieldInitializer: g.ConstructorFieldInitializer,
-		generator.FuncMapKeyFieldDeclaration:            g.FieldDeclaration,
-		generator.FuncMapKeyReadFieldFromBuffer:         g.ReadFieldFromBuffer,
-		generator.FuncMapKeyReadValueFromBuffer:         g.ReadValueFromBuffer,
-		generator.FuncMapKeyWriteFieldToBuffer:          g.WriteFieldToBuffer,
-		generator.FuncMapKeyWriteVariableToBuffer:       g.WriteVariableToBuffer,
-	}
 }

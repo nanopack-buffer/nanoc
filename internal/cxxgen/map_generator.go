@@ -7,7 +7,6 @@ import (
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
 	"strings"
-	"text/template"
 )
 
 type mapGenerator struct {
@@ -31,7 +30,7 @@ func (g mapGenerator) ConstructorFieldParameter(field npschema.MessageField) str
 	return g.TypeDeclaration(field.Type) + " " + strcase.ToSnake(field.Name)
 }
 
-func (g mapGenerator) ConstructorFieldInitializer(field npschema.MessageField) string {
+func (g mapGenerator) FieldInitializer(field npschema.MessageField) string {
 	s := strcase.ToSnake(field.Name)
 	return fmt.Sprintf("%v(std::move(%v))", s, s)
 }
@@ -178,9 +177,4 @@ func (g mapGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName 
 	}
 
 	return generator.Lines(ls, l8, l9, "}")
-}
-
-func (g mapGenerator) ToFuncMap() template.FuncMap {
-	//TODO implement me
-	panic("implement me")
 }

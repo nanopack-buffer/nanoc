@@ -216,7 +216,7 @@ func generateMessageImplFile(msgSchema *npschema.Message, gm generator.MessageCo
 	for _, f := range msgSchema.DeclaredFields {
 		g := gm[f.Type.Kind]
 		info.ConstructorParameters = append(info.ConstructorParameters, g.ConstructorFieldParameter(f))
-		info.FieldInitializers = append(info.FieldInitializers, g.ConstructorFieldInitializer(f))
+		info.FieldInitializers = append(info.FieldInitializers, g.FieldInitializer(f))
 	}
 
 	ctx := generator.CodeContext{}

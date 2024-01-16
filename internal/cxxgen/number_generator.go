@@ -6,7 +6,6 @@ import (
 	"nanoc/internal/datatype"
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
-	"text/template"
 )
 
 var cxxIntTypes = map[datatype.Kind]string{
@@ -31,7 +30,7 @@ func (g numberGenerator) ConstructorFieldParameter(field npschema.MessageField) 
 	return cxxIntTypes[field.Type.Kind] + " " + strcase.ToSnake(field.Name)
 }
 
-func (g numberGenerator) ConstructorFieldInitializer(field npschema.MessageField) string {
+func (g numberGenerator) FieldInitializer(field npschema.MessageField) string {
 	s := strcase.ToSnake(field.Name)
 	return fmt.Sprintf("%v(%v)", s, s)
 }
@@ -67,18 +66,4 @@ func (g numberGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx gen
 
 func (g numberGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
 	return fmt.Sprintf("writer.append_%v(%v);", dataType.Identifier, varName)
-}
-
-func (g numberGenerator) ToFuncMap() template.FuncMap {
-	return template.FuncMap{
-		generator.FuncMapKeyTypeDeclaration:             g.TypeDeclaration,
-		generator.FuncMapKeyReadSizeExpression:          g.ReadSizeExpression,
-		generator.FuncMapKeyConstructorFieldParameter:   g.ConstructorFieldParameter,
-		generator.FuncMapKeyConstructorFieldInitializer: g.ConstructorFieldInitializer,
-		generator.FuncMapKeyFieldDeclaration:            g.FieldDeclaration,
-		generator.FuncMapKeyReadFieldFromBuffer:         g.ReadFieldFromBuffer,
-		generator.FuncMapKeyReadValueFromBuffer:         g.ReadValueFromBuffer,
-		generator.FuncMapKeyWriteFieldToBuffer:          g.WriteFieldToBuffer,
-		generator.FuncMapKeyWriteVariableToBuffer:       g.WriteVariableToBuffer,
-	}
 }

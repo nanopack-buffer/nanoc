@@ -6,7 +6,6 @@ import (
 	"nanoc/internal/datatype"
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
-	"text/template"
 )
 
 type messageGenerator struct{}
@@ -30,7 +29,7 @@ func (g messageGenerator) ConstructorFieldParameter(field npschema.MessageField)
 	return td + " " + s
 }
 
-func (g messageGenerator) ConstructorFieldInitializer(field npschema.MessageField) string {
+func (g messageGenerator) FieldInitializer(field npschema.MessageField) string {
 	ms := field.Type.Schema.(*npschema.Message)
 	selfRef := ms.TypeID == field.Schema.TypeID
 	s := strcase.ToSnake(field.Name)
@@ -114,9 +113,4 @@ func (g messageGenerator) WriteVariableToBuffer(dataType datatype.DataType, varN
 	return generator.Lines(
 		fmt.Sprintf("const std::vector<uint8_t> %v_data = %v.data();", varName),
 		fmt.Sprintf("writer.append_bytes(%v_data);", varName))
-}
-
-func (g messageGenerator) ToFuncMap() template.FuncMap {
-	//TODO implement me
-	panic("implement me")
 }

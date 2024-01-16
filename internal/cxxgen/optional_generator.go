@@ -7,7 +7,6 @@ import (
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
 	"strings"
-	"text/template"
 )
 
 type optionalGenerator struct {
@@ -31,7 +30,7 @@ func (g optionalGenerator) ConstructorFieldParameter(field npschema.MessageField
 	return g.TypeDeclaration(field.Type) + " " + strcase.ToSnake(field.Name)
 }
 
-func (g optionalGenerator) ConstructorFieldInitializer(field npschema.MessageField) string {
+func (g optionalGenerator) FieldInitializer(field npschema.MessageField) string {
 	s := strcase.ToSnake(field.Name)
 	return fmt.Sprintf("%v(std::move(%v))", s, s)
 }
@@ -96,9 +95,4 @@ func (g optionalGenerator) WriteVariableToBuffer(dataType datatype.DataType, var
 		"} else {",
 		"    writer.appendInt8(0);",
 		"}")
-}
-
-func (g optionalGenerator) ToFuncMap() template.FuncMap {
-	//TODO implement me
-	panic("implement me")
 }

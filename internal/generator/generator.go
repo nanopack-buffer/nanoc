@@ -3,7 +3,6 @@ package generator
 import (
 	"nanoc/internal/datatype"
 	"nanoc/internal/npschema"
-	"text/template"
 )
 
 type MessageCodeGeneratorMap map[datatype.Kind]DataTypeMessageCodeGenerator
@@ -20,8 +19,8 @@ type DataTypeMessageCodeGenerator interface {
 	// ConstructorFieldParameter creates the constructor parameter definition of the given message field.
 	ConstructorFieldParameter(field npschema.MessageField) string
 
-	// ConstructorFieldInitializer creates the statement to initialize the given message field in the message class.
-	ConstructorFieldInitializer(field npschema.MessageField) string
+	// FieldInitializer creates the statement to initialize the given message field in the message class.
+	FieldInitializer(field npschema.MessageField) string
 
 	// FieldDeclaration creates the field declaration for the given message field in the message class.
 	FieldDeclaration(field npschema.MessageField) string
@@ -37,16 +36,13 @@ type DataTypeMessageCodeGenerator interface {
 
 	// WriteVariableToBuffer creates code to write the value of a variable to a NanoPack-formatted buffer.
 	WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx CodeContext) string
-
-	// ToFuncMap creates a template.FuncMap for this generator that can be used in a Go template.
-	ToFuncMap() template.FuncMap
 }
 
 const (
 	FuncMapKeyTypeDeclaration             = "TypeDeclaration"
 	FuncMapKeyReadSizeExpression          = "ReadSizeExpression"
 	FuncMapKeyConstructorFieldParameter   = "ConstructorFieldParameter"
-	FuncMapKeyConstructorFieldInitializer = "ConstructorFieldInitializer"
+	FuncMapKeyConstructorFieldInitializer = "FieldInitializer"
 	FuncMapKeyFieldDeclaration            = "FieldDeclaration"
 	FuncMapKeyReadFieldFromBuffer         = "ReadFieldFromBuffer"
 	FuncMapKeyReadValueFromBuffer         = "ReadValueFromBuffer"

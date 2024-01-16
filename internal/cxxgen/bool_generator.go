@@ -6,7 +6,6 @@ import (
 	"nanoc/internal/datatype"
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
-	"text/template"
 )
 
 type boolGenerator struct{}
@@ -23,7 +22,7 @@ func (g boolGenerator) ConstructorFieldParameter(field npschema.MessageField) st
 	return g.TypeDeclaration(field.Type) + " " + strcase.ToSnake(field.Name)
 }
 
-func (g boolGenerator) ConstructorFieldInitializer(field npschema.MessageField) string {
+func (g boolGenerator) FieldInitializer(field npschema.MessageField) string {
 	s := strcase.ToSnake(field.Name)
 	return fmt.Sprintf("%v(%v)", s, s)
 }
@@ -54,18 +53,4 @@ func (g boolGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx gener
 
 func (g boolGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
 	return fmt.Sprintf("writer.append_bool(%v);", varName)
-}
-
-func (g boolGenerator) ToFuncMap() template.FuncMap {
-	return template.FuncMap{
-		generator.FuncMapKeyTypeDeclaration:             g.TypeDeclaration,
-		generator.FuncMapKeyReadSizeExpression:          g.ReadSizeExpression,
-		generator.FuncMapKeyConstructorFieldParameter:   g.ConstructorFieldParameter,
-		generator.FuncMapKeyConstructorFieldInitializer: g.ConstructorFieldInitializer,
-		generator.FuncMapKeyFieldDeclaration:            g.FieldDeclaration,
-		generator.FuncMapKeyReadFieldFromBuffer:         g.ReadFieldFromBuffer,
-		generator.FuncMapKeyReadValueFromBuffer:         g.ReadValueFromBuffer,
-		generator.FuncMapKeyWriteFieldToBuffer:          g.WriteFieldToBuffer,
-		generator.FuncMapKeyWriteVariableToBuffer:       g.WriteVariableToBuffer,
-	}
 }
