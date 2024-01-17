@@ -19,21 +19,21 @@ func (g boolGenerator) ReadSizeExpression(dataType datatype.DataType, varName st
 }
 
 func (g boolGenerator) ConstructorFieldParameter(field npschema.MessageField) string {
-	return fmt.Sprintf("%v: %v", strcase.ToCamel(field.Name), g.TypeDeclaration(field.Type))
+	return fmt.Sprintf("%v: %v", strcase.ToLowerCamel(field.Name), g.TypeDeclaration(field.Type))
 }
 
 func (g boolGenerator) FieldInitializer(field npschema.MessageField) string {
-	c := strcase.ToCamel(field.Name)
+	c := strcase.ToLowerCamel(field.Name)
 	return fmt.Sprintf("self.%v = %v", c, c)
 }
 
 func (g boolGenerator) FieldDeclaration(field npschema.MessageField) string {
-	return fmt.Sprintf("let %v: %v", strcase.ToCamel(field.Name), g.TypeDeclaration(field.Type))
+	return fmt.Sprintf("let %v: %v", strcase.ToLowerCamel(field.Name), g.TypeDeclaration(field.Type))
 }
 
 func (g boolGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
 	return generator.Lines(
-		fmt.Sprintf("let %v = data.read(at: ptr)", strcase.ToCamel(field.Name)),
+		fmt.Sprintf("let %v = data.read(at: ptr)", strcase.ToLowerCamel(field.Name)),
 		"ptr += 1")
 }
 
@@ -52,7 +52,7 @@ func (g boolGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName s
 func (g boolGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
 	return generator.Lines(
 		fmt.Sprintf("data.write(size: 1, ofField: %d)", field.Number),
-		fmt.Sprintf("data.append(bool: %v)", strcase.ToCamel(field.Name)))
+		fmt.Sprintf("data.append(bool: %v)", strcase.ToLowerCamel(field.Name)))
 }
 
 func (g boolGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {

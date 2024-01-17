@@ -26,20 +26,20 @@ func (g arrayGenerator) ReadSizeExpression(dataType datatype.DataType, varName s
 }
 
 func (g arrayGenerator) ConstructorFieldParameter(field npschema.MessageField) string {
-	return fmt.Sprintf("%v: %v", strcase.ToCamel(field.Name), g.TypeDeclaration(field.Type))
+	return fmt.Sprintf("%v: %v", strcase.ToLowerCamel(field.Name), g.TypeDeclaration(field.Type))
 }
 
 func (g arrayGenerator) FieldInitializer(field npschema.MessageField) string {
-	c := strcase.ToCamel(field.Name)
+	c := strcase.ToLowerCamel(field.Name)
 	return fmt.Sprintf("self.%v = %v", c, c)
 }
 
 func (g arrayGenerator) FieldDeclaration(field npschema.MessageField) string {
-	return fmt.Sprintf("let %v: %v", strcase.ToCamel(field.Name), g.TypeDeclaration(field.Type))
+	return fmt.Sprintf("let %v: %v", strcase.ToLowerCamel(field.Name), g.TypeDeclaration(field.Type))
 }
 
 func (g arrayGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
-	c := strcase.ToCamel(field.Name)
+	c := strcase.ToLowerCamel(field.Name)
 
 	if field.Type.ElemType.ByteSize != datatype.DynamicSize {
 		ctx.AddVariableToScope(c + "ByteSize")
@@ -114,9 +114,9 @@ func (g arrayGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName 
 
 func (g arrayGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
 	ig := g.gm[field.Type.ElemType.Kind]
-	c := strcase.ToCamel(field.Name)
+	c := strcase.ToLowerCamel(field.Name)
 
-	if field.Type.ElemType.Kind == datatype.DynamicSize {
+	if field.Type.ElemType.ByteSize == datatype.DynamicSize {
 		return generator.Lines(
 			g.WriteVariableToBuffer(field.Type, c, ctx),
 			fmt.Sprintf("data.write(size: %vByteSize, ofField: %d)", c, field.Number))

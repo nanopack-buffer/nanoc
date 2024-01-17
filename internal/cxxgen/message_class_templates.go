@@ -27,9 +27,9 @@ type messageImplFileTemplateInfo struct {
 	FieldInitializers     []string
 
 	ReadPtrStart           int
-	InitialWriteBufferSize int
+	FieldReadCodeFragments []string
 
-	FieldReadCodeFragments  []string
+	InitialWriteBufferSize  int
 	FieldWriteCodeFragments []string
 }
 

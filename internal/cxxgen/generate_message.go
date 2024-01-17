@@ -219,14 +219,14 @@ func generateMessageImplFile(msgSchema *npschema.Message, gm generator.MessageCo
 		info.FieldInitializers = append(info.FieldInitializers, g.FieldInitializer(f))
 	}
 
-	ctx := generator.CodeContext{}
+	ctx := generator.NewCodeContext()
 	for _, f := range msgSchema.AllFields {
 		g := gm[f.Type.Kind]
 		info.FieldReadCodeFragments = append(info.FieldReadCodeFragments, g.ReadFieldFromBuffer(f, ctx))
 	}
 
 	// new context in new block of code
-	ctx = generator.CodeContext{}
+	ctx = generator.NewCodeContext()
 	for _, f := range msgSchema.AllFields {
 		g := gm[f.Type.Kind]
 		info.FieldWriteCodeFragments = append(info.FieldWriteCodeFragments, g.WriteFieldToBuffer(f, ctx))

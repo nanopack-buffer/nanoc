@@ -119,10 +119,11 @@ func resolveMessageSchemaTypeInfo(partialMsg *npschema.PartialMessage, sm dataty
 	imported := map[string]struct{}{}
 	for _, f := range partialMsg.DeclaredFields {
 		if f.TypeName == partialMsg.Name {
-			// self-referencing field
+			t := fullSchema.DataType()
+			// self-referencing field, mark type as optional to add indirection
 			fullSchema.DeclaredFields = append(fullSchema.DeclaredFields, npschema.MessageField{
 				Name:   f.Name,
-				Type:   fullSchema.DataType(),
+				Type:   datatype.NewOptionalType(&t),
 				Number: f.Number,
 				Schema: fullSchema,
 			})
@@ -161,6 +162,10 @@ func resolveMessageSchemaTypeInfo(partialMsg *npschema.PartialMessage, sm dataty
 }
 
 func resolveMessageInheritance(msgSchema *npschema.Message) {
+	sort.Slice(msgSchema.DeclaredFields, func(i, j int) bool {
+		return msgSchema.DeclaredFields[i].Number < msgSchema.DeclaredFields[j].Number
+	})
+
 	if msgSchema.HasParentMessage {
 		ic := list.New()
 		cur := msgSchema
@@ -192,14 +197,18 @@ func resolveMessageInheritance(msgSchema *npschema.Message) {
 			n = next
 		}
 
+		sort.Slice(msgSchema.InheritedFields, func(i, j int) bool {
+			return msgSchema.InheritedFields[i].Number < msgSchema.InheritedFields[j].Number
+		})
+
 		msgSchema.AllFields = append(msgSchema.AllFields, msgSchema.InheritedFields...)
 		msgSchema.AllFields = append(msgSchema.AllFields, msgSchema.DeclaredFields...)
 	} else {
 		msgSchema.AllFields = make([]npschema.MessageField, len(msgSchema.DeclaredFields))
 		copy(msgSchema.AllFields, msgSchema.DeclaredFields)
-	}
 
-	sort.Slice(msgSchema.AllFields, func(i, j int) bool {
-		return msgSchema.AllFields[i].Number < msgSchema.AllFields[j].Number
-	})
+		sort.Slice(msgSchema.AllFields, func(i, j int) bool {
+			return msgSchema.AllFields[i].Number < msgSchema.AllFields[j].Number
+		})
+	}
 }

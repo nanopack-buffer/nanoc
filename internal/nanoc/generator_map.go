@@ -9,9 +9,11 @@ type schemaGeneratorFunc func(schema datatype.Schema, opts Options) error
 type messageFactoryGeneratorFunc func(schemas []*npschema.Message, opts Options) error
 
 var schemaGeneratorMap = map[SupportedLanguage]schemaGeneratorFunc{
-	LanguageCxx: runCxxSchemaGenerator,
+	LanguageCxx:   runCxxSchemaGenerator,
+	LanguageSwift: runSwiftSchemaGenerator,
 }
 
 var messageFactoryGeneratorMap = map[SupportedLanguage]messageFactoryGeneratorFunc{
-	LanguageCxx: runCxxMessageFactoryGenerator,
+	LanguageCxx:   runCxxMessageFactoryGenerator,
+	LanguageSwift: runSwiftMessageFactoryGenerator,
 }

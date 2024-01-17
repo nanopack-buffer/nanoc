@@ -32,6 +32,9 @@ func DefaultFormatter(lang SupportedLanguage) (string, []string) {
 	case LanguageCxx:
 		return "clang-format", []string{"-i", "-style=LLVM"}
 
+	case LanguageSwift:
+		return "swift-format", []string{"--in-place"}
+
 	default:
 		return "", nil
 	}

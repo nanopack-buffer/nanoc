@@ -27,20 +27,20 @@ func (g numberGenerator) ReadSizeExpression(dataType datatype.DataType, varName 
 }
 
 func (g numberGenerator) ConstructorFieldParameter(field npschema.MessageField) string {
-	return fmt.Sprintf("%v: %v", strcase.ToCamel(field.Name), g.TypeDeclaration(field.Type))
+	return fmt.Sprintf("%v: %v", strcase.ToLowerCamel(field.Name), g.TypeDeclaration(field.Type))
 }
 
 func (g numberGenerator) FieldInitializer(field npschema.MessageField) string {
-	c := strcase.ToCamel(field.Name)
+	c := strcase.ToLowerCamel(field.Name)
 	return fmt.Sprintf("self.%v = %v", c, c)
 }
 
 func (g numberGenerator) FieldDeclaration(field npschema.MessageField) string {
-	return fmt.Sprintf("let %v: %v", strcase.ToCamel(field.Name), g.TypeDeclaration(field.Type))
+	return fmt.Sprintf("let %v: %v", strcase.ToLowerCamel(field.Name), g.TypeDeclaration(field.Type))
 }
 
 func (g numberGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
-	return g.ReadValueFromBuffer(field.Type, strcase.ToCamel(field.Name), ctx)
+	return g.ReadValueFromBuffer(field.Type, strcase.ToLowerCamel(field.Name), ctx)
 }
 
 func (g numberGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
@@ -60,7 +60,7 @@ func (g numberGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx gen
 	if field.Type.Kind == datatype.Double {
 		l1 = fmt.Sprintf("data.append(double: %v)", strcase.ToSnake(field.Name))
 	} else {
-		l1 = fmt.Sprintf("data.append(int: %v", strcase.ToSnake(field.Name))
+		l1 = fmt.Sprintf("data.append(int: %v)", strcase.ToSnake(field.Name))
 	}
 	return generator.Lines(
 		fmt.Sprintf("data.write(size: %d, ofField: %d)", field.Type.ByteSize, field.Number),

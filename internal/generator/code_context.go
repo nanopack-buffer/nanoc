@@ -4,6 +4,12 @@ type CodeContext struct {
 	vars map[string]struct{}
 }
 
+func NewCodeContext() CodeContext {
+	return CodeContext{
+		vars: make(map[string]struct{}),
+	}
+}
+
 func (c CodeContext) IsVariableInScope(varName string) bool {
 	_, ok := c.vars[varName]
 	return ok
@@ -28,6 +34,18 @@ func (c CodeContext) NewLoopVar() string {
 		i += 1
 		v = loopVar[i]
 	}
+	c.AddVariableToScope(v)
+	return v
+}
+
+func (c CodeContext) NewLoopVarWithSuffix(suffix string) string {
+	i := 0
+	v := loopVar[i]
+	for c.IsVariableInScope(v) {
+		i += 1
+		v = loopVar[i]
+	}
+	v = v + suffix
 	c.AddVariableToScope(v)
 	return v
 }
