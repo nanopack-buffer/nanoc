@@ -90,7 +90,7 @@ func (g arrayGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName 
 	// code for binding memory to type
 	b := strings.Builder{}
 	b.WriteString(fmt.Sprintf("    %v($0.bindMemory(to: %v.self)", g.TypeDeclaration(dataType), ig.TypeDeclaration(*dataType.ElemType)))
-	if datatype.IsNumberType(*dataType.ElemType) {
+	if datatype.IsNumber(*dataType.ElemType) {
 		b.WriteString(".lazy.map{ $0.littleEndian }")
 	}
 	b.WriteString(")")

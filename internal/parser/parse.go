@@ -25,12 +25,7 @@ func ParseSchema(path string) (datatype.PartialSchema, error) {
 
 	for k, v := range m {
 		if strings.HasPrefix(k, symbol.Enum+" ") {
-			body, ok := v.(map[string]interface{})
-			if !ok {
-				return nil, errors.New("invalid enum schema body")
-			}
-
-			s, err := parseEnumSchema(k, body)
+			s, err := parseEnumSchema(k, v)
 			if err != nil {
 				return nil, err
 			}

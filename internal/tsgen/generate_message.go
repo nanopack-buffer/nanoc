@@ -8,7 +8,6 @@ import (
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -107,6 +106,7 @@ func generateMessageClass(msgSchema *npschema.Message, opts Options) error {
 	gm[datatype.Optional] = optionalGenerator{gm}
 	gm[datatype.Array] = arrayGenerator{gm}
 	gm[datatype.Map] = mapGenerator{gm}
+	gm[datatype.Enum] = enumGenerator{gm}
 
 	// the message header byte size includes 4 bytes for the type ID and 4 bytes to store the byte size of each field
 	npHeaderByteSize := (len(msgSchema.AllFields) + 1) * 4
@@ -126,6 +126,8 @@ func generateMessageClass(msgSchema *npschema.Message, opts Options) error {
 		switch s := s.(type) {
 		case *npschema.Message:
 			info.ExternalImports = append(info.ExternalImports, fmt.Sprintf("import { %v } from \"%v\";", s.Name, p))
+		case *npschema.Enum:
+			info.ExternalImports = append(info.ExternalImports, fmt.Sprintf("import type { T%v } from \"%v\";", s.Name, p))
 		}
 	}
 
@@ -229,31 +231,4 @@ func generateMessageClassFactory(msgSchema *npschema.Message, opts Options) erro
 	}
 
 	return nil
-}
-
-func resolveImportPath(toPath string, fromPath string) (string, error) {
-	p, err := filepath.Rel(filepath.Dir(toPath), fromPath)
-	if err != nil {
-		return "", err
-	}
-
-	fname := filepath.Base(toPath)
-	fname = strcase.ToKebab(strings.TrimSuffix(fname, filepath.Ext(fname))) + extImport
-
-	p = strings.Replace(p, filepath.Base(p), fname, 1)
-	if !strings.HasPrefix(p, ".") || !strings.HasPrefix(p, "/") {
-		p = "./" + p
-	}
-
-	return p, nil
-}
-
-func resolveSchemaImportPath(toSchema datatype.Schema, fromSchema datatype.Schema) (string, error) {
-	return resolveImportPath(toSchema.SchemaPathAbsolute(), fromSchema.SchemaPathAbsolute())
-}
-
-func formatCode(path string, formatter string, args ...string) error {
-	args = append(args, path)
-	cmd := exec.Command(formatter, args...)
-	return cmd.Run()
 }

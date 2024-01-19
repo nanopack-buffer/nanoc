@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Compile enum to TS" type="GoApplicationRunConfiguration" factoryName="Go Application" folderName="Enum example">
+    <module name="nanoc" />
+    <working_directory value="$PROJECT_DIR$/examples/ts/enum/" />
+    <parameters value="--language=ts src/week.yml src/month.yml src/alignment.yml src/np-date.yml src/column.yml" />
+    <kind value="PACKAGE" />
+    <package value="nanoc/cmd/nanoc" />
+    <directory value="$PROJECT_DIR$" />
+    <filePath value="$PROJECT_DIR$" />
+    <method v="2" />
+  </configuration>
+</component>

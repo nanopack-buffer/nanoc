@@ -1,0 +1,19 @@
+{
+  "name": "nanoc-enum-example",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "An example of NanoPack generated code in TypeScript",
+  "main": "src/main.ts",
+  "author": "",
+  "license": "MIT",
+  "scripts": {
+    "start": "ts-node --esm src/main.ts"
+  },
+  "dependencies": {
+    "nanopack": "git+https://github.com/poly-gui/ts-nanopack.git#main"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}

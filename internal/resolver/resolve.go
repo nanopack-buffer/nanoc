@@ -3,10 +3,13 @@ package resolver
 import (
 	"container/list"
 	"errors"
+	"fmt"
+	"math"
 	"nanoc/internal/datatype"
 	"nanoc/internal/npschema"
 	"nanoc/internal/parser"
 	"sort"
+	"strconv"
 )
 
 func Resolve(schemas []datatype.PartialSchema) ([]datatype.Schema, error) {
@@ -71,17 +74,62 @@ func resolveEnumSchema(partialEnum *npschema.PartialEnum, sm datatype.SchemaMap)
 		return errors.New("unexpected error when resolving " + partialEnum.Name + ": schema type is not npschema.Enum.")
 	}
 
-	if partialEnum.ValueTypeName == "" {
-		// empty string means that the value type of the enum is not declared
-		// when the value type is not declared, the enum will be implicitly backed by an int8.
-		fullSchema.ValueType = *datatype.FromKind(datatype.Int8)
-	} else if t := datatype.FromIdentifier(partialEnum.ValueTypeName); t != nil {
+	if t := datatype.FromIdentifier(partialEnum.ValueTypeName); t != nil {
 		fullSchema.ValueType = *t
+
+		if datatype.IsInt(fullSchema.ValueType) {
+			for _, m := range fullSchema.Members {
+				_, err := strconv.Atoi(m.ValueLiteral)
+				if err != nil {
+					return errors.New(fmt.Sprintf("non-int value %v used for enum member %v in enum %v", m.ValueLiteral, m.Name, partialEnum.Name))
+				}
+			}
+		} else if datatype.IsDouble(fullSchema.ValueType) {
+			for _, m := range fullSchema.Members {
+				_, err := strconv.ParseFloat(m.ValueLiteral, 64)
+				if err != nil {
+					return errors.New(fmt.Sprintf("non-double value %v used for enum member %v in enum %v", m.ValueLiteral, m.Name, partialEnum.Name))
+				}
+			}
+		}
 	} else {
-		return errors.New("unsupported type " + partialEnum.ValueTypeName + " used for values of " + partialEnum.Name)
+		// guess type based on enum values
+
+		nums := make([]int, 0, len(fullSchema.Members))
+
+		ok := false
+		for _, m := range partialEnum.Members {
+			n, err := strconv.Atoi(m.ValueLiteral)
+			if err != nil {
+				fullSchema.ValueType = *datatype.FromKind(datatype.String)
+				ok = true
+				break
+			}
+			nums = append(nums, n)
+		}
+
+		if !ok {
+			max := -1
+			for _, n := range nums {
+				if n > max {
+					max = n
+				}
+			}
+
+			if max <= math.MaxInt8 {
+				fullSchema.ValueType = *datatype.FromKind(datatype.Int8)
+			} else if max <= math.MaxInt32 {
+				fullSchema.ValueType = *datatype.FromKind(datatype.Int32)
+			} else if max <= math.MaxInt64 {
+				fullSchema.ValueType = *datatype.FromKind(datatype.Int64)
+			} else {
+				return errors.New(fmt.Sprintf("unable to determine the value type to use for enum %v", partialEnum.Name))
+			}
+		}
 	}
 
 	fullSchema.Name = partialEnum.Name
+	fullSchema.Members = make([]npschema.EnumMember, len(partialEnum.Members))
 	copy(fullSchema.Members, partialEnum.Members)
 
 	return nil

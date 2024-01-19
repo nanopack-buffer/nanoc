@@ -54,12 +54,21 @@ func (g numberGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx ge
 }
 
 func (g numberGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
-	m := readMethodName[dataType.Kind]
+	var m string
+	var cast string
+
+	if dataType.Kind == datatype.Enum {
+		cast = fmt.Sprintf(" as T%v", dataType.Identifier)
+		m = readMethodName[dataType.ElemType.Kind]
+	} else {
+		m = readMethodName[dataType.Kind]
+	}
+
 	var l0 string
 	if ctx.IsVariableInScope(varName) {
-		l0 = fmt.Sprintf("%v = reader.%v(ptr);", varName, m)
+		l0 = fmt.Sprintf("%v = reader.%v(ptr)%v;", varName, m, cast)
 	} else {
-		l0 = fmt.Sprintf("const %v = reader.%v(ptr);", varName, m)
+		l0 = fmt.Sprintf("const %v = reader.%v(ptr)%v;", varName, m, cast)
 	}
 
 	return generator.Lines(

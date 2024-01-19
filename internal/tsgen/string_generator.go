@@ -34,33 +34,43 @@ func (g stringGenerator) FieldDeclaration(field npschema.MessageField) string {
 func (g stringGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
 	c := strcase.ToLowerCamel(field.Name)
 
+	var cast string
+	if field.Type.Kind == datatype.Enum {
+		cast = fmt.Sprintf(" as T%v", field.Type.Identifier)
+	}
+
 	var l1 string
 	if ctx.IsVariableInScope(c) {
-		l1 = fmt.Sprintf("%v = reader.readString(ptr, %vByteLength)", c, c)
+		l1 = fmt.Sprintf("%v = reader.readString(ptr, %vByteLength)%v;", c, c, cast)
 	} else {
-		l1 = fmt.Sprintf("const %v = reader.readString(ptr, %vByteLength)", c, c)
+		l1 = fmt.Sprintf("const %v = reader.readString(ptr, %vByteLength)%v;", c, c, cast)
 	}
 
 	return generator.Lines(
 		fmt.Sprintf("const %vByteLength = reader.readFieldSize(%d);", c, field.Number),
 		l1,
-		fmt.Sprintf("ptr += %vByteLength", c),
+		fmt.Sprintf("ptr += %vByteLength;", c),
 	)
 }
 
 func (g stringGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
+	var cast string
+	if dataType.Kind == datatype.Enum {
+		cast = fmt.Sprintf(" as T%v", dataType.Identifier)
+	}
+
 	var l2 string
 	if ctx.IsVariableInScope(varName) {
-		l2 = fmt.Sprintf("%v = reader.readString(ptr, %vByteLength);", varName, varName)
+		l2 = fmt.Sprintf("%v = reader.readString(ptr, %vByteLength)%v;", varName, varName, cast)
 	} else {
-		l2 = fmt.Sprintf("const %v = reader.readString(ptr, %vByteLength);", varName, varName)
+		l2 = fmt.Sprintf("const %v = reader.readString(ptr, %vByteLength)%v;", varName, varName, cast)
 	}
 
 	return generator.Lines(
-		fmt.Sprintf("const %vByteLength = reader.readInt32(ptr)", varName),
-		fmt.Sprintf("ptr + 4"),
+		fmt.Sprintf("const %vByteLength = reader.readInt32(ptr);", varName),
+		fmt.Sprintf("ptr + 4;"),
 		l2,
-		fmt.Sprintf("ptr += %vByteLength"), varName)
+		fmt.Sprintf("ptr += %vByteLength;"), varName)
 }
 
 func (g stringGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
