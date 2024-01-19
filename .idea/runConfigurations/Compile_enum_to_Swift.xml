@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Compile enum to Swift" type="GoApplicationRunConfiguration" factoryName="Go Application" folderName="Enum example">
+    <module name="nanoc" />
+    <working_directory value="$PROJECT_DIR$/examples/swift/enum" />
+    <parameters value="--language=swift Sources/Alignment.yml Sources/Month.yml Sources/Week.yml Sources/NpDate.yml Sources/Column.yml" />
+    <kind value="PACKAGE" />
+    <package value="nanoc/cmd/nanoc" />
+    <directory value="$PROJECT_DIR$" />
+    <filePath value="$PROJECT_DIR$" />
+    <method v="2" />
+  </configuration>
+</component>
