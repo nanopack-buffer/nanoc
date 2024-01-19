@@ -35,6 +35,9 @@ func DefaultFormatter(lang SupportedLanguage) (string, []string) {
 	case LanguageSwift:
 		return "swift-format", []string{"--in-place"}
 
+	case LanguageTypeScript:
+		return "npx", []string{"prettier", "--write"}
+
 	default:
 		return "", nil
 	}

@@ -24,7 +24,7 @@ type Message struct {
 	TypeID        int
 
 	IsInherited   bool
-	ChildMessages []Message
+	ChildMessages []*Message
 
 	HasParentMessage bool
 	ParentMessage    *Message

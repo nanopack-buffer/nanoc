@@ -112,8 +112,12 @@ func resolveMessageSchemaTypeInfo(partialMsg *npschema.PartialMessage, sm dataty
 			return errors.New(partialMsg.Name + " is trying to inherit from a non-message type. This is forbidden.")
 		}
 
+		pmsg.IsInherited = true
+		pmsg.ChildMessages = append(pmsg.ChildMessages, fullSchema)
+
 		fullSchema.HasParentMessage = true
 		fullSchema.ParentMessage = pmsg
+		fullSchema.ImportedTypes = append(fullSchema.ImportedTypes, pmsg)
 	}
 
 	imported := map[string]struct{}{}
