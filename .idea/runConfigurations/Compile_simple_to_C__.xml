@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Compile to C++" type="GoApplicationRunConfiguration" factoryName="Go Application" folderName="Simple example">
+  <configuration default="false" name="Compile simple to C++" type="GoApplicationRunConfiguration" factoryName="Go Application" folderName="Simple example">
     <module name="nanoc" />
     <working_directory value="$PROJECT_DIR$" />
     <parameters value="--language=c++ examples/cxx/simple/person.yml" />
