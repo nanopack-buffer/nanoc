@@ -10,3 +10,35 @@ serialization/deserialization in NanoPack.
     - C++: `clang-format`
     - Swift: `swift-format`
     - JavaScript/TypeScript: `prettier` will be used via `npx`, so `npm` needs to be available
+
+## Installation
+
+Currently, the only way to use nanoc is to build the source code and install the binary via `go install`:
+
+```
+# Assuming the cwd is in the project directory where go.mod is
+go install nanoc/cmd/nanoc
+```
+
+The above compiles the source code, produces an executable called `nanoc`, and then moves (installs) it to `GOBIN`, or `GOPATH/bin` if `GOBIN` is not set. **Make sure either is in PATH**.
+
+## Usage
+
+`nanoc` has the following arguments:
+- `--language` specifies the language of the generated code. Can be `c++`, `swift`, or `ts`.
+- `--factory-out` (optional) specifies the folder in which the message factory code file should be put.
+- The list of relative paths to the NanoPack schemas that should be compiled.
+
+### Example
+
+Compiling `person.yml` and `car.yml` in the current  directory to C++:
+
+```
+nanoc --language=c++ ./person.yml ./car.yml
+```
+
+Compiling `person.yml` and `car.yml` in the current directory to TypeScript, and generate the message factory in the current directory:
+
+```
+nanoc --language=ts --factory-out=. ./person.yml ./car.yml
+```
