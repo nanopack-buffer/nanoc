@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Compile simple to TS" type="GoApplicationRunConfiguration" factoryName="Go Application" folderName="Simple example">
+    <module name="nanoc" />
+    <working_directory value="$PROJECT_DIR$" />
+    <parameters value="--language=ts examples/ts/simple/src/person.yml" />
+    <kind value="PACKAGE" />
+    <package value="nanoc/cmd/nanoc" />
+    <directory value="$PROJECT_DIR$" />
+    <filePath value="$PROJECT_DIR$" />
+    <method v="2" />
+  </configuration>
+</component>

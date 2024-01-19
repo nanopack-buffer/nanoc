@@ -50,7 +50,6 @@ func GenerateMessageClass(msgSchema *npschema.Message, opts Options) error {
 	for _, f := range msgSchema.InheritedFields {
 		g := gm[f.Type.Kind]
 		c := strcase.ToLowerCamel(f.Name)
-		info.FieldInitializers = append(info.FieldInitializers, g.FieldInitializer(f))
 		info.ConstructorParameters = append(info.ConstructorParameters, g.ConstructorFieldParameter(f))
 		info.SuperConstructorArgs = append(info.SuperConstructorArgs, fmt.Sprintf("%v: %v", c, c))
 	}

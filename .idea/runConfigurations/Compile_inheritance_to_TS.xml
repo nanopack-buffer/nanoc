@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Compile inheritance to TS" type="GoApplicationRunConfiguration" factoryName="Go Application" folderName="Inheritance example">
+    <module name="nanoc" />
+    <working_directory value="$PROJECT_DIR$/examples/ts/inheritance/src" />
+    <parameters value="--language=ts --factory-out=. text.yml widget.yml" />
+    <kind value="PACKAGE" />
+    <package value="nanoc/cmd/nanoc" />
+    <directory value="$PROJECT_DIR$" />
+    <filePath value="$PROJECT_DIR$" />
+    <method v="2" />
+  </configuration>
+</component>

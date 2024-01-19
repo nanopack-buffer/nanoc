@@ -38,7 +38,7 @@ import NanoPack
 
 let {{.Schema.Name}}_typeID: TypeID = {{.Schema.TypeID}}
 
-class {{.Schema.Name}}: {{if .Schema.HasParentMessage}}{{.ParentMessage.Schema.Name}}{{else}}NanoPackMessage{{end}} {
+class {{.Schema.Name}}: {{if .Schema.HasParentMessage}}{{.Schema.ParentMessage.Name}}{{else}}NanoPackMessage{{end}} {
     {{if .Schema.HasParentMessage}}override{{end}} var typeID: TypeID { return {{.Schema.TypeID}} }
 
     {{range .FieldDeclarationLines}}
@@ -49,8 +49,8 @@ class {{.Schema.Name}}: {{if .Schema.HasParentMessage}}{{.ParentMessage.Schema.N
     static func from(data: Data) -> {{.Schema.Name}}? {
         switch data.readTypeID() {
         case {{.Schema.TypeID}}: return {{.Schema.Name}}(data: data)
-        {{range .ChildMessages}}
-        case {{.Schema.TypeID}}: return {{.Schema.Name}}(data: Data)
+        {{range .Schema.ChildMessages -}}
+        case {{.TypeID}}: return {{.Name}}(data: data)
         {{- end}}
         default: return nil
         }
@@ -59,8 +59,8 @@ class {{.Schema.Name}}: {{if .Schema.HasParentMessage}}{{.ParentMessage.Schema.N
     static func from(data: Data, bytesRead: inout Int) -> {{.Schema.Name}}? {
         switch data.readTypeID() {
         case {{.Schema.TypeID}}: return {{.Schema.Name}}(data: data, bytesRead: &bytesRead)
-        {{range .ChildMessages}}
-        case {{.Schema.TypeID}}: return {{.Schema.Name}}(data: Data, bytesRead: &bytesRead)
+        {{range .Schema.ChildMessages -}}
+        case {{.TypeID}}: return {{.Name}}(data: data, bytesRead: &bytesRead)
         {{- end}}
         default: return nil
         }
@@ -72,8 +72,8 @@ class {{.Schema.Name}}: {{if .Schema.HasParentMessage}}{{.ParentMessage.Schema.N
         {{.}}
         {{- end -}}
         {{if .Schema.HasParentMessage}}
-        super({{join .SuperConstructorArgs ", "}})
-        {{end}}
+        super.init({{join .SuperConstructorArgs ", "}})
+        {{- end}}
     }
 
     required init?(data: Data) {
@@ -86,6 +86,9 @@ class {{.Schema.Name}}: {{if .Schema.HasParentMessage}}{{.ParentMessage.Schema.N
 
         {{range .FieldInitializers}}
         {{.}}
+        {{- end -}}
+        {{if .Schema.HasParentMessage}}
+        super.init({{join .SuperConstructorArgs ", "}})
         {{- end}}
     }
 
@@ -99,6 +102,9 @@ class {{.Schema.Name}}: {{if .Schema.HasParentMessage}}{{.ParentMessage.Schema.N
 
 		{{range .FieldInitializers}}
         {{.}}
+        {{- end -}}
+        {{if .Schema.HasParentMessage}}
+        super.init({{join .SuperConstructorArgs ", "}})
         {{- end}}
 
         bytesRead = ptr
@@ -131,8 +137,8 @@ import NanoPack
 
 func makeNanoPackMessage(from data: Data, typeID: TypeID) -> NanoPackMessage? {
     switch typeID {
-    {{range .Schemas}}
-    case {{.Schema.TypeID}}: return {{.Schema.Name}}(data: Data)
+    {{- range .Schemas}}
+    case {{.TypeID}}: return {{.Name}}(data: data)
     {{- end}}
     default: return nil
     }
