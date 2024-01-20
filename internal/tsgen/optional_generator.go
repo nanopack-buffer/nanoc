@@ -84,7 +84,7 @@ func (g optionalGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx g
 		fmt.Sprintf("if (this.%v) {", c),
 		ig.WriteFieldToBuffer(npschema.MessageField{
 			Name:   field.Name,
-			Type:   field.Type,
+			Type:   *field.Type.ElemType,
 			Number: field.Number,
 			Schema: field.Schema,
 		}, ctx),

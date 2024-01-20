@@ -13,7 +13,7 @@ type arrayGenerator struct {
 }
 
 func (g arrayGenerator) TypeDeclaration(dataType datatype.DataType) string {
-	ig := g.gm[dataType.Kind]
+	ig := g.gm[dataType.ElemType.Kind]
 	return ig.TypeDeclaration(*dataType.ElemType) + "[]"
 }
 
@@ -71,7 +71,6 @@ func (g arrayGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName 
 
 	lv := ctx.NewLoopVar()
 	iv := lv + "Item"
-	ctx.AddVariableToScope(iv)
 
 	ls := generator.Lines(
 		l0,
@@ -81,7 +80,6 @@ func (g arrayGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName 
 		fmt.Sprintf("%v[%v] = %v", varName, lv, iv),
 		"}")
 
-	ctx.RemoveVariableFromScope(iv)
 	ctx.RemoveVariableFromScope(lv)
 
 	return ls
@@ -91,19 +89,28 @@ func (g arrayGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx gene
 	c := strcase.ToLowerCamel(field.Name)
 	ig := g.gm[field.Type.ElemType.Kind]
 
-	if field.Type.ElemType.ByteSize == datatype.DynamicSize {
-		return generator.Lines(
-			g.WriteVariableToBuffer(field.Type, "this."+c, ctx),
-			fmt.Sprintf("writer.writeFieldSize(%d, %vByteLength);", field.Number, c))
-	}
-
 	lv := ctx.NewLoopVarWithSuffix("Item")
 
-	ls := generator.Lines(
-		fmt.Sprintf("writer.writeFieldSize(%d, %v.length * %d);", field.Number, c, field.Type.ElemType.ByteSize),
-		fmt.Sprintf("for (const %v of this.%v) {", c, c),
-		ig.WriteVariableToBuffer(*field.Type.ElemType, c, ctx),
-		"}")
+	var ls string
+
+	if field.Type.ElemType.ByteSize == datatype.DynamicSize {
+		ctx.AddVariableToScope(c + "ByteLength")
+		ls = generator.Lines(
+			fmt.Sprintf("writer.appendInt32(this.%v.length);", c),
+			fmt.Sprintf("let %vByteLength = 4;", c),
+			fmt.Sprintf("for (const %v of this.%v) {", lv, c),
+			ig.WriteVariableToBuffer(*field.Type.ElemType, lv, ctx),
+			fmt.Sprintf("%vByteLength += %v;", c, ig.ReadSizeExpression(*field.Type.ElemType, lv)),
+			"}",
+			fmt.Sprintf("writer.writeFieldSize(%d, %vByteLength);", field.Number, c))
+		ctx.RemoveVariableFromScope(c + "ByteLength")
+	} else {
+		ls = generator.Lines(
+			fmt.Sprintf("writer.writeFieldSize(%d, this.%v.length * %d);", field.Number, c, field.Type.ElemType.ByteSize),
+			fmt.Sprintf("for (const %v of this.%v) {", c, c),
+			ig.WriteVariableToBuffer(*field.Type.ElemType, c, ctx),
+			"}")
+	}
 
 	ctx.RemoveVariableFromScope(lv)
 

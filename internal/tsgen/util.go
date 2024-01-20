@@ -9,7 +9,7 @@ import (
 )
 
 func resolveImportPath(toPath string, fromPath string) (string, error) {
-	p, err := filepath.Rel(filepath.Dir(toPath), fromPath)
+	p, err := filepath.Rel(filepath.Dir(fromPath), toPath)
 	if err != nil {
 		return "", err
 	}
@@ -18,7 +18,7 @@ func resolveImportPath(toPath string, fromPath string) (string, error) {
 	fname = strcase.ToKebab(strings.TrimSuffix(fname, filepath.Ext(fname))) + extImport
 
 	p = strings.Replace(p, filepath.Base(p), fname, 1)
-	if !strings.HasPrefix(p, ".") || !strings.HasPrefix(p, "/") {
+	if !strings.HasPrefix(p, ".") && !strings.HasPrefix(p, "/") {
 		p = "./" + p
 	}
 

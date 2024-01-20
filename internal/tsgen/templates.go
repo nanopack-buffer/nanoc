@@ -133,7 +133,7 @@ function make{{.Schema.Name}}(bytes: Uint8Array) {
   const reader = new NanoBufReader(bytes);
   switch (reader.readTypeId()) {
   case {{.Schema.TypeID}}: return {{.Schema.Name}}.fromReader(reader);
-  {{range .Schema.ChildMessages}}
+  {{- range .Schema.ChildMessages}}
   case {{.TypeID}}: return {{.Name}}.fromReader(reader);
   {{- end}}
   default: return null;
