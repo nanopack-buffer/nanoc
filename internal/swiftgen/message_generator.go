@@ -42,9 +42,16 @@ func (g messageGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx g
 		v = c
 	}
 
+	var ctor string
+	if field.Type.Schema.(*npschema.Message).IsInherited {
+		ctor = fmt.Sprintf("%v.from", g.TypeDeclaration(field.Type))
+	} else {
+		ctor = g.TypeDeclaration(field.Type)
+	}
+
 	return generator.Lines(
 		fmt.Sprintf("let %vByteSize = data.readSize(ofField: %d)", c, field.Number),
-		fmt.Sprintf("guard let %v = %v(data: data[ptr...]) else {", v, g.TypeDeclaration(field.Type)),
+		fmt.Sprintf("guard let %v = %v(data: data[ptr...]) else {", v, ctor),
 		"    return nil",
 		"}",
 		l4,
@@ -61,9 +68,16 @@ func (g messageGenerator) ReadValueFromBuffer(dataType datatype.DataType, varNam
 		v = varName
 	}
 
+	var ctor string
+	if dataType.Schema.(*npschema.Message).IsInherited {
+		ctor = fmt.Sprintf("%v.from", g.TypeDeclaration(dataType))
+	} else {
+		ctor = g.TypeDeclaration(dataType)
+	}
+
 	return generator.Lines(
 		fmt.Sprintf("var %vByteSize = 0", varName),
-		fmt.Sprintf("guard let %v = %v(data: data[ptr...], bytesRead: &%vByteSize) else {", v, g.TypeDeclaration(dataType), varName),
+		fmt.Sprintf("guard let %v = %v(data: data[ptr...], bytesRead: &%vByteSize) else {", v, ctor, varName),
 		"    return nil",
 		"}",
 		l4,
