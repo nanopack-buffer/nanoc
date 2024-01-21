@@ -46,7 +46,7 @@ func (g arrayGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx gen
 		ctx.AddVariableToScope(c + "ItemCount")
 		return generator.Lines(
 			fmt.Sprintf("let %vByteSize = data.readSize(ofField: %d)", c, field.Number),
-			fmt.Sprintf("let %vItemCount = %vSize / %d", field.Type.ElemType.ByteSize),
+			fmt.Sprintf("let %vItemCount = %vSize / %d", c, c, field.Type.ElemType.ByteSize),
 			g.ReadValueFromBuffer(field.Type, c, ctx))
 	}
 
@@ -68,10 +68,10 @@ func (g arrayGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName 
 			fmt.Sprintf("let %vItemCount = data.readSize(at: ptr)", varName),
 			"ptr += 4",
 			l2,
-			fmt.Sprintf("%v.reservceCapacity(%vItemCount)", varName, varName),
+			fmt.Sprintf("%v.reserveCapacity(%vItemCount)", varName, varName),
 			fmt.Sprintf("for _ in 0..<%vItemCount {", varName),
-			ig.ReadValueFromBuffer(*dataType.ElemType, lv, ctx),
-			fmt.Sprintf("    %v.append(%v)", varName, lv),
+			ig.ReadValueFromBuffer(*dataType.ElemType, lv+"Item", ctx),
+			fmt.Sprintf("    %v.append(%v)", varName, lv+"Item"),
 			"}")
 
 		ctx.RemoveVariableFromScope(lv)
@@ -142,7 +142,7 @@ func (g arrayGenerator) WriteVariableToBuffer(dataType datatype.DataType, varNam
 		lv := ctx.NewLoopVar()
 		ls := generator.Lines(
 			fmt.Sprintf("data.append(size: %v.count)", varName),
-			fmt.Sprintf("let %vByteSize: Size = 4", varName),
+			fmt.Sprintf("var %vByteSize: Size = 4", varName),
 			fmt.Sprintf("for %v in %v {", lv, varName),
 			ig.WriteVariableToBuffer(dataType, lv, ctx),
 			fmt.Sprintf("%vByteSize += %v", varName, ig.ReadSizeExpression(*dataType.ElemType, lv)),

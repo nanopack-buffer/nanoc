@@ -63,11 +63,11 @@ func (g messageGenerator) ReadValueFromBuffer(dataType datatype.DataType, varNam
 
 	return generator.Lines(
 		fmt.Sprintf("var %vByteSize = 0", varName),
-		fmt.Sprintf("guard let %v = %v(data: data[ptr...], &%vByteSize) else {", v, g.TypeDeclaration(dataType), varName),
+		fmt.Sprintf("guard let %v = %v(data: data[ptr...], bytesRead: &%vByteSize) else {", v, g.TypeDeclaration(dataType), varName),
 		"    return nil",
 		"}",
 		l4,
-		"ptr += %vByteSize", varName)
+		fmt.Sprintf("ptr += %vByteSize", varName))
 }
 
 func (g messageGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
@@ -85,5 +85,5 @@ func (g messageGenerator) WriteVariableToBuffer(dataType datatype.DataType, varN
 		fmt.Sprintf("guard let %vData = %v.data() else {", varName, varName),
 		"    return nil",
 		"}",
-		fmt.Sprintf("writer.append(%vData)", varName))
+		fmt.Sprintf("data.append(%vData)", varName))
 }

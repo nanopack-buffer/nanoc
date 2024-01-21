@@ -27,7 +27,7 @@ type enumTemplateInfo struct {
 	MemberDeclarations []string
 }
 
-const extSwift = ".swift"
+const extSwift = ".np.swift"
 
 const (
 	templateNameMessageClass = "SwiftMessageClass"
@@ -85,7 +85,7 @@ class {{.Schema.Name}}: {{if .Schema.HasParentMessage}}{{.Schema.ParentMessage.N
     }
 
     required init?(data: Data) {
-        var ptr = {{.ReadPtrStart}}
+        var ptr = data.startIndex + {{.ReadPtrStart}}
 
         {{range .FieldReadCodeFragments}}
         {{.}}
@@ -101,7 +101,7 @@ class {{.Schema.Name}}: {{if .Schema.HasParentMessage}}{{.Schema.ParentMessage.N
     }
 
     required init?(data: Data, bytesRead: inout Int) {
-        var ptr = {{.ReadPtrStart}}
+        var ptr = data.startIndex + {{.ReadPtrStart}}
 
         {{range .FieldReadCodeFragments}}
         {{.}}
@@ -115,7 +115,7 @@ class {{.Schema.Name}}: {{if .Schema.HasParentMessage}}{{.Schema.ParentMessage.N
         super.init({{join .SuperConstructorArgs ", "}})
         {{- end}}
 
-        bytesRead = ptr
+        bytesRead = ptr - data.startIndex
     }
 
     {{if .Schema.HasParentMessage}}override{{end}} func data() -> Data? {
