@@ -102,6 +102,7 @@ func generateMessageClass(msgSchema *npschema.Message, opts Options) error {
 		datatype.String:  stringGenerator{},
 		datatype.Bool:    boolGenerator{},
 		datatype.Message: messageGenerator{},
+		datatype.Any:     anyGenerator{},
 	}
 	gm[datatype.Optional] = optionalGenerator{gm}
 	gm[datatype.Array] = arrayGenerator{gm}

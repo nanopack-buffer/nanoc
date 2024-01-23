@@ -42,6 +42,8 @@ const (
 	Enum
 	Message
 	Optional
+
+	Any
 )
 
 var (
@@ -80,6 +82,15 @@ var (
 		Kind:       String,
 		ByteSize:   DynamicSize,
 	}
+
+	npany = DataType{
+		Identifier: "any",
+		Kind:       Any,
+		ByteSize:   DynamicSize,
+		Schema:     nil,
+		KeyType:    nil,
+		ElemType:   nil,
+	}
 )
 
 // SchemaMap is a map that maps names of schemas to the corresponding Schema definition.
@@ -101,6 +112,8 @@ func FromKind(kind Kind) *DataType {
 		return &npdouble
 	case String:
 		return &npstring
+	case Any:
+		return &npany
 	default:
 		return nil
 	}
@@ -112,21 +125,18 @@ func FromIdentifier(identifier string) *DataType {
 	switch identifier {
 	case npint8.Identifier:
 		return &npint8
-
 	case npint32.Identifier:
 		return &npint32
-
 	case npint64.Identifier:
 		return &npint64
-
 	case npdouble.Identifier:
 		return &npdouble
-
 	case npbool.Identifier:
 		return &npbool
-
 	case npstring.Identifier:
 		return &npstring
+	case npany.Identifier:
+		return &npany
 
 	default:
 		return nil
