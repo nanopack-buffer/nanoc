@@ -11,7 +11,7 @@ import (
 type anyGenerator struct{}
 
 func (g anyGenerator) TypeDeclaration(dataType datatype.DataType) string {
-	return "NanoPackReader"
+	return "NanoBufReader"
 }
 
 func (g anyGenerator) ReadSizeExpression(dataType datatype.DataType, varName string) string {
@@ -65,12 +65,12 @@ func (g anyGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName st
 func (g anyGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
 	c := strcase.ToLowerCamel(field.Name)
 	return generator.Lines(
-		fmt.Sprintf("writer.writeFieldSize(%d, this.%v.byteLength);", field.Number, c),
-		fmt.Sprintf("writer.appendBytes(this.%v)", c))
+		fmt.Sprintf("writer.writeFieldSize(%d, this.%v.bytes.byteLength);", field.Number, c),
+		fmt.Sprintf("writer.appendBytes(this.%v.bytes)", c))
 }
 
 func (g anyGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
 	return generator.Lines(
-		fmt.Sprintf("writer.appendInt32(%v.byteLength);", varName),
+		fmt.Sprintf("writer.appendInt32(%v.bytes.byteLength);", varName),
 		fmt.Sprintf("writer.appendBytes(%v);", varName))
 }
