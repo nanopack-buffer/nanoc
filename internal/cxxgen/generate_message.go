@@ -2,6 +2,7 @@ package cxxgen
 
 import (
 	"errors"
+	"fmt"
 	"github.com/iancoleman/strcase"
 	"nanoc/internal/datatype"
 	"nanoc/internal/generator"
@@ -41,7 +42,12 @@ func GenerateMessageClass(msgSchema *npschema.Message, opts Options) error {
 	gm[datatype.Map] = mapGenerator{gm}
 
 	var wg sync.WaitGroup
-	errs := make([]error, 2)
+	var errs []error
+	if msgSchema.IsInherited {
+		errs = make([]error, 4)
+	} else {
+		errs = make([]error, 2)
+	}
 
 	wg.Add(1)
 	go func() {
@@ -55,10 +61,26 @@ func GenerateMessageClass(msgSchema *npschema.Message, opts Options) error {
 		wg.Done()
 	}()
 
+	if msgSchema.IsInherited {
+		wg.Add(1)
+		go func() {
+			errs[2] = generateChildMessageFactoryHeaderFile(msgSchema, opts)
+			wg.Done()
+		}()
+
+		wg.Add(1)
+		go func() {
+			errs[3] = generateChildMessageFactoryImplFile(msgSchema, opts)
+			wg.Done()
+		}()
+	}
+
 	wg.Wait()
 
-	if errs[0] != nil || errs[1] != nil {
-		return errors.Join(errs...)
+	for _, err := range errs {
+		if err != nil {
+			return errors.Join(errs...)
+		}
 	}
 
 	return nil
@@ -99,7 +121,6 @@ func generateMessageHeaderFile(msgSchema *npschema.Message, gm generator.Message
 	}
 
 	libimp := map[string]struct{}{}
-	relimp := map[string]struct{}{}
 	for _, field := range msgSchema.DeclaredFields {
 		switch field.Type.Kind {
 		case datatype.String:
@@ -111,13 +132,6 @@ func generateMessageHeaderFile(msgSchema *npschema.Message, gm generator.Message
 		case datatype.Optional:
 			libimp["optional"] = struct{}{}
 
-		case datatype.Message:
-			p, err := resolveSchemaImportPath(field.Type.Schema, msgSchema)
-			if err != nil {
-				return err
-			}
-			relimp[p] = struct{}{}
-
 		default:
 			continue
 		}
@@ -125,18 +139,17 @@ func generateMessageHeaderFile(msgSchema *npschema.Message, gm generator.Message
 
 	if msgSchema.HasParentMessage {
 		info.ParentMessageName = msgSchema.ParentMessage.Name
-		p, err := resolveSchemaImportPath(msgSchema.ParentMessage, msgSchema)
-		if err != nil {
-			return err
-		}
-		relimp[p] = struct{}{}
 	}
 
 	for k := range libimp {
 		info.LibraryImports = append(info.LibraryImports, k)
 	}
-	for k := range relimp {
-		info.RelativeImports = append(info.RelativeImports, k)
+	for _, t := range msgSchema.ImportedTypes {
+		p, err := resolveSchemaImportPath(t, msgSchema)
+		if err != nil {
+			return err
+		}
+		info.RelativeImports = append(info.RelativeImports, p)
 	}
 
 	for _, f := range msgSchema.InheritedFields {
@@ -238,6 +251,86 @@ func generateMessageImplFile(msgSchema *npschema.Message, gm generator.MessageCo
 		}).
 		Parse(messageImplFile)
 
+	if err != nil {
+		return err
+	}
+
+	op := strings.Replace(msgSchema.SchemaPath, filepath.Base(msgSchema.SchemaPath), fname, 1)
+	f, err := os.Create(op)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	err = tmpl.Execute(f, info)
+	if err != nil {
+		return err
+	}
+
+	err = formatCode(op, opts.FormatterPath, opts.FormatterArgs...)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func generateChildMessageFactoryHeaderFile(msgSchema *npschema.Message, opts Options) error {
+	h := filepath.Base(msgSchema.SchemaPath)
+	h = strcase.ToSnake(strings.TrimSuffix(h, filepath.Ext(h))) + extHeaderFile
+
+	info := childMessageFactoryHeaderFileTemplateInfo{
+		IncludeGuardName:    fmt.Sprintf("%v_FACTORY_NP_HXX", strcase.ToScreamingSnake(msgSchema.Name)),
+		MessageName:         msgSchema.Name,
+		MessageHeaderName:   h,
+		FactoryFunctionName: fmt.Sprintf("make_%v", strcase.ToSnake(msgSchema.Name)),
+	}
+
+	tmpl, err := template.New(templateNameChildMessageFactoryHeaderFile).Parse(childMessageFactoryHeaderFile)
+	if err != nil {
+		return err
+	}
+
+	fname := fmt.Sprintf("make_%v%v", strcase.ToSnake(msgSchema.Name), extHeaderFile)
+	op := strings.Replace(msgSchema.SchemaPath, filepath.Base(msgSchema.SchemaPath), fname, 1)
+	f, err := os.Create(op)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	err = tmpl.Execute(f, info)
+	if err != nil {
+		return err
+	}
+
+	err = formatCode(op, opts.FormatterPath, opts.FormatterArgs...)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func generateChildMessageFactoryImplFile(msgSchema *npschema.Message, opts Options) error {
+	fname := filepath.Base(msgSchema.SchemaPath)
+	fname = fmt.Sprintf("make_%v%v", strcase.ToSnake(msgSchema.Name), extImplFile)
+
+	info := childMessageFactoryImplFileTemplateInfo{
+		Schema:              msgSchema,
+		HeaderName:          strings.Replace(fname, extImplFile, extHeaderFile, 1),
+		FactoryFunctionName: fmt.Sprintf("make_%v", strcase.ToSnake(msgSchema.Name)),
+	}
+
+	for _, m := range msgSchema.ChildMessages {
+		p, err := resolveSchemaImportPath(m, msgSchema)
+		if err != nil {
+			return err
+		}
+		info.ChildMessageImportPaths = append(info.ChildMessageImportPaths, p)
+	}
+
+	tmpl, err := template.New(templateNameChildMessageFactoryImplFile).Parse(childMessageFactoryImplFile)
 	if err != nil {
 		return err
 	}

@@ -1,4 +1,3 @@
 [submodule "examples/cxx/lib/nanopack"]
 	path = examples/cxx/lib/nanopack
 	url = https://github.com/poly-gui/nanopack
-    branch = lib-only
