@@ -9,8 +9,6 @@
 #include <string>
 #include <vector>
 
-#inlcude "person.np.hxx"
-
 struct Person : NanoPack::Message {
   static constexpr int32_t TYPE_ID = 1;
 
@@ -18,13 +16,12 @@ struct Person : NanoPack::Message {
   std::optional<std::string> middle_name;
   std::string last_name;
   int8_t age;
-  std::shared_ptr<Person> other_friend;
+  std::optional<Person> other_friend;
 
   Person() = default;
 
   Person(std::string first_name, std::optional<std::string> middle_name,
-         std::string last_name, int8_t age,
-         std::shared_ptr<Person> other_friend);
+         std::string last_name, int8_t age, std::optional<Person> other_friend);
 
   Person(std::vector<uint8_t>::const_iterator begin, int &bytes_read);
 
