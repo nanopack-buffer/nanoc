@@ -111,6 +111,13 @@ func GenerateMessageFactory(schemas []*npschema.Message, opts Options) error {
 	return nil
 }
 
+func findGeneratorForField(f npschema.MessageField, gm generator.MessageCodeGeneratorMap) generator.DataTypeMessageCodeGenerator {
+	if f.IsSelfReferencing() {
+		return gm[f.Type.ElemType.Kind]
+	}
+	return gm[f.Type.Kind]
+}
+
 func generateMessageHeaderFile(msgSchema *npschema.Message, gm generator.MessageCodeGeneratorMap, opts Options) error {
 	info := messageHeaderFileTemplateInfo{
 		MessageName:      msgSchema.Name,
@@ -153,12 +160,12 @@ func generateMessageHeaderFile(msgSchema *npschema.Message, gm generator.Message
 	}
 
 	for _, f := range msgSchema.InheritedFields {
-		g := gm[f.Type.Kind]
+		g := findGeneratorForField(f, gm)
 		info.ConstructorParameters = append(info.ConstructorParameters, g.ConstructorFieldParameter(f))
 	}
 
 	for _, f := range msgSchema.DeclaredFields {
-		g := gm[f.Type.Kind]
+		g := findGeneratorForField(f, gm)
 		info.FieldDeclarationLines = append(info.FieldDeclarationLines, g.FieldDeclaration(f))
 		info.ConstructorParameters = append(info.ConstructorParameters, g.ConstructorFieldParameter(f))
 	}
@@ -221,27 +228,27 @@ func generateMessageImplFile(msgSchema *npschema.Message, gm generator.MessageCo
 	}
 
 	for _, f := range msgSchema.InheritedFields {
-		g := gm[f.Type.Kind]
+		g := findGeneratorForField(f, gm)
 		info.ConstructorParameters = append(info.ConstructorParameters, g.ConstructorFieldParameter(f))
 		info.SuperConstructorArgs = append(info.SuperConstructorArgs, strcase.ToSnake(f.Name))
 	}
 
 	for _, f := range msgSchema.DeclaredFields {
-		g := gm[f.Type.Kind]
+		g := findGeneratorForField(f, gm)
 		info.ConstructorParameters = append(info.ConstructorParameters, g.ConstructorFieldParameter(f))
 		info.FieldInitializers = append(info.FieldInitializers, g.FieldInitializer(f))
 	}
 
 	ctx := generator.NewCodeContext()
 	for _, f := range msgSchema.AllFields {
-		g := gm[f.Type.Kind]
+		g := findGeneratorForField(f, gm)
 		info.FieldReadCodeFragments = append(info.FieldReadCodeFragments, g.ReadFieldFromBuffer(f, ctx))
 	}
 
 	// new context in new block of code
 	ctx = generator.NewCodeContext()
 	for _, f := range msgSchema.AllFields {
-		g := gm[f.Type.Kind]
+		g := findGeneratorForField(f, gm)
 		info.FieldWriteCodeFragments = append(info.FieldWriteCodeFragments, g.WriteFieldToBuffer(f, ctx))
 	}
 

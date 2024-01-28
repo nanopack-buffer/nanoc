@@ -68,3 +68,10 @@ func (m *Message) DataType() datatype.DataType {
 }
 
 func (p PartialMessage) IsPartialSchema() {}
+
+// IsSelfReferencing returns whether the message field is referencing the message it is in.
+func (f MessageField) IsSelfReferencing() bool {
+	return f.Type.Kind == datatype.Optional &&
+		f.Type.ElemType.Kind == datatype.Message &&
+		f.Type.ElemType.Schema.(*Message).TypeID == f.Schema.TypeID
+}

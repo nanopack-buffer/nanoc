@@ -7,7 +7,7 @@
 
 Person::Person(std::string first_name, std::optional<std::string> middle_name,
                std::string last_name, int8_t age,
-               std::optional<Person> other_friend)
+               std::shared_ptr<Person> other_friend)
     : first_name(std::move(first_name)), middle_name(std::move(middle_name)),
       last_name(std::move(last_name)), age(age),
       other_friend(std::move(other_friend)) {}
@@ -37,16 +37,12 @@ Person::Person(const NanoPack::Reader &reader, int &bytes_read) {
   this->age = age;
 
   if (reader.read_field_size(4) < 0) {
-    this->other_friend = std::nullopt;
+    other_friend = nullptr;
   } else {
-    if (reader.read_field_size(4) < 0) {
-      other_friend = nullptr;
-    } else {
-      int other_friend_bytes_read = 0;
-      other_friend =
-          std::make_shared<Person>(begin + ptr, other_friend_bytes_read);
-      ptr += other_friend_bytes_read;
-    }
+    int other_friend_bytes_read = 0;
+    other_friend =
+        std::make_shared<Person>(begin + ptr, other_friend_bytes_read);
+    ptr += other_friend_bytes_read;
   }
 
   bytes_read = ptr;
@@ -78,15 +74,10 @@ std::vector<uint8_t> Person::data() const {
   writer.write_field_size(3, 1);
   writer.append_int8(age);
 
-  if (other_friend.has_value()) {
-    const auto other_friend = this->other_friend.value();
-    if (other_friend != nullptr) {
-      const std::vector<uint8_t> other_friend_data = other_friend->data();
-      writer.append_bytes(other_friend_data);
-      writer.write_field_size(4, other_friend_data.size());
-    } else {
-      writer.write_field_size(4, -1);
-    }
+  if (other_friend != nullptr) {
+    const std::vector<uint8_t> other_friend_data = other_friend->data();
+    writer.append_bytes(other_friend_data);
+    writer.write_field_size(4, other_friend_data.size());
   } else {
     writer.write_field_size(4, -1);
   }

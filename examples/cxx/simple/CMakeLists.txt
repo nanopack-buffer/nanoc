@@ -16,3 +16,4 @@ add_executable(simple
 add_subdirectory(${SHARED_LIB_DIR}/nanopack ./nanopack)
 
 target_include_directories(simple PUBLIC ${SHARED_LIB_DIR}/nanopack/include)
+target_link_libraries(simple nanopack)

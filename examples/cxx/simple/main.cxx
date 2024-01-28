@@ -33,7 +33,7 @@ int main() {
 	if (!person1.middle_name.has_value()) {
 		std::cout << "This person does not have a middle name." << std::endl;
 	}
-	std::cout << "Age: " << person1.age << std::endl;
+	std::cout << "Age: " << +person1.age << std::endl;
 
 	std::cout << "His friend:" << std::endl;
 	std::cout << "    First name: " << person1.other_friend->first_name
