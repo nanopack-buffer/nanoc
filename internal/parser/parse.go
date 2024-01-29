@@ -2,7 +2,7 @@ package parser
 
 import (
 	"errors"
-	"gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v2"
 	"nanoc/internal/datatype"
 	"nanoc/internal/symbol"
 	"os"
@@ -15,7 +15,7 @@ func ParseSchema(path string) (datatype.PartialSchema, error) {
 		return nil, err
 	}
 
-	m := map[string]interface{}{}
+	m := yaml.MapSlice{}
 	err = yaml.Unmarshal(b, m)
 	if err != nil {
 		return nil, err
@@ -23,7 +23,9 @@ func ParseSchema(path string) (datatype.PartialSchema, error) {
 
 	var schema datatype.PartialSchema
 
-	for k, v := range m {
+	for _, e := range m {
+		k := e.Key.(string)
+		v := e.Value
 		if strings.HasPrefix(k, symbol.Enum+" ") {
 			s, err := parseEnumSchema(k, v)
 			if err != nil {
