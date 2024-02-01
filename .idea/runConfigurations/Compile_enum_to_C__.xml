@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Compile enum to C++" type="GoApplicationRunConfiguration" factoryName="Go Application" folderName="Enum example">
+    <module name="nanoc" />
+    <working_directory value="$PROJECT_DIR$/examples/cxx/enum" />
+    <parameters value="--language=c++ week.yml np_date.yml alignment.yml column.yml month.yml" />
+    <kind value="PACKAGE" />
+    <package value="nanoc/cmd/nanoc" />
+    <directory value="$PROJECT_DIR$" />
+    <filePath value="$PROJECT_DIR$" />
+    <method v="2" />
+  </configuration>
+</component>
