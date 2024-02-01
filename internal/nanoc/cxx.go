@@ -9,13 +9,18 @@ import (
 )
 
 func runCxxSchemaGenerator(schema datatype.Schema, opts Options) error {
+	o := cxxgen.Options{
+		FormatterPath:      opts.CodeFormatterPath,
+		FormatterArgs:      opts.CodeFormatterArgs,
+		MessageFactoryPath: opts.MessageFactoryAbsFilePath,
+	}
+
 	switch s := schema.(type) {
 	case *npschema.Message:
-		return cxxgen.GenerateMessageClass(s, cxxgen.Options{
-			FormatterPath:      opts.CodeFormatterPath,
-			FormatterArgs:      opts.CodeFormatterArgs,
-			MessageFactoryPath: opts.MessageFactoryAbsFilePath,
-		})
+		return cxxgen.GenerateMessageClass(s, o)
+
+	case *npschema.Enum:
+		return cxxgen.GenerateEnum(s, o)
 
 	default:
 		return errors.New("unexpected error. Unsupported schema type " + reflect.TypeOf(schema).Name())

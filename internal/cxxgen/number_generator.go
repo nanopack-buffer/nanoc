@@ -41,6 +41,11 @@ func (g numberGenerator) FieldDeclaration(field npschema.MessageField) string {
 
 func (g numberGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
 	s := strcase.ToSnake(field.Name)
+
+	if field.Type.Kind == datatype.Enum {
+		return g.ReadValueFromBuffer(*field.Type.ElemType, s+"_raw_value", ctx)
+	}
+
 	return generator.Lines(
 		g.ReadValueFromBuffer(field.Type, s, ctx),
 		fmt.Sprintf("this->%v = %v;", s, s))
@@ -59,11 +64,19 @@ func (g numberGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName
 }
 
 func (g numberGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
+	if field.Type.Kind == datatype.Enum {
+		return generator.Lines(
+			fmt.Sprintf("writer.write_field_size(%d, %d);", field.Number, field.Type.ByteSize),
+			fmt.Sprintf("writer.append_%v(%v);", field.Type.ElemType.Identifier, strcase.ToSnake(field.Name)))
+	}
 	return generator.Lines(
 		fmt.Sprintf("writer.write_field_size(%d, %d);", field.Number, field.Type.ByteSize),
 		fmt.Sprintf("writer.append_%v(%v);", field.Type.Identifier, strcase.ToSnake(field.Name)))
 }
 
 func (g numberGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
+	if dataType.Kind == datatype.Enum {
+		return fmt.Sprintf("writer.append_%v(%v);", dataType.ElemType.Identifier, varName)
+	}
 	return fmt.Sprintf("writer.append_%v(%v);", dataType.Identifier, varName)
 }

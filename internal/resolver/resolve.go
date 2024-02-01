@@ -130,6 +130,7 @@ func resolveEnumSchema(partialEnum *npschema.PartialEnum, sm datatype.SchemaMap)
 	}
 
 	fullSchema.Name = partialEnum.Name
+	fullSchema.IsDefaultValueUsed = partialEnum.IsDefaultValueUsed
 	fullSchema.Members = make([]npschema.EnumMember, len(partialEnum.Members))
 	copy(fullSchema.Members, partialEnum.Members)
 

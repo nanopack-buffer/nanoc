@@ -37,6 +37,7 @@ func GenerateMessageClass(msgSchema *npschema.Message, opts Options) error {
 		datatype.Bool:    boolGenerator{},
 		datatype.Message: messageGenerator{},
 	}
+	gm[datatype.Enum] = enumGenerator{gm}
 	gm[datatype.Optional] = optionalGenerator{gm}
 	gm[datatype.Array] = arrayGenerator{gm}
 	gm[datatype.Map] = mapGenerator{gm}

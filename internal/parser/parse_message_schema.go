@@ -3,13 +3,14 @@ package parser
 import (
 	"errors"
 	"fmt"
+	"gopkg.in/yaml.v2"
 	"nanoc/internal/npschema"
 	"nanoc/internal/symbol"
 	"strconv"
 	"strings"
 )
 
-func parseMessageSchema(header string, body map[string]interface{}) (*npschema.PartialMessage, error) {
+func parseMessageSchema(header string, body yaml.MapSlice) (*npschema.PartialMessage, error) {
 	ps := strings.Split(header, symbol.TypeSeparator)
 	l := len(ps)
 	if l > 2 || l <= 0 {
@@ -24,7 +25,9 @@ func parseMessageSchema(header string, body map[string]interface{}) (*npschema.P
 		schema.ParentMessageName = ps[1]
 	}
 
-	for k, v := range body {
+	for _, e := range body {
+		k := e.Key.(string)
+		v := e.Value
 		if k == symbol.TypeID {
 			typeID, ok := v.(int)
 			if !ok {

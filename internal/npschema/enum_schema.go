@@ -3,17 +3,19 @@ package npschema
 import "nanoc/internal/datatype"
 
 type Enum struct {
-	SchemaPath string
-	Name       string
-	ValueType  datatype.DataType
-	Members    []EnumMember
+	IsDefaultValueUsed bool
+	SchemaPath         string
+	Name               string
+	ValueType          datatype.DataType
+	Members            []EnumMember
 }
 
 type PartialEnum struct {
-	SchemaPath    string
-	Name          string
-	ValueTypeName string
-	Members       []EnumMember
+	IsDefaultValueUsed bool
+	SchemaPath         string
+	Name               string
+	ValueTypeName      string
+	Members            []EnumMember
 }
 
 type EnumMember struct {

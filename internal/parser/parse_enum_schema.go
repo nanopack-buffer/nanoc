@@ -3,6 +3,7 @@ package parser
 import (
 	"errors"
 	"fmt"
+	"gopkg.in/yaml.v2"
 	"nanoc/internal/npschema"
 	"nanoc/internal/symbol"
 	"strconv"
@@ -29,12 +30,17 @@ func parseEnumSchema(header string, body any) (*npschema.PartialEnum, error) {
 	}
 
 	switch body := body.(type) {
-	case map[string]any:
-		for k, v := range body {
+	case yaml.MapSlice:
+		schema.IsDefaultValueUsed = false
+
+		for _, e := range body {
+			k := e.Key.(string)
+			v := e.Value
+
 			var l string
 			switch v := v.(type) {
 			case string:
-				l = v
+				l = fmt.Sprintf("\"%v\"", v)
 			case int:
 				l = strconv.Itoa(v)
 			default:
@@ -51,6 +57,8 @@ func parseEnumSchema(header string, body any) (*npschema.PartialEnum, error) {
 		}
 
 	case []any:
+		schema.IsDefaultValueUsed = true
+
 		for i, v := range body {
 			var l string
 			switch v := v.(type) {

@@ -16,7 +16,7 @@ func ParseSchema(path string) (datatype.PartialSchema, error) {
 	}
 
 	m := yaml.MapSlice{}
-	err = yaml.Unmarshal(b, m)
+	err = yaml.Unmarshal(b, &m)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func ParseSchema(path string) (datatype.PartialSchema, error) {
 			s.SchemaPath = path
 			schema = s
 		} else {
-			body, ok := v.(map[string]interface{})
+			body, ok := v.(yaml.MapSlice)
 			if !ok {
 				return nil, errors.New("invalid message schema body")
 			}

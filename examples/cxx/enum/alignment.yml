@@ -1,0 +1,6 @@
+enum Alignment:
+  START: start
+  END: end
+  CENTER: center
+  TOP: top
+  BOTTOM: bottom
