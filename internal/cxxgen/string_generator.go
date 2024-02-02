@@ -67,7 +67,7 @@ func (g stringGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx gen
 
 	var expr string
 	if field.Type.Kind == datatype.Enum {
-		expr = s + ".value"
+		expr = s + ".value()"
 	} else {
 		expr = s
 	}
@@ -80,7 +80,7 @@ func (g stringGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx gen
 func (g stringGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
 	var expr string
 	if dataType.ElemType.Kind == datatype.Enum {
-		expr = varName + ".value"
+		expr = varName + ".value()"
 	} else {
 		expr = varName
 	}

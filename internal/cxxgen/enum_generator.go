@@ -18,7 +18,7 @@ func (g enumGenerator) TypeDeclaration(dataType datatype.DataType) string {
 
 func (g enumGenerator) ReadSizeExpression(dataType datatype.DataType, varName string) string {
 	if dataType.ElemType.Kind == datatype.String {
-		return fmt.Sprintf("%v.value.length()", varName)
+		return fmt.Sprintf("%v.value().size()", varName)
 	}
 	ig := g.gm[dataType.ElemType.Kind]
 	return ig.ReadSizeExpression(*dataType.ElemType, varName)

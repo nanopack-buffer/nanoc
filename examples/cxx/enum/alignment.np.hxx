@@ -29,25 +29,21 @@ private:
   std::string_view _value;
 
 public:
-  const std::string_view &value = _value;
-
   Alignment() = default;
 
   explicit Alignment(const std::string_view &value)
-      : enum_value(lookup.find(value)->second), value(values[enum_value]) {}
+      : enum_value(lookup.find(value)->second), _value(values[enum_value]) {}
 
   constexpr Alignment(AlignmentMember member)
-      : enum_value(member), value(values[member]) {}
+      : enum_value(member), _value(values[member]) {}
+
+  [[nodiscard]] constexpr const std::string_view &value() const {
+    return _value;
+  }
 
   constexpr operator AlignmentMember() const { return enum_value; }
 
   explicit operator bool() const = delete;
-
-  Alignment &operator=(const Alignment &other) {
-    enum_value = other.enum_value;
-    _value = other._value;
-    return *this;
-  }
 };
 
 #endif

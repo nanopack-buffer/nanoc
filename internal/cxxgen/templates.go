@@ -248,12 +248,10 @@ private:
   {{.BackingTypeName}} _value;
 
 public:
-  const {{.BackingTypeName}} &value = _value;
-
   {{.Schema.Name}}() = default;
 
   {{if eq .BackingTypeName "std::string_view" -}}
-  explicit {{.Schema.Name}}(const {{.BackingTypeName}} &value) : enum_value(lookup.find(value)->second), value(values[enum_value]) {}
+  explicit {{.Schema.Name}}(const {{.BackingTypeName}} &value) : enum_value(lookup.find(value)->second), _value(values[enum_value]) {}
   {{- else -}}
   explicit {{.Schema.Name}}(const {{.BackingTypeName}} &value) {
     switch (value) {
@@ -266,17 +264,13 @@ public:
   }
   {{- end}}
 
-  constexpr {{.Schema.Name}}({{.Schema.Name}}Member member) : enum_value(member), value(values[member]) {}
+  constexpr {{.Schema.Name}}({{.Schema.Name}}Member member) : enum_value(member), _value(values[member]) {}
+
+  [[nodiscard]] constexpr const {{.BackingTypeName}} &value() const { return _value; }
 
   constexpr operator {{.Schema.Name}}Member() const { return enum_value; }
 
   explicit operator bool() const = delete;
-
-  {{.Schema.Name}}& operator=(const {{.Schema.Name}}& other) {
-    enum_value = other.enum_value;
-    _value = other._value;
-    return *this;
-  }
 };
 
 #endif

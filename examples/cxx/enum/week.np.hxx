@@ -25,8 +25,6 @@ private:
   int8_t _value;
 
 public:
-  const int8_t &value = _value;
-
   Week() = default;
 
   explicit Week(const int8_t &value) {
@@ -59,17 +57,13 @@ public:
   }
 
   constexpr Week(WeekMember member)
-      : enum_value(member), value(values[member]) {}
+      : enum_value(member), _value(values[member]) {}
+
+  [[nodiscard]] constexpr const int8_t &value() const { return _value; }
 
   constexpr operator WeekMember() const { return enum_value; }
 
   explicit operator bool() const = delete;
-
-  Week &operator=(const Week &other) {
-    enum_value = other.enum_value;
-    _value = other._value;
-    return *this;
-  }
 };
 
 #endif

@@ -18,7 +18,7 @@ InvokeCallback::InvokeCallback(const NanoPack::Reader &reader,
   this->handle = handle;
 
   const int32_t args_byte_size = reader.read_field_size(1);
-  args = std::move(NanoPack::Any(begin + ptr, begin + ptr + args_byte_size));
+  args = NanoPack::Any(begin + ptr, begin + ptr + args_byte_size);
   ptr += args_byte_size;
 
   bytes_read = ptr;

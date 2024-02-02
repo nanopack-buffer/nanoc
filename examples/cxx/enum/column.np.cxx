@@ -29,8 +29,8 @@ std::vector<uint8_t> Column::data() const {
 
   writer.write_type_id(TYPE_ID);
 
-  writer.write_field_size(0, alignment.value.size());
-  writer.append_string(alignment.value);
+  writer.write_field_size(0, alignment.value().size());
+  writer.append_string(alignment.value());
 
   return buf;
 }

@@ -30,8 +30,6 @@ private:
   int8_t _value;
 
 public:
-  const int8_t &value = _value;
-
   Month() = default;
 
   explicit Month(const int8_t &value) {
@@ -79,17 +77,13 @@ public:
   }
 
   constexpr Month(MonthMember member)
-      : enum_value(member), value(values[member]) {}
+      : enum_value(member), _value(values[member]) {}
+
+  [[nodiscard]] constexpr const int8_t &value() const { return _value; }
 
   constexpr operator MonthMember() const { return enum_value; }
 
   explicit operator bool() const = delete;
-
-  Month &operator=(const Month &other) {
-    enum_value = other.enum_value;
-    _value = other._value;
-    return *this;
-  }
 };
 
 #endif
