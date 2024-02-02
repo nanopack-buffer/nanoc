@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Compile any to C++" type="GoApplicationRunConfiguration" factoryName="Go Application" folderName="Any example">
+    <module name="nanoc" />
+    <working_directory value="$PROJECT_DIR$/examples/cxx/any" />
+    <parameters value="--language=c++ invoke_callback.yml click_event.yml" />
+    <kind value="PACKAGE" />
+    <package value="nanoc/cmd/nanoc" />
+    <directory value="$PROJECT_DIR$" />
+    <filePath value="$PROJECT_DIR$" />
+    <method v="2" />
+  </configuration>
+</component>
