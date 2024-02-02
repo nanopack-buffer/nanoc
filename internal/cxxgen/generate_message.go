@@ -36,6 +36,7 @@ func GenerateMessageClass(msgSchema *npschema.Message, opts Options) error {
 		datatype.String:  stringGenerator{},
 		datatype.Bool:    boolGenerator{},
 		datatype.Message: messageGenerator{},
+		datatype.Any:     anyGenerator{},
 	}
 	gm[datatype.Enum] = enumGenerator{gm}
 	gm[datatype.Optional] = optionalGenerator{gm}
@@ -139,6 +140,9 @@ func generateMessageHeaderFile(msgSchema *npschema.Message, gm generator.Message
 
 		case datatype.Optional:
 			libimp["optional"] = struct{}{}
+
+		case datatype.Any:
+			libimp["nanopack/any.hxx"] = struct{}{}
 
 		default:
 			continue
