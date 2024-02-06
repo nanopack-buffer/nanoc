@@ -3,7 +3,8 @@
 import Foundation
 import NanoPack
 
-func makeNanoPackMessage(from data: Data, typeID: TypeID) -> NanoPackMessage? {
+func makeNanoPackMessage(from data: Data) -> NanoPackMessage? {
+    let typeID = data.readTypeID()
     switch typeID {
     case 1: return Widget(data: data)
     case 2: return Text(data: data)

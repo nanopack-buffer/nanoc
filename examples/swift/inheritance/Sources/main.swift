@@ -4,7 +4,7 @@ print("In this example, Text inherits Widget, so it inherits all the declared fi
 let widget_: Widget = Text(id: 123, content: "hello world")
 let data = widget_.data()!
 
-let message = makeNanoPackMessage(from: data, typeID: Text_typeID)!
+let message = makeNanoPackMessage(from: data)!
 let widget = message as! Widget
 
 print("Read \(data.count) bytes.")

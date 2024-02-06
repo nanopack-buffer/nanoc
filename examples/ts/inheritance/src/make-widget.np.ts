@@ -10,7 +10,6 @@ function makeWidget(bytes: Uint8Array) {
   switch (reader.readTypeId()) {
     case 1:
       return Widget.fromReader(reader);
-
     case 2:
       return Text.fromReader(reader);
     default:

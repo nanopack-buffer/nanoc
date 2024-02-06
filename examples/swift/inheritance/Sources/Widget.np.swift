@@ -31,7 +31,7 @@ class Widget: NanoPackMessage {
   }
 
   required init?(data: Data) {
-    var ptr = 8
+    var ptr = data.startIndex + 8
 
     let id: Int32 = data.read(at: ptr)
     ptr += 4
@@ -40,14 +40,14 @@ class Widget: NanoPackMessage {
   }
 
   required init?(data: Data, bytesRead: inout Int) {
-    var ptr = 8
+    var ptr = data.startIndex + 8
 
     let id: Int32 = data.read(at: ptr)
     ptr += 4
 
     self.id = id
 
-    bytesRead = ptr
+    bytesRead = ptr - data.startIndex
   }
 
   func data() -> Data? {

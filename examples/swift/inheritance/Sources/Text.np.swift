@@ -16,12 +16,12 @@ class Text: Widget {
   }
 
   required init?(data: Data) {
-    var ptr = 12
+    var ptr = data.startIndex + 12
 
     let id: Int32 = data.read(at: ptr)
     ptr += 4
 
-    let contentSize = data.readSize(ofField: 0)
+    let contentSize = data.readSize(ofField: 1)
     guard let content = data.read(at: ptr, withLength: contentSize) else {
       return nil
     }
@@ -32,12 +32,12 @@ class Text: Widget {
   }
 
   required init?(data: Data, bytesRead: inout Int) {
-    var ptr = 12
+    var ptr = data.startIndex + 12
 
     let id: Int32 = data.read(at: ptr)
     ptr += 4
 
-    let contentSize = data.readSize(ofField: 0)
+    let contentSize = data.readSize(ofField: 1)
     guard let content = data.read(at: ptr, withLength: contentSize) else {
       return nil
     }
@@ -46,7 +46,7 @@ class Text: Widget {
     self.content = content
     super.init(id: id)
 
-    bytesRead = ptr
+    bytesRead = ptr - data.startIndex
   }
 
   override func data() -> Data? {
@@ -62,7 +62,7 @@ class Text: Widget {
     data.write(size: 4, ofField: 0)
     data.append(int: id)
 
-    data.write(size: content.lengthOfBytes(using: .utf8), ofField: 0)
+    data.write(size: content.lengthOfBytes(using: .utf8), ofField: 1)
     data.append(string: content)
 
     return data

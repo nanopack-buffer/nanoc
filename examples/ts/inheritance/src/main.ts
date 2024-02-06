@@ -1,6 +1,6 @@
 import { Widget } from "./widget.np.js";
 import { Text } from "./text.np.js";
-import { makeNanoPackMessage } from "./make-nanopack-message.np.js";
+import { makeNanoPackMessage } from "./message-factory.np.js";
 
 console.log("NanoPack supports inheritance!")
 console.log("In this example, Text inherits Widget, so it inherits all the declared fields of Widgets.")
@@ -8,7 +8,7 @@ console.log("In this example, Text inherits Widget, so it inherits all the decla
 const widget_: Widget = new Text(123, "hello world");
 const bytes = widget_.bytes()
 
-const { bytesRead, result: message } = makeNanoPackMessage(bytes, Text.TYPE_ID)!;
+const { bytesRead, result: message } = makeNanoPackMessage(bytes)!;
 const widget = message as Widget
 
 console.log(`Read ${bytesRead} bytes.`)

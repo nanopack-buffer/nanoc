@@ -29,7 +29,7 @@ class Text extends Widget {
     const id = reader.readInt32(ptr);
     ptr += 4;
 
-    const contentByteLength = reader.readFieldSize(0);
+    const contentByteLength = reader.readFieldSize(1);
     const content = reader.readString(ptr, contentByteLength);
     ptr += contentByteLength;
 
@@ -48,7 +48,7 @@ class Text extends Widget {
     writer.writeFieldSize(0, 4);
 
     const contentByteLength = writer.appendString(this.content);
-    writer.writeFieldSize(0, contentByteLength);
+    writer.writeFieldSize(1, contentByteLength);
 
     return writer.bytes;
   }
@@ -61,7 +61,7 @@ class Text extends Widget {
     writer.writeFieldSize(0, 4);
 
     const contentByteLength = writer.appendString(this.content);
-    writer.writeFieldSize(0, contentByteLength);
+    writer.writeFieldSize(1, contentByteLength);
 
     writer.writeLengthPrefix(writer.currentSize - 4);
 
