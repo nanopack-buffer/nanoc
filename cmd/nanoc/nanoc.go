@@ -10,9 +10,11 @@ import (
 func main() {
 	var language string
 	var factoryOut string
+	var namespace string
 
 	flag.StringVar(&language, "language", "", "The language of the generated code.")
 	flag.StringVar(&factoryOut, "factory-out", "", "Optionally generate a message factory.")
+	flag.StringVar(&namespace, "namespace", "", "Optionally put the generated code under this namespace. Use dot notation for nested namespaces, for example My.Namespace")
 
 	flag.Parse()
 
@@ -33,6 +35,7 @@ func main() {
 		Language:                  nanoc.SupportedLanguage(language),
 		MessageFactoryAbsFilePath: "",
 		InputFileAbsolutePaths:    inputs,
+		Namespace:                 namespace,
 	}
 
 	if factoryOut != "" {

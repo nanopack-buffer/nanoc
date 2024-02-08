@@ -111,6 +111,6 @@ func (g messageGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx ge
 
 func (g messageGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
 	return generator.Lines(
-		fmt.Sprintf("const std::vector<uint8_t> %v_data = %v.data();", varName),
+		fmt.Sprintf("const std::vector<uint8_t> %v_data = %v.data();", varName, varName),
 		fmt.Sprintf("writer.append_bytes(%v_data);", varName))
 }

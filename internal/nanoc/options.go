@@ -16,6 +16,7 @@ type Options struct {
 	InputFileAbsolutePaths    []string
 	CodeFormatterPath         string
 	CodeFormatterArgs         []string
+	Namespace                 string
 }
 
 func IsLanguageSupported(language string) bool {

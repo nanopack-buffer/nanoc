@@ -6,6 +6,7 @@ import (
 	"nanoc/internal/datatype"
 	"nanoc/internal/npschema"
 	"reflect"
+	"strings"
 )
 
 func runCxxSchemaGenerator(schema datatype.Schema, opts Options) error {
@@ -13,6 +14,7 @@ func runCxxSchemaGenerator(schema datatype.Schema, opts Options) error {
 		FormatterPath:      opts.CodeFormatterPath,
 		FormatterArgs:      opts.CodeFormatterArgs,
 		MessageFactoryPath: opts.MessageFactoryAbsFilePath,
+		Namespaces:         strings.Split(opts.Namespace, "."),
 	}
 
 	switch s := schema.(type) {

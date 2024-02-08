@@ -13,6 +13,7 @@ import (
 
 func GenerateEnum(enumSchema *npschema.Enum, opts Options) error {
 	info := enumHeaderFileInfo{
+		Namespace:        strings.Join(opts.Namespaces, cxxSymbolMemberOf),
 		Schema:           enumSchema,
 		BackingTypeName:  "",
 		MemberNames:      nil,

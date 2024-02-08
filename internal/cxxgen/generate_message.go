@@ -24,6 +24,11 @@ type Options struct {
 	// The absolute path to the directory where the factory file should be put in
 	// This is an empty string when it is not requested.
 	MessageFactoryPath string
+
+	// The namespace to which put the generated messages should be put under.
+	// For nested namespaces, the outermost namespace will appear earlier in the slice.
+	// For example, My.Namespace will be stored as ["My", "Namespace"] in the slice.
+	Namespaces []string
 }
 
 func GenerateMessageClass(msgSchema *npschema.Message, opts Options) error {
@@ -122,6 +127,7 @@ func findGeneratorForField(f npschema.MessageField, gm generator.MessageCodeGene
 
 func generateMessageHeaderFile(msgSchema *npschema.Message, gm generator.MessageCodeGeneratorMap, opts Options) error {
 	info := messageHeaderFileTemplateInfo{
+		Namespace:        strings.Join(opts.Namespaces, cxxSymbolMemberOf),
 		MessageName:      msgSchema.Name,
 		TypeID:           msgSchema.TypeID,
 		HasParentMessage: msgSchema.HasParentMessage,
@@ -217,6 +223,7 @@ func generateMessageImplFile(msgSchema *npschema.Message, gm generator.MessageCo
 	npHeaderByteSize := (len(msgSchema.AllFields) + 1) * 4
 
 	info := messageImplFileTemplateInfo{
+		Namespace:               strings.Join(opts.Namespaces, cxxSymbolMemberOf),
 		HeaderName:              strings.Replace(fname, extImplFile, extHeaderFile, 1),
 		MessageName:             msgSchema.Name,
 		HasParentMessage:        msgSchema.HasParentMessage,
@@ -292,6 +299,7 @@ func generateChildMessageFactoryHeaderFile(msgSchema *npschema.Message, opts Opt
 	h = strcase.ToSnake(strings.TrimSuffix(h, filepath.Ext(h))) + extHeaderFile
 
 	info := childMessageFactoryHeaderFileTemplateInfo{
+		Namespace:           strings.Join(opts.Namespaces, cxxSymbolMemberOf),
 		IncludeGuardName:    fmt.Sprintf("%v_FACTORY_NP_HXX", strcase.ToScreamingSnake(msgSchema.Name)),
 		MessageName:         msgSchema.Name,
 		MessageHeaderName:   h,
@@ -329,6 +337,7 @@ func generateChildMessageFactoryImplFile(msgSchema *npschema.Message, opts Optio
 	fname = fmt.Sprintf("make_%v%v", strcase.ToSnake(msgSchema.Name), extImplFile)
 
 	info := childMessageFactoryImplFileTemplateInfo{
+		Namespace:           strings.Join(opts.Namespaces, cxxSymbolMemberOf),
 		Schema:              msgSchema,
 		HeaderName:          strings.Replace(fname, extImplFile, extHeaderFile, 1),
 		FactoryFunctionName: fmt.Sprintf("make_%v", strcase.ToSnake(msgSchema.Name)),
@@ -368,11 +377,28 @@ func generateChildMessageFactoryImplFile(msgSchema *npschema.Message, opts Optio
 }
 
 func generateMessageFactoryHeaderFile(opts Options) error {
+	info := messageFactoryHeaderFileTemplateInfo{
+		Namespace: strings.Join(opts.Namespaces, cxxSymbolMemberOf),
+	}
+
 	op := filepath.Join(opts.MessageFactoryPath, fileNameMessageFactory+extHeaderFile)
-	err := os.WriteFile(op, []byte(messageFactoryHeaderFile), 0644)
+
+	tmpl, err := template.New(templateNameMessageFactoryHeaderFile).Parse(messageFactoryHeaderFile)
 	if err != nil {
 		return err
 	}
+
+	f, err := os.Create(op)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	err = tmpl.Execute(f, info)
+	if err != nil {
+		return err
+	}
+
 	return formatCode(op, opts.FormatterPath, opts.FormatterArgs...)
 }
 
@@ -380,6 +406,7 @@ func generateMessageFactoryImplFile(schemas []*npschema.Message, opts Options) e
 	op := filepath.Join(opts.MessageFactoryPath, fileNameMessageFactory+extImplFile)
 
 	info := messageFactoryImplFileTemplateInfo{
+		Namespace:          strings.Join(opts.Namespaces, cxxSymbolMemberOf),
 		MessageImportPaths: nil,
 		MessageSchemas:     nil,
 	}

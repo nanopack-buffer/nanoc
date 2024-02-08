@@ -14,7 +14,7 @@ type arrayGenerator struct {
 
 func (g arrayGenerator) TypeDeclaration(dataType datatype.DataType) string {
 	ig := g.gm[dataType.ElemType.Kind]
-	return fmt.Sprintf("std::vector<%v>", ig.TypeDeclaration(dataType))
+	return fmt.Sprintf("std::vector<%v>", ig.TypeDeclaration(*dataType.ElemType))
 }
 
 func (g arrayGenerator) ReadSizeExpression(dataType datatype.DataType, varName string) string {
@@ -48,7 +48,8 @@ func (g arrayGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx gen
 		fmt.Sprintf("const int32_t %v_byte_size = reader.read_field_size(%d);", s, field.Number),
 		l1,
 		g.ReadValueFromBuffer(field.Type, s, ctx),
-		fmt.Sprintf("this->%v = %v;", s, s))
+		fmt.Sprintf("this->%v = %v;", s, s),
+		fmt.Sprintf("ptr += %v_byte_size;", s))
 }
 
 func (g arrayGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
@@ -65,16 +66,16 @@ func (g arrayGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName 
 
 	var l1 string
 	if ctx.IsVariableInScope(varName) {
-		l1 = fmt.Sprintf("%v = %v(%v)", varName, g.TypeDeclaration(dataType), vecSizeVar)
+		l1 = fmt.Sprintf("%v = %v(%v);", varName, g.TypeDeclaration(dataType), vecSizeVar)
 	} else {
-		l1 = fmt.Sprintf("%v %v(%v)", varName, g.TypeDeclaration(dataType), vecSizeVar)
+		l1 = fmt.Sprintf("%v %v(%v);", g.TypeDeclaration(dataType), varName, vecSizeVar)
 	}
 
 	lv := ctx.NewLoopVar()
 	ls := generator.Lines(
 		l0,
 		l1,
-		fmt.Sprintf("for (int %v = 0; %v < %v, %v++) {", lv, lv, vecSizeVar, lv),
+		fmt.Sprintf("for (int %v = 0; %v < %v; %v++) {", lv, lv, vecSizeVar, lv),
 		ig.ReadValueFromBuffer(*dataType.ElemType, lv+"_item", ctx),
 		fmt.Sprintf("%v[%v] = %v;", varName, lv, lv+"_item"),
 		"}")
@@ -142,7 +143,7 @@ func (g arrayGenerator) WriteVariableToBuffer(dataType datatype.DataType, varNam
 
 	var l5 string
 	if isItemDynamicSize {
-		l5 = fmt.Sprintf("%v_total_size += %v;", varName, ig.ReadSizeExpression(*dataType.ElemType, lv))
+		l5 = fmt.Sprintf("%v_byte_size += %v;", varName, ig.ReadSizeExpression(*dataType.ElemType, lv))
 	}
 
 	return generator.Lines(
