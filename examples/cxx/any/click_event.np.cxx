@@ -31,6 +31,8 @@ ClickEvent::ClickEvent(std::vector<uint8_t>::const_iterator begin,
                        int &bytes_read)
     : ClickEvent(NanoPack::Reader(begin), bytes_read) {}
 
+int32_t ClickEvent::type_id() const { return TYPE_ID; }
+
 std::vector<uint8_t> ClickEvent::data() const {
   std::vector<uint8_t> buf(16);
   NanoPack::Writer writer(&buf);

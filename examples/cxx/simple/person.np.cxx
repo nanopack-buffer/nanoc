@@ -51,6 +51,8 @@ Person::Person(const NanoPack::Reader &reader, int &bytes_read) {
 Person::Person(std::vector<uint8_t>::const_iterator begin, int &bytes_read)
     : Person(NanoPack::Reader(begin), bytes_read) {}
 
+int32_t Person::type_id() const { return TYPE_ID; }
+
 std::vector<uint8_t> Person::data() const {
   std::vector<uint8_t> buf(24);
   NanoPack::Writer writer(&buf);

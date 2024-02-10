@@ -137,6 +137,11 @@ func generateMessageHeaderFile(msgSchema *npschema.Message, gm generator.Message
 
 	libimp := map[string]struct{}{}
 	for _, field := range msgSchema.DeclaredFields {
+		if field.IsSelfReferencing() {
+			libimp["memory"] = struct{}{}
+			continue
+		}
+
 		switch field.Type.Kind {
 		case datatype.String:
 			libimp["string"] = struct{}{}
@@ -149,6 +154,11 @@ func generateMessageHeaderFile(msgSchema *npschema.Message, gm generator.Message
 
 		case datatype.Any:
 			libimp["nanopack/any.hxx"] = struct{}{}
+
+		case datatype.Message:
+			if field.Type.Schema.(*npschema.Message).IsInherited {
+				libimp["memory"] = struct{}{}
+			}
 
 		default:
 			continue
@@ -168,6 +178,14 @@ func generateMessageHeaderFile(msgSchema *npschema.Message, gm generator.Message
 			return err
 		}
 		info.RelativeImports = append(info.RelativeImports, p)
+
+		// if this type is inherited (polymorphic) and is imported because it is used by one of the fields
+		// then its factory needs to be imported as well,
+		// because it will be used when reading fields that use this polymorphic type to instantiate the correct type.
+		if ms, ok := t.(*npschema.Message); ok && ms.IsInherited {
+			header := fmt.Sprintf("make_%v%v", strcase.ToSnake(ms.Name), extHeaderFile)
+			info.RelativeImports = append(info.RelativeImports, strings.Replace(p, filepath.Base(p), header, 1))
+		}
 	}
 
 	for _, f := range msgSchema.InheritedFields {
@@ -179,6 +197,13 @@ func generateMessageHeaderFile(msgSchema *npschema.Message, gm generator.Message
 		g := findGeneratorForField(f, gm)
 		info.FieldDeclarationLines = append(info.FieldDeclarationLines, g.FieldDeclaration(f))
 		info.ConstructorParameters = append(info.ConstructorParameters, g.ConstructorFieldParameter(f))
+
+		if f.Type.Kind == datatype.Message && f.Type.Schema.(*npschema.Message).IsInherited {
+			// this field stores a polymorphic type which requires a unique_ptr to hold the value
+			// a getter is needed to expose the value as a reference
+			l := fmt.Sprintf("[[nodiscard]] %v &get_%v() const;", f.Type.Identifier, strcase.ToSnake(f.Name))
+			info.FieldGetters = append(info.FieldGetters, l)
+		}
 	}
 
 	tmpl, err := template.New(templateNameMessageHeaderFile).
@@ -249,6 +274,17 @@ func generateMessageImplFile(msgSchema *npschema.Message, gm generator.MessageCo
 		g := findGeneratorForField(f, gm)
 		info.ConstructorParameters = append(info.ConstructorParameters, g.ConstructorFieldParameter(f))
 		info.FieldInitializers = append(info.FieldInitializers, g.FieldInitializer(f))
+
+		if f.Type.Kind == datatype.Message && f.Type.Schema.(*npschema.Message).IsInherited {
+			// this field stores a polymorphic type which requires a unique_ptr to hold the value
+			// a getter is needed to expose the value as a reference
+			s := strcase.ToSnake(f.Name)
+			l := generator.Lines(
+				fmt.Sprintf("%v::%v &%v::%v::get_%v() const {", info.Namespace, f.Type.Identifier, info.Namespace, info.MessageName, s),
+				fmt.Sprintf("    return *%v;", s),
+				"}")
+			info.FieldGetters = append(info.FieldGetters, l)
+		}
 	}
 
 	ctx := generator.NewCodeContext()

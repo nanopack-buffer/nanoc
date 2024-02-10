@@ -48,7 +48,7 @@ func (g arrayGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx gen
 		fmt.Sprintf("const int32_t %v_byte_size = reader.read_field_size(%d);", s, field.Number),
 		l1,
 		g.ReadValueFromBuffer(field.Type, s, ctx),
-		fmt.Sprintf("this->%v = %v;", s, s),
+		fmt.Sprintf("this->%v = std::move(%v);", s, s),
 		fmt.Sprintf("ptr += %v_byte_size;", s))
 }
 
@@ -56,6 +56,8 @@ func (g arrayGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName 
 	i32g := g.gm[datatype.Int32]
 	ig := g.gm[dataType.ElemType.Kind]
 	vecSizeVar := varName + "_vec_size"
+
+	lv := ctx.NewLoopVar()
 
 	// If the number of elements in the vector is not read previously,
 	// generate code to read it here.
@@ -66,18 +68,26 @@ func (g arrayGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName 
 
 	var l1 string
 	if ctx.IsVariableInScope(varName) {
-		l1 = fmt.Sprintf("%v = %v(%v);", varName, g.TypeDeclaration(dataType), vecSizeVar)
+		l1 = fmt.Sprintf("%v.reserve(%v);", varName, vecSizeVar)
 	} else {
-		l1 = fmt.Sprintf("%v %v(%v);", g.TypeDeclaration(dataType), varName, vecSizeVar)
+		l1 = generator.Lines(
+			fmt.Sprintf("%v %v;", g.TypeDeclaration(dataType), varName),
+			fmt.Sprintf("%v.reserve(%v);", varName, vecSizeVar))
 	}
 
-	lv := ctx.NewLoopVar()
+	var l4 string
+	if isTriviallyCopiable(dataType) {
+		l4 = fmt.Sprintf("%v.emplace_back(%v);", varName, lv+"_item")
+	} else {
+		l4 = fmt.Sprintf("%v.emplace_back(std::move(%v));", varName, lv+"_item")
+	}
+
 	ls := generator.Lines(
 		l0,
 		l1,
 		fmt.Sprintf("for (int %v = 0; %v < %v; %v++) {", lv, lv, vecSizeVar, lv),
 		ig.ReadValueFromBuffer(*dataType.ElemType, lv+"_item", ctx),
-		fmt.Sprintf("%v[%v] = %v;", varName, lv, lv+"_item"),
+		l4,
 		"}")
 
 	ctx.RemoveVariableFromScope(lv)

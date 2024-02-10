@@ -28,6 +28,8 @@ InvokeCallback::InvokeCallback(std::vector<uint8_t>::const_iterator begin,
                                int &bytes_read)
     : InvokeCallback(NanoPack::Reader(begin), bytes_read) {}
 
+int32_t InvokeCallback::type_id() const { return TYPE_ID; }
+
 std::vector<uint8_t> InvokeCallback::data() const {
   std::vector<uint8_t> buf(12);
   NanoPack::Writer writer(&buf);

@@ -23,6 +23,8 @@ Column::Column(const NanoPack::Reader &reader, int &bytes_read) {
 Column::Column(std::vector<uint8_t>::const_iterator begin, int &bytes_read)
     : Column(NanoPack::Reader(begin), bytes_read) {}
 
+int32_t Column::type_id() const { return TYPE_ID; }
+
 std::vector<uint8_t> Column::data() const {
   std::vector<uint8_t> buf(8);
   NanoPack::Writer writer(&buf);

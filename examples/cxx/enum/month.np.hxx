@@ -4,6 +4,7 @@
 #define MONTH_ENUM_NP_HXX
 
 #include <array>
+#include <stdexcept>
 
 class Month {
 public:
