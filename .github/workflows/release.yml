@@ -28,3 +28,5 @@ jobs:
           version: latest
           args: release --rm-dist
           workdir: ./cmd/nanoc
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
