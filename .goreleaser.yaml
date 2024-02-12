@@ -29,6 +29,8 @@ builds:
 
 signs:
   - artifacts: checksum
+    args:
+      [ "--batch", "-u", "{{ .Env.GPG_FINGERPRINT }}", "--output", "${signature}", "--detach-sign", "${artifact}" ]
 
 archives:
   - format: tar.gz
