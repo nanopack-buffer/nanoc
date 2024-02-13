@@ -25,7 +25,7 @@ func parseMessageSchema(header string, body yaml.MapSlice) (*npschema.PartialMes
 		schema.ParentMessageName = ps[1]
 	}
 
-	for _, e := range body {
+	for i, e := range body {
 		k := e.Key.(string)
 		v := e.Value
 		if k == symbol.TypeID {
@@ -41,6 +41,12 @@ func parseMessageSchema(header string, body yaml.MapSlice) (*npschema.PartialMes
 			typeName, fieldNumber, err := parseFieldType(s)
 			if err != nil {
 				return nil, err
+			}
+
+			if fieldNumber < 0 {
+				// field number is not declared, use the declaration order of the field in the schema as its field number
+				// i starts with 1 because typeid field precedes message fields.
+				fieldNumber = i - 1
 			}
 			schema.DeclaredFields = append(schema.DeclaredFields, npschema.PartialMessageField{
 				Name:     k,
@@ -62,10 +68,12 @@ func parseMessageSchema(header string, body yaml.MapSlice) (*npschema.PartialMes
 	return &schema, nil
 }
 
+// parseFieldType returns the type name and the field number of the given field type declaration, e.g. string:0, int.
+// field number will be returned as a negative number if it is not declared.
 func parseFieldType(str string) (string, int, error) {
 	ps := strings.Split(str, symbol.FieldNumberSeparator)
 	if len(ps) != 2 {
-		return "", 0, errors.New("invalid field type syntax. expected field-type:field-number, received: " + str)
+		return ps[0], -1, nil
 	}
 
 	fieldNumber, err := strconv.Atoi(ps[1])

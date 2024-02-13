@@ -1,6 +1,6 @@
 NpDate:
   typeid: 1
-  day: int8:0
-  week: Week:1
-  month: Month:2
-  year: int32:3
+  day: int8
+  week: Week
+  month: Month
+  year: int32

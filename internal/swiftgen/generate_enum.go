@@ -30,15 +30,8 @@ func GenerateEnum(enumSchema *npschema.Enum, opts Options) error {
 		return errors.New("not gonna happen")
 	}
 
-	var t string
-	if enumSchema.ValueType.Kind == datatype.String {
-		t = "case %v = \"%v\""
-	} else {
-		t = "case %v = %v"
-	}
-
 	for _, m := range enumSchema.Members {
-		info.MemberDeclarations = append(info.MemberDeclarations, fmt.Sprintf(t, strcase.ToLowerCamel(m.Name), m.ValueLiteral))
+		info.MemberDeclarations = append(info.MemberDeclarations, fmt.Sprintf("case %v = %v", strcase.ToLowerCamel(m.Name), m.ValueLiteral))
 	}
 
 	tmpl, err := template.New(templateNameEnum).Parse(enumTemplate)

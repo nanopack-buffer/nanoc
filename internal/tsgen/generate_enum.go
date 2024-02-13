@@ -3,7 +3,6 @@ package tsgen
 import (
 	"fmt"
 	"github.com/iancoleman/strcase"
-	"nanoc/internal/datatype"
 	"nanoc/internal/npschema"
 	"os"
 	"path/filepath"
@@ -17,11 +16,7 @@ func GenerateEnum(enumSchema *npschema.Enum, opts Options) error {
 	}
 
 	for _, m := range enumSchema.Members {
-		if enumSchema.ValueType.Kind == datatype.String {
-			info.MemberDeclarations = append(info.MemberDeclarations, fmt.Sprintf("%v: \"%v\"", m.Name, m.ValueLiteral))
-		} else {
-			info.MemberDeclarations = append(info.MemberDeclarations, fmt.Sprintf("%v: %v", m.Name, m.ValueLiteral))
-		}
+		info.MemberDeclarations = append(info.MemberDeclarations, fmt.Sprintf("%v: %v", m.Name, m.ValueLiteral))
 	}
 
 	tmpl, err := template.New(templateNameEnum).Parse(enumTemplate)

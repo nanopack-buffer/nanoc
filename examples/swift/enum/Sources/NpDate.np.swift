@@ -21,7 +21,7 @@ class NpDate: NanoPackMessage {
   }
 
   required init?(data: Data) {
-    var ptr = 20
+    var ptr = data.startIndex + 20
 
     let day: Int8 = data.read(at: ptr)
     ptr += 1
@@ -48,7 +48,7 @@ class NpDate: NanoPackMessage {
   }
 
   required init?(data: Data, bytesRead: inout Int) {
-    var ptr = 20
+    var ptr = data.startIndex + 20
 
     let day: Int8 = data.read(at: ptr)
     ptr += 1
@@ -73,7 +73,7 @@ class NpDate: NanoPackMessage {
     self.month = month
     self.year = year
 
-    bytesRead = ptr
+    bytesRead = ptr - data.startIndex
   }
 
   func data() -> Data? {

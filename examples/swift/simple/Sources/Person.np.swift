@@ -23,7 +23,7 @@ class Person: NanoPackMessage {
   }
 
   required init?(data: Data) {
-    var ptr = 24
+    var ptr = data.startIndex + 24
 
     let firstNameSize = data.readSize(ofField: 0)
     guard let firstName = data.read(at: ptr, withLength: firstNameSize) else {
@@ -72,7 +72,7 @@ class Person: NanoPackMessage {
   }
 
   required init?(data: Data, bytesRead: inout Int) {
-    var ptr = 24
+    var ptr = data.startIndex + 24
 
     let firstNameSize = data.readSize(ofField: 0)
     guard let firstName = data.read(at: ptr, withLength: firstNameSize) else {
@@ -119,7 +119,7 @@ class Person: NanoPackMessage {
     self.age = age
     self.otherFriend = otherFriend
 
-    bytesRead = ptr
+    bytesRead = ptr - data.startIndex
   }
 
   func data() -> Data? {

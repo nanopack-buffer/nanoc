@@ -21,6 +21,8 @@ Widget::Widget(const NanoPack::Reader &reader, int &bytes_read) {
 Widget::Widget(std::vector<uint8_t>::const_iterator begin, int &bytes_read)
     : Widget(NanoPack::Reader(begin), bytes_read) {}
 
+int32_t Widget::type_id() const { return TYPE_ID; }
+
 std::vector<uint8_t> Widget::data() const {
   std::vector<uint8_t> buf(8);
   NanoPack::Writer writer(&buf);
