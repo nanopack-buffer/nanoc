@@ -15,7 +15,7 @@ class Column: NanoPackMessage {
   }
 
   required init?(data: Data) {
-    var ptr = 8
+    var ptr = data.startIndex + 8
 
     let alignmentSize = data.readSize(ofField: 0)
     guard let alignmentRawValue = data.read(at: ptr, withLength: alignmentSize) else {
@@ -29,7 +29,7 @@ class Column: NanoPackMessage {
   }
 
   required init?(data: Data, bytesRead: inout Int) {
-    var ptr = 8
+    var ptr = data.startIndex + 8
 
     let alignmentSize = data.readSize(ofField: 0)
     guard let alignmentRawValue = data.read(at: ptr, withLength: alignmentSize) else {
@@ -41,7 +41,7 @@ class Column: NanoPackMessage {
 
     self.alignment = alignment
 
-    bytesRead = ptr
+    bytesRead = ptr - data.startIndex
   }
 
   func data() -> Data? {

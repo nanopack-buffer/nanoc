@@ -20,6 +20,8 @@ struct Widget : NanoPack::Message {
 
   Widget(const NanoPack::Reader &reader, int &bytes_read);
 
+  [[nodiscard]] int32_t type_id() const override;
+
   [[nodiscard]] std::vector<uint8_t> data() const override;
 };
 

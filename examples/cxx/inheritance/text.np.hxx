@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include "make_widget.np.hxx"
 #include "widget.np.hxx"
 
 struct Text : Widget {
@@ -21,6 +22,8 @@ struct Text : Widget {
   Text(std::vector<uint8_t>::const_iterator begin, int &bytes_read);
 
   Text(const NanoPack::Reader &reader, int &bytes_read);
+
+  [[nodiscard]] int32_t type_id() const override;
 
   [[nodiscard]] std::vector<uint8_t> data() const override;
 };
