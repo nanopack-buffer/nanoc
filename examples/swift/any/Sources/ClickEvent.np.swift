@@ -55,23 +55,46 @@ class ClickEvent: NanoPackMessage {
   }
 
   func data() -> Data? {
+    let offset = 0
+
     var data = Data()
     data.reserveCapacity(16)
 
-    withUnsafeBytes(of: Int32(ClickEvent_typeID)) {
-      data.append(contentsOf: $0)
-    }
-
+    data.append(int: Int32(ClickEvent_typeID))
     data.append([0], count: 3 * 4)
 
-    data.write(size: 8, ofField: 0)
+    data.write(size: 8, ofField: 0, offset: offset)
     data.append(double: x)
 
-    data.write(size: 8, ofField: 1)
+    data.write(size: 8, ofField: 1, offset: offset)
     data.append(double: y)
 
-    data.write(size: 8, ofField: 2)
+    data.write(size: 8, ofField: 2, offset: offset)
     data.append(int: timestamp)
+
+    return data
+  }
+
+  func dataWithLengthPrefix() -> Data? {
+    let offset = 4
+
+    var data = Data()
+    data.reserveCapacity(16 + 4)
+
+    data.append(int: Int32(0))
+    data.append(int: Int32(ClickEvent_typeID))
+    data.append([0], count: 3 * 4)
+
+    data.write(size: 8, ofField: 0, offset: offset)
+    data.append(double: x)
+
+    data.write(size: 8, ofField: 1, offset: offset)
+    data.append(double: y)
+
+    data.write(size: 8, ofField: 2, offset: offset)
+    data.append(int: timestamp)
+
+    data.write(size: data.count, at: 0)
 
     return data
   }

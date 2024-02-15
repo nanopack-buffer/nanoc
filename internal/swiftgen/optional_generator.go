@@ -91,7 +91,7 @@ func (g optionalGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx g
 			Schema: field.Schema,
 		}, ctx),
 		"} else {",
-		fmt.Sprintf("data.write(size: -1, ofField: %d)", field.Number),
+		fmt.Sprintf("data.write(size: -1, ofField: %d, offset: offset)", field.Number),
 		"}")
 }
 

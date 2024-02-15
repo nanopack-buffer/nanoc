@@ -119,19 +119,38 @@ class {{.Schema.Name}}: {{if .Schema.HasParentMessage}}{{.Schema.ParentMessage.N
     }
 
     {{if .Schema.HasParentMessage}}override{{end}} func data() -> Data? {
+        let offset = 0
+
         var data = Data()
         data.reserveCapacity({{.InitialWriteBufferSize}})
 
-        withUnsafeBytes(of: Int32({{.Schema.Name}}_typeID)) {
-            data.append(contentsOf: $0)
-        }
-
+        data.append(int: Int32({{.Schema.Name}}_typeID))
 		data.append([0], count: {{len .Schema.AllFields}} * 4)
 
         {{range .FieldWriteCodeFragments}}
         {{.}}
 
         {{end}}
+
+        return data
+    }
+
+    {{if .Schema.HasParentMessage}}override{{end}} func dataWithLengthPrefix() -> Data? {
+		let offset = 4        
+
+		var data = Data()
+        data.reserveCapacity({{.InitialWriteBufferSize}} + 4)
+
+        data.append(int: Int32(0))
+        data.append(int: Int32({{.Schema.Name}}_typeID))
+        data.append([0], count: {{len .Schema.AllFields}} * 4)
+
+        {{range .FieldWriteCodeFragments}}
+        {{.}}
+
+        {{end}}
+
+        data.write(size: data.count, at: 0)
 
         return data
     }

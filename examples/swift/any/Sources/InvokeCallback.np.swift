@@ -47,20 +47,40 @@ class InvokeCallback: NanoPackMessage {
   }
 
   func data() -> Data? {
+    let offset = 0
+
     var data = Data()
     data.reserveCapacity(12)
 
-    withUnsafeBytes(of: Int32(InvokeCallback_typeID)) {
-      data.append(contentsOf: $0)
-    }
-
+    data.append(int: Int32(InvokeCallback_typeID))
     data.append([0], count: 2 * 4)
 
-    data.write(size: 4, ofField: 0)
+    data.write(size: 4, ofField: 0, offset: offset)
     data.append(int: handle)
 
-    data.write(size: args.count, ofField: 1)
+    data.write(size: args.count, ofField: 1, offset: offset)
     data.append(args)
+
+    return data
+  }
+
+  func dataWithLengthPrefix() -> Data? {
+    let offset = 4
+
+    var data = Data()
+    data.reserveCapacity(12 + 4)
+
+    data.append(int: Int32(0))
+    data.append(int: Int32(InvokeCallback_typeID))
+    data.append([0], count: 2 * 4)
+
+    data.write(size: 4, ofField: 0, offset: offset)
+    data.append(int: handle)
+
+    data.write(size: args.count, ofField: 1, offset: offset)
+    data.append(args)
+
+    data.write(size: data.count, at: 0)
 
     return data
   }

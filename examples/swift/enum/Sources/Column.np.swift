@@ -45,17 +45,34 @@ class Column: NanoPackMessage {
   }
 
   func data() -> Data? {
+    let offset = 0
+
     var data = Data()
     data.reserveCapacity(8)
 
-    withUnsafeBytes(of: Int32(Column_typeID)) {
-      data.append(contentsOf: $0)
-    }
-
+    data.append(int: Int32(Column_typeID))
     data.append([0], count: 1 * 4)
 
-    data.write(size: alignment.rawValue.lengthOfBytes(using: .utf8), ofField: 0)
+    data.write(size: alignment.rawValue.lengthOfBytes(using: .utf8), ofField: 0, offset: offset)
     data.append(string: alignment.rawValue)
+
+    return data
+  }
+
+  func dataWithLengthPrefix() -> Data? {
+    let offset = 4
+
+    var data = Data()
+    data.reserveCapacity(8 + 4)
+
+    data.append(int: Int32(0))
+    data.append(int: Int32(Column_typeID))
+    data.append([0], count: 1 * 4)
+
+    data.write(size: alignment.rawValue.lengthOfBytes(using: .utf8), ofField: 0, offset: offset)
+    data.append(string: alignment.rawValue)
+
+    data.write(size: data.count, at: 0)
 
     return data
   }

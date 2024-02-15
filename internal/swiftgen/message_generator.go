@@ -90,7 +90,7 @@ func (g messageGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx ge
 		fmt.Sprintf("guard let %vData = %v.data() else {", c, c),
 		"    return nil",
 		"}",
-		fmt.Sprintf("data.write(size: %vData.count, ofField: %d)", c, field.Number),
+		fmt.Sprintf("data.write(size: %vData.count, ofField: %d, offset: offset)", c, field.Number),
 		fmt.Sprintf("data.append(%vData)", c))
 }
 

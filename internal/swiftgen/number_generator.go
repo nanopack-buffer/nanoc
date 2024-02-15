@@ -79,7 +79,7 @@ func (g numberGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx gen
 		l1 = fmt.Sprintf("data.append(int: %v)", expr)
 	}
 	return generator.Lines(
-		fmt.Sprintf("data.write(size: %d, ofField: %d)", field.Type.ByteSize, field.Number),
+		fmt.Sprintf("data.write(size: %d, ofField: %d, offset: offset)", field.Type.ByteSize, field.Number),
 		l1)
 }
 

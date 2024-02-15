@@ -119,13 +119,13 @@ func (g arrayGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx gene
 	if field.Type.ElemType.ByteSize == datatype.DynamicSize {
 		return generator.Lines(
 			g.WriteVariableToBuffer(field.Type, c, ctx),
-			fmt.Sprintf("data.write(size: %vByteSize, ofField: %d)", c, field.Number))
+			fmt.Sprintf("data.write(size: %vByteSize, ofField: %d, offset: offset)", c, field.Number))
 	}
 
 	lv := ctx.NewLoopVar()
 
 	ls := generator.Lines(
-		fmt.Sprintf("data.write(size: %v.count * %d, ofField: %d)", c, field.Type.ElemType.ByteSize, field.Number),
+		fmt.Sprintf("data.write(size: %v.count * %d, ofField: %d, offset: offset)", c, field.Type.ElemType.ByteSize, field.Number),
 		fmt.Sprintf("for %v in %v {", lv, c),
 		ig.WriteVariableToBuffer(*field.Type.ElemType, lv, ctx),
 		"}")

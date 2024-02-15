@@ -102,7 +102,7 @@ func (g mapGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx genera
 	if field.Type.ElemType.ByteSize == datatype.DynamicSize || field.Type.KeyType.ByteSize == datatype.DynamicSize {
 		return generator.Lines(
 			g.WriteVariableToBuffer(field.Type, c, ctx),
-			fmt.Sprintf("data.write(size: %vByteSize, ofField: %d)", c, field.Number))
+			fmt.Sprintf("data.write(size: %vByteSize, ofField: %d, offset: offset)", c, field.Number))
 	}
 
 	kv := ctx.NewLoopVarWithSuffix("Key")

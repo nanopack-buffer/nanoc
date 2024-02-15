@@ -103,7 +103,7 @@ func (g stringGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx gen
 	}
 
 	return generator.Lines(
-		fmt.Sprintf("data.write(size: %v, ofField: %d)", g.ReadSizeExpression(field.Type, c), field.Number),
+		fmt.Sprintf("data.write(size: %v, ofField: %d, offset: offset)", g.ReadSizeExpression(field.Type, c), field.Number),
 		fmt.Sprintf("data.append(string: %v)", expr))
 }
 
