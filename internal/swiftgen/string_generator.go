@@ -42,7 +42,8 @@ func (g stringGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx ge
 			fmt.Sprintf("let %vSize = data.readSize(ofField: %d)", c, field.Number),
 			fmt.Sprintf("guard let %vRawValue = data.read(at: ptr, withLength: %vSize) else {", c, c),
 			"    return nil",
-			"}")
+			"}",
+			fmt.Sprintf("ptr += %vSize", c))
 	}
 
 	var v string
@@ -70,7 +71,8 @@ func (g stringGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName
 			"ptr += 4",
 			fmt.Sprintf("guard let %vRawValue = data.read(at: ptr, withLength: %vSize) else {", varName, varName),
 			"    return nil",
-			"}")
+			"}",
+			fmt.Sprintf("ptr += %vSize", varName))
 	}
 
 	var v string

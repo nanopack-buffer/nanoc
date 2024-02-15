@@ -21,6 +21,7 @@ class Column: NanoPackMessage {
     guard let alignmentRawValue = data.read(at: ptr, withLength: alignmentSize) else {
       return nil
     }
+    ptr += alignmentSize
     guard let alignment = Alignment(rawValue: alignmentRawValue) else {
       return nil
     }
@@ -35,6 +36,7 @@ class Column: NanoPackMessage {
     guard let alignmentRawValue = data.read(at: ptr, withLength: alignmentSize) else {
       return nil
     }
+    ptr += alignmentSize
     guard let alignment = Alignment(rawValue: alignmentRawValue) else {
       return nil
     }
