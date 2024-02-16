@@ -131,6 +131,8 @@ struct {{.MessageName}} : {{if .HasParentMessage}}{{.ParentMessageName}}{{else}}
   [[nodiscard]] int32_t type_id() const override;
 
   [[nodiscard]] std::vector<uint8_t> data() const override;
+
+  [[nodiscard]] std::vector<uint8_t> data_with_length_prefix() const override;
 };
 
 {{if .Namespace}}} // namespace {{.Namespace}}{{end}}
@@ -181,6 +183,26 @@ std::vector<uint8_t> {{if .Namespace}}{{.Namespace}}::{{end}}{{.MessageName}}::d
   {{.}}
 
   {{end}}
+
+  return buf;
+}
+
+std::vector<uint8_t> {{if .Namespace}}{{.Namespace}}::{{end}}{{.MessageName}}::data_with_length_prefix() const {
+  std::vector<uint8_t> buf({{.InitialWriteBufferSize}} + 4);
+  NanoPack::Writer writer(&buf, 4);
+
+  writer.write_type_id(TYPE_ID);
+
+  {{range .FieldWriteCodeFragments}}
+  {{.}}
+
+  {{end}}
+
+  const size_t byte_size = buf.size() - 4;
+  buf[0] = byte_size & 0xFF;
+  buf[1] = byte_size & 0xFF00;
+  buf[2] = byte_size & 0xFF0000;
+  buf[3] = byte_size & 0xFF000000;
 
   return buf;
 }
