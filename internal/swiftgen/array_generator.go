@@ -46,7 +46,7 @@ func (g arrayGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx gen
 		ctx.AddVariableToScope(c + "ItemCount")
 		return generator.Lines(
 			fmt.Sprintf("let %vByteSize = data.readSize(ofField: %d)", c, field.Number),
-			fmt.Sprintf("let %vItemCount = %vSize / %d", c, c, field.Type.ElemType.ByteSize),
+			fmt.Sprintf("let %vItemCount = %vByteSize / %d", c, c, field.Type.ElemType.ByteSize),
 			g.ReadValueFromBuffer(field.Type, c, ctx))
 	}
 
