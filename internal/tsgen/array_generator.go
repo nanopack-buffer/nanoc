@@ -45,6 +45,7 @@ func (g arrayGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx gen
 	}
 
 	ctx.AddVariableToScope(c + "ByteLength")
+	ctx.AddVariableToScope(c + "Length")
 	ctx.AddVariableToScope(c + "ItemCount")
 
 	return generator.Lines(
