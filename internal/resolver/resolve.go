@@ -110,18 +110,18 @@ func resolveEnumSchema(partialEnum *npschema.PartialEnum, sm datatype.SchemaMap)
 		}
 
 		if !ok {
-			max := -1
+			maxVal := -1
 			for _, n := range nums {
-				if n > max {
-					max = n
+				if n > maxVal {
+					maxVal = n
 				}
 			}
 
-			if max <= math.MaxInt8 {
+			if maxVal <= math.MaxInt8 {
 				fullSchema.ValueType = *datatype.FromKind(datatype.Int8)
-			} else if max <= math.MaxInt32 {
+			} else if maxVal <= math.MaxInt32 {
 				fullSchema.ValueType = *datatype.FromKind(datatype.Int32)
-			} else if max <= math.MaxInt64 {
+			} else if maxVal <= math.MaxInt64 {
 				fullSchema.ValueType = *datatype.FromKind(datatype.Int64)
 			} else {
 				return errors.New(fmt.Sprintf("unable to determine the value type to use for enum %v", partialEnum.Name))
@@ -259,4 +259,8 @@ func resolveMessageInheritance(msgSchema *npschema.Message) {
 			return msgSchema.AllFields[i].Number < msgSchema.AllFields[j].Number
 		})
 	}
+
+	sort.Slice(msgSchema.ChildMessages, func(i, j int) bool {
+		return msgSchema.ChildMessages[i].TypeID < msgSchema.ChildMessages[j].TypeID
+	})
 }

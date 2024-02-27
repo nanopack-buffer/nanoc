@@ -6,6 +6,7 @@ import (
 	"nanoc/internal/npschema"
 	"nanoc/internal/parser"
 	"nanoc/internal/resolver"
+	"sort"
 	"sync"
 )
 
@@ -66,12 +67,18 @@ func Run(opts Options) error {
 			defer wg.Done()
 
 			g := messageFactoryGeneratorMap[opts.Language]
+
 			var mss []*npschema.Message
 			for _, s := range schemas {
 				if ms, ok := s.(*npschema.Message); ok {
 					mss = append(mss, ms)
 				}
 			}
+
+			sort.Slice(mss, func(i, j int) bool {
+				return mss[i].TypeID < mss[j].TypeID
+			})
+
 			if err := g(mss, opts); err != nil {
 				mu.Lock()
 				errs = append(errs, err)
