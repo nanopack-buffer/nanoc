@@ -3,25 +3,25 @@
 import Foundation
 import NanoPack
 
-let Widget_typeID: TypeID = 1
+let Widget_typeID: TypeID = 1_676_374_721
 
 class Widget: NanoPackMessage {
-  var typeID: TypeID { return 1 }
+  var typeID: TypeID { return 1_676_374_721 }
 
   let id: Int32
 
   static func from(data: Data) -> Widget? {
     switch data.readTypeID() {
-    case 1: return Widget(data: data)
-    case 2: return Text(data: data)
+    case 1_676_374_721: return Widget(data: data)
+    case 3_495_336_243: return Text(data: data)
     default: return nil
     }
   }
 
   static func from(data: Data, bytesRead: inout Int) -> Widget? {
     switch data.readTypeID() {
-    case 1: return Widget(data: data, bytesRead: &bytesRead)
-    case 2: return Text(data: data, bytesRead: &bytesRead)
+    case 1_676_374_721: return Widget(data: data, bytesRead: &bytesRead)
+    case 3_495_336_243: return Text(data: data, bytesRead: &bytesRead)
     default: return nil
     }
   }
@@ -56,10 +56,10 @@ class Widget: NanoPackMessage {
     var data = Data()
     data.reserveCapacity(8)
 
-    data.append(int: Int32(Widget_typeID))
+    data.append(typeID: TypeID(Widget_typeID))
     data.append([0], count: 1 * 4)
 
-    data.write(size: 4, ofField: 0, offset: offset)
+    data.write(size: 4, ofField: -1, offset: offset)
     data.append(int: id)
 
     return data
@@ -72,10 +72,10 @@ class Widget: NanoPackMessage {
     data.reserveCapacity(8 + 4)
 
     data.append(int: Int32(0))
-    data.append(int: Int32(Widget_typeID))
+    data.append(typeID: TypeID(Widget_typeID))
     data.append([0], count: 1 * 4)
 
-    data.write(size: 4, ofField: 0, offset: offset)
+    data.write(size: 4, ofField: -1, offset: offset)
     data.append(int: id)
 
     data.write(size: data.count, at: 0)

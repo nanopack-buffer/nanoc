@@ -10,9 +10,9 @@ function makeNanoPackMessage(
 ): { bytesRead: number; result: NanoPackMessage } | null {
   const reader = new NanoBufReader(bytes);
   switch (reader.readTypeId()) {
-    case 1:
+    case 1676374721:
       return Widget.fromReader(reader);
-    case 2:
+    case 3495336243:
       return Text.fromReader(reader);
     default:
       return null;

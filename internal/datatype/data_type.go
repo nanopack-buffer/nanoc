@@ -28,6 +28,8 @@ type DataType struct {
 
 const DynamicSize = -1
 
+type TypeID = uint32
+
 type Kind uint
 
 const (

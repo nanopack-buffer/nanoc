@@ -5,7 +5,7 @@ import { NanoBufReader, NanoBufWriter, type NanoPackMessage } from "nanopack";
 import type { TAlignment } from "./alignment.np.js";
 
 class Column implements NanoPackMessage {
-  public static TYPE_ID = 2;
+  public static TYPE_ID = 2415007766;
 
   constructor(public alignment: TAlignment) {}
 
@@ -29,12 +29,12 @@ class Column implements NanoPackMessage {
   }
 
   public get typeId(): number {
-    return 2;
+    return 2415007766;
   }
 
   public bytes(): Uint8Array {
     const writer = new NanoBufWriter(8);
-    writer.writeTypeId(2);
+    writer.writeTypeId(2415007766);
 
     const alignmentByteLength = writer.appendString(this.alignment);
     writer.writeFieldSize(0, alignmentByteLength);
@@ -44,7 +44,7 @@ class Column implements NanoPackMessage {
 
   public bytesWithLengthPrefix(): Uint8Array {
     const writer = new NanoBufWriter(8 + 4, true);
-    writer.writeTypeId(2);
+    writer.writeTypeId(2415007766);
 
     const alignmentByteLength = writer.appendString(this.alignment);
     writer.writeFieldSize(0, alignmentByteLength);

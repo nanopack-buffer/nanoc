@@ -3,10 +3,10 @@
 import Foundation
 import NanoPack
 
-let Column_typeID: TypeID = 2
+let Column_typeID: TypeID = 2_415_007_766
 
 class Column: NanoPackMessage {
-  var typeID: TypeID { return 2 }
+  var typeID: TypeID { return 2_415_007_766 }
 
   let alignment: Alignment
 
@@ -17,7 +17,7 @@ class Column: NanoPackMessage {
   required init?(data: Data) {
     var ptr = data.startIndex + 8
 
-    let alignmentSize = data.readSize(ofField: 0)
+    let alignmentSize = data.readSize(ofField: -1)
     guard let alignmentRawValue = data.read(at: ptr, withLength: alignmentSize) else {
       return nil
     }
@@ -32,7 +32,7 @@ class Column: NanoPackMessage {
   required init?(data: Data, bytesRead: inout Int) {
     var ptr = data.startIndex + 8
 
-    let alignmentSize = data.readSize(ofField: 0)
+    let alignmentSize = data.readSize(ofField: -1)
     guard let alignmentRawValue = data.read(at: ptr, withLength: alignmentSize) else {
       return nil
     }
@@ -52,10 +52,10 @@ class Column: NanoPackMessage {
     var data = Data()
     data.reserveCapacity(8)
 
-    data.append(int: Int32(Column_typeID))
+    data.append(typeID: TypeID(Column_typeID))
     data.append([0], count: 1 * 4)
 
-    data.write(size: alignment.rawValue.lengthOfBytes(using: .utf8), ofField: 0, offset: offset)
+    data.write(size: alignment.rawValue.lengthOfBytes(using: .utf8), ofField: -1, offset: offset)
     data.append(string: alignment.rawValue)
 
     return data
@@ -68,10 +68,10 @@ class Column: NanoPackMessage {
     data.reserveCapacity(8 + 4)
 
     data.append(int: Int32(0))
-    data.append(int: Int32(Column_typeID))
+    data.append(typeID: TypeID(Column_typeID))
     data.append([0], count: 1 * 4)
 
-    data.write(size: alignment.rawValue.lengthOfBytes(using: .utf8), ofField: 0, offset: offset)
+    data.write(size: alignment.rawValue.lengthOfBytes(using: .utf8), ofField: -1, offset: offset)
     data.append(string: alignment.rawValue)
 
     data.write(size: data.count, at: 0)

@@ -3,10 +3,10 @@
 import Foundation
 import NanoPack
 
-let InvokeCallback_typeID: TypeID = 1
+let InvokeCallback_typeID: TypeID = 2_013_877_267
 
 class InvokeCallback: NanoPackMessage {
-  var typeID: TypeID { return 1 }
+  var typeID: TypeID { return 2_013_877_267 }
 
   let handle: Int32
   let args: Data
@@ -22,7 +22,7 @@ class InvokeCallback: NanoPackMessage {
     let handle: Int32 = data.read(at: ptr)
     ptr += 4
 
-    let argsByteSize = data.readSize(ofField: 1)
+    let argsByteSize = data.readSize(ofField: 0)
     let args = data[ptr..<ptr + argsByteSize]
     ptr += argsByteSize
 
@@ -36,7 +36,7 @@ class InvokeCallback: NanoPackMessage {
     let handle: Int32 = data.read(at: ptr)
     ptr += 4
 
-    let argsByteSize = data.readSize(ofField: 1)
+    let argsByteSize = data.readSize(ofField: 0)
     let args = data[ptr..<ptr + argsByteSize]
     ptr += argsByteSize
 
@@ -52,13 +52,13 @@ class InvokeCallback: NanoPackMessage {
     var data = Data()
     data.reserveCapacity(12)
 
-    data.append(int: Int32(InvokeCallback_typeID))
+    data.append(typeID: TypeID(InvokeCallback_typeID))
     data.append([0], count: 2 * 4)
 
-    data.write(size: 4, ofField: 0, offset: offset)
+    data.write(size: 4, ofField: -1, offset: offset)
     data.append(int: handle)
 
-    data.write(size: args.count, ofField: 1, offset: offset)
+    data.write(size: args.count, ofField: 0, offset: offset)
     data.append(args)
 
     return data
@@ -71,13 +71,13 @@ class InvokeCallback: NanoPackMessage {
     data.reserveCapacity(12 + 4)
 
     data.append(int: Int32(0))
-    data.append(int: Int32(InvokeCallback_typeID))
+    data.append(typeID: TypeID(InvokeCallback_typeID))
     data.append([0], count: 2 * 4)
 
-    data.write(size: 4, ofField: 0, offset: offset)
+    data.write(size: 4, ofField: -1, offset: offset)
     data.append(int: handle)
 
-    data.write(size: args.count, ofField: 1, offset: offset)
+    data.write(size: args.count, ofField: 0, offset: offset)
     data.append(args)
 
     data.write(size: data.count, at: 0)

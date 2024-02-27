@@ -9,9 +9,9 @@ std::unique_ptr<Widget> make_widget(std::vector<uint8_t>::const_iterator begin,
                                     int &bytes_read) {
   const NanoPack::Reader reader(begin);
   switch (reader.read_type_id()) {
-  case 1:
+  case 1676374721:
     return std::make_unique<Widget>(reader, bytes_read);
-  case 2:
+  case 3495336243:
     return std::make_unique<Text>(reader, bytes_read);
   default:
     return nullptr;

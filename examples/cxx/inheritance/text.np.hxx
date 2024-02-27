@@ -12,7 +12,7 @@
 #include "widget.np.hxx"
 
 struct Text : Widget {
-  static constexpr NanoPack::TypeId TYPE_ID = 2;
+  static constexpr NanoPack::TypeId TYPE_ID = 3495336243;
 
   std::string content;
 

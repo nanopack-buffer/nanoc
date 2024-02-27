@@ -16,19 +16,19 @@ Person::Person(const NanoPack::Reader &reader, int &bytes_read) {
   const auto begin = reader.begin();
   int ptr = 24;
 
-  const int32_t first_name_size = reader.read_field_size(0);
+  const int32_t first_name_size = reader.read_field_size(-1);
   first_name = reader.read_string(ptr, first_name_size);
   ptr += first_name_size;
 
-  if (reader.read_field_size(1) < 0) {
+  if (reader.read_field_size(0) < 0) {
     this->middle_name = std::nullopt;
   } else {
-    const int32_t middle_name_size = reader.read_field_size(1);
+    const int32_t middle_name_size = reader.read_field_size(0);
     middle_name = reader.read_string(ptr, middle_name_size);
     ptr += middle_name_size;
   }
 
-  const int32_t last_name_size = reader.read_field_size(2);
+  const int32_t last_name_size = reader.read_field_size(1);
   last_name = reader.read_string(ptr, last_name_size);
   ptr += last_name_size;
 
@@ -36,7 +36,7 @@ Person::Person(const NanoPack::Reader &reader, int &bytes_read) {
   ptr += 1;
   this->age = age;
 
-  if (reader.read_field_size(4) < 0) {
+  if (reader.read_field_size(3) < 0) {
     other_friend = nullptr;
   } else {
     int other_friend_bytes_read = 0;
@@ -59,29 +59,29 @@ std::vector<uint8_t> Person::data() const {
 
   writer.write_type_id(TYPE_ID);
 
-  writer.write_field_size(0, first_name.size());
+  writer.write_field_size(-1, first_name.size());
   writer.append_string(first_name);
 
   if (middle_name.has_value()) {
     const auto middle_name = this->middle_name.value();
-    writer.write_field_size(1, middle_name.size());
+    writer.write_field_size(0, middle_name.size());
     writer.append_string(middle_name);
   } else {
-    writer.write_field_size(1, -1);
+    writer.write_field_size(0, -1);
   }
 
-  writer.write_field_size(2, last_name.size());
+  writer.write_field_size(1, last_name.size());
   writer.append_string(last_name);
 
-  writer.write_field_size(3, 1);
+  writer.write_field_size(2, 1);
   writer.append_int8(age);
 
   if (other_friend != nullptr) {
     const std::vector<uint8_t> other_friend_data = other_friend->data();
     writer.append_bytes(other_friend_data);
-    writer.write_field_size(4, other_friend_data.size());
+    writer.write_field_size(3, other_friend_data.size());
   } else {
-    writer.write_field_size(4, -1);
+    writer.write_field_size(3, -1);
   }
 
   return buf;
@@ -93,29 +93,29 @@ std::vector<uint8_t> Person::data_with_length_prefix() const {
 
   writer.write_type_id(TYPE_ID);
 
-  writer.write_field_size(0, first_name.size());
+  writer.write_field_size(-1, first_name.size());
   writer.append_string(first_name);
 
   if (middle_name.has_value()) {
     const auto middle_name = this->middle_name.value();
-    writer.write_field_size(1, middle_name.size());
+    writer.write_field_size(0, middle_name.size());
     writer.append_string(middle_name);
   } else {
-    writer.write_field_size(1, -1);
+    writer.write_field_size(0, -1);
   }
 
-  writer.write_field_size(2, last_name.size());
+  writer.write_field_size(1, last_name.size());
   writer.append_string(last_name);
 
-  writer.write_field_size(3, 1);
+  writer.write_field_size(2, 1);
   writer.append_int8(age);
 
   if (other_friend != nullptr) {
     const std::vector<uint8_t> other_friend_data = other_friend->data();
     writer.append_bytes(other_friend_data);
-    writer.write_field_size(4, other_friend_data.size());
+    writer.write_field_size(3, other_friend_data.size());
   } else {
-    writer.write_field_size(4, -1);
+    writer.write_field_size(3, -1);
   }
 
   const size_t byte_size = buf.size() - 4;

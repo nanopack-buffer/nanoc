@@ -9,7 +9,7 @@
 #include <vector>
 
 struct Widget : NanoPack::Message {
-  static constexpr NanoPack::TypeId TYPE_ID = 1;
+  static constexpr NanoPack::TypeId TYPE_ID = 1676374721;
 
   int32_t id;
 

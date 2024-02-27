@@ -9,7 +9,7 @@
 #include <vector>
 
 struct ClickEvent : NanoPack::Message {
-  static constexpr NanoPack::TypeId TYPE_ID = 2;
+  static constexpr NanoPack::TypeId TYPE_ID = 837166865;
 
   double x;
   double y;

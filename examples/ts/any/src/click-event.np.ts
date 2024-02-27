@@ -3,7 +3,7 @@
 import { NanoBufReader, NanoBufWriter, type NanoPackMessage } from "nanopack";
 
 class ClickEvent implements NanoPackMessage {
-  public static TYPE_ID = 2;
+  public static TYPE_ID = 837166865;
 
   constructor(
     public x: number,
@@ -36,37 +36,37 @@ class ClickEvent implements NanoPackMessage {
   }
 
   public get typeId(): number {
-    return 2;
+    return 837166865;
   }
 
   public bytes(): Uint8Array {
     const writer = new NanoBufWriter(16);
-    writer.writeTypeId(2);
+    writer.writeTypeId(837166865);
 
     writer.appendDouble(this.x);
-    writer.writeFieldSize(0, 8);
+    writer.writeFieldSize(-1, 8);
 
     writer.appendDouble(this.y);
-    writer.writeFieldSize(1, 8);
+    writer.writeFieldSize(0, 8);
 
     writer.appendInt64(this.timestamp);
-    writer.writeFieldSize(2, 8);
+    writer.writeFieldSize(1, 8);
 
     return writer.bytes;
   }
 
   public bytesWithLengthPrefix(): Uint8Array {
     const writer = new NanoBufWriter(16 + 4, true);
-    writer.writeTypeId(2);
+    writer.writeTypeId(837166865);
 
     writer.appendDouble(this.x);
-    writer.writeFieldSize(0, 8);
+    writer.writeFieldSize(-1, 8);
 
     writer.appendDouble(this.y);
-    writer.writeFieldSize(1, 8);
+    writer.writeFieldSize(0, 8);
 
     writer.appendInt64(this.timestamp);
-    writer.writeFieldSize(2, 8);
+    writer.writeFieldSize(1, 8);
 
     writer.writeLengthPrefix(writer.currentSize - 4);
 

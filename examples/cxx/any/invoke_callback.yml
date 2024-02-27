@@ -1,4 +1,3 @@
 InvokeCallback:
-  typeid: 1
   handle: int32
   args: any

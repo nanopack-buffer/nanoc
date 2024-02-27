@@ -11,7 +11,7 @@ Column::Column(const NanoPack::Reader &reader, int &bytes_read) {
   const auto begin = reader.begin();
   int ptr = 8;
 
-  const int32_t alignment_size = reader.read_field_size(0);
+  const int32_t alignment_size = reader.read_field_size(-1);
   const std::string alignment_raw_value =
       reader.read_string(ptr, alignment_size);
   ptr += alignment_size;
@@ -31,7 +31,7 @@ std::vector<uint8_t> Column::data() const {
 
   writer.write_type_id(TYPE_ID);
 
-  writer.write_field_size(0, alignment.value().size());
+  writer.write_field_size(-1, alignment.value().size());
   writer.append_string(alignment.value());
 
   return buf;
@@ -43,7 +43,7 @@ std::vector<uint8_t> Column::data_with_length_prefix() const {
 
   writer.write_type_id(TYPE_ID);
 
-  writer.write_field_size(0, alignment.value().size());
+  writer.write_field_size(-1, alignment.value().size());
   writer.append_string(alignment.value());
 
   const size_t byte_size = buf.size() - 4;
