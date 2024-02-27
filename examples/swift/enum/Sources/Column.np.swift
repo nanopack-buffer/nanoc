@@ -17,7 +17,7 @@ class Column: NanoPackMessage {
   required init?(data: Data) {
     var ptr = data.startIndex + 8
 
-    let alignmentSize = data.readSize(ofField: -1)
+    let alignmentSize = data.readSize(ofField: 0)
     guard let alignmentRawValue = data.read(at: ptr, withLength: alignmentSize) else {
       return nil
     }
@@ -32,7 +32,7 @@ class Column: NanoPackMessage {
   required init?(data: Data, bytesRead: inout Int) {
     var ptr = data.startIndex + 8
 
-    let alignmentSize = data.readSize(ofField: -1)
+    let alignmentSize = data.readSize(ofField: 0)
     guard let alignmentRawValue = data.read(at: ptr, withLength: alignmentSize) else {
       return nil
     }
@@ -55,7 +55,7 @@ class Column: NanoPackMessage {
     data.append(typeID: TypeID(Column_typeID))
     data.append([0], count: 1 * 4)
 
-    data.write(size: alignment.rawValue.lengthOfBytes(using: .utf8), ofField: -1, offset: offset)
+    data.write(size: alignment.rawValue.lengthOfBytes(using: .utf8), ofField: 0, offset: offset)
     data.append(string: alignment.rawValue)
 
     return data
@@ -71,7 +71,7 @@ class Column: NanoPackMessage {
     data.append(typeID: TypeID(Column_typeID))
     data.append([0], count: 1 * 4)
 
-    data.write(size: alignment.rawValue.lengthOfBytes(using: .utf8), ofField: -1, offset: offset)
+    data.write(size: alignment.rawValue.lengthOfBytes(using: .utf8), ofField: 0, offset: offset)
     data.append(string: alignment.rawValue)
 
     data.write(size: data.count, at: 0)

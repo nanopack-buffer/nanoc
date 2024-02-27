@@ -59,7 +59,7 @@ class Widget: NanoPackMessage {
     data.append(typeID: TypeID(Widget_typeID))
     data.append([0], count: 1 * 4)
 
-    data.write(size: 4, ofField: -1, offset: offset)
+    data.write(size: 4, ofField: 0, offset: offset)
     data.append(int: id)
 
     return data
@@ -75,7 +75,7 @@ class Widget: NanoPackMessage {
     data.append(typeID: TypeID(Widget_typeID))
     data.append([0], count: 1 * 4)
 
-    data.write(size: 4, ofField: -1, offset: offset)
+    data.write(size: 4, ofField: 0, offset: offset)
     data.append(int: id)
 
     data.write(size: data.count, at: 0)

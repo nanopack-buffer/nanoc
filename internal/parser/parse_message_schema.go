@@ -47,11 +47,8 @@ func parseMessageSchema(header string, body yaml.MapSlice) (*npschema.PartialMes
 			if err != nil {
 				return nil, err
 			}
-
 			if fieldNumber < 0 {
-				// field number is not declared, use the declaration order of the field in the schema as its field number
-				// i starts with 1 because typeid field precedes message fields.
-				fieldNumber = i - 1
+				fieldNumber = i
 			}
 			schema.DeclaredFields = append(schema.DeclaredFields, npschema.PartialMessageField{
 				Name:     k,

@@ -51,16 +51,16 @@ class NpDate implements NanoPackMessage {
     writer.writeTypeId(1732634645);
 
     writer.appendInt8(this.day);
-    writer.writeFieldSize(-1, 1);
-
-    writer.appendInt8(this.week);
     writer.writeFieldSize(0, 1);
 
-    writer.appendInt8(this.month);
+    writer.appendInt8(this.week);
     writer.writeFieldSize(1, 1);
 
+    writer.appendInt8(this.month);
+    writer.writeFieldSize(2, 1);
+
     writer.appendInt32(this.year);
-    writer.writeFieldSize(2, 4);
+    writer.writeFieldSize(3, 4);
 
     return writer.bytes;
   }
@@ -70,16 +70,16 @@ class NpDate implements NanoPackMessage {
     writer.writeTypeId(1732634645);
 
     writer.appendInt8(this.day);
-    writer.writeFieldSize(-1, 1);
-
-    writer.appendInt8(this.week);
     writer.writeFieldSize(0, 1);
 
-    writer.appendInt8(this.month);
+    writer.appendInt8(this.week);
     writer.writeFieldSize(1, 1);
 
+    writer.appendInt8(this.month);
+    writer.writeFieldSize(2, 1);
+
     writer.appendInt32(this.year);
-    writer.writeFieldSize(2, 4);
+    writer.writeFieldSize(3, 4);
 
     writer.writeLengthPrefix(writer.currentSize - 4);
 

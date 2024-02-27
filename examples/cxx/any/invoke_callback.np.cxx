@@ -17,7 +17,7 @@ InvokeCallback::InvokeCallback(const NanoPack::Reader &reader,
   ptr += 4;
   this->handle = handle;
 
-  const int32_t args_byte_size = reader.read_field_size(0);
+  const int32_t args_byte_size = reader.read_field_size(1);
   args = NanoPack::Any(begin + ptr, begin + ptr + args_byte_size);
   ptr += args_byte_size;
 
@@ -36,10 +36,10 @@ std::vector<uint8_t> InvokeCallback::data() const {
 
   writer.write_type_id(TYPE_ID);
 
-  writer.write_field_size(-1, 4);
+  writer.write_field_size(0, 4);
   writer.append_int32(handle);
 
-  writer.write_field_size(0, args.size());
+  writer.write_field_size(1, args.size());
   writer.append_bytes(args.data());
 
   return buf;
@@ -51,10 +51,10 @@ std::vector<uint8_t> InvokeCallback::data_with_length_prefix() const {
 
   writer.write_type_id(TYPE_ID);
 
-  writer.write_field_size(-1, 4);
+  writer.write_field_size(0, 4);
   writer.append_int32(handle);
 
-  writer.write_field_size(0, args.size());
+  writer.write_field_size(1, args.size());
   writer.append_bytes(args.data());
 
   const size_t byte_size = buf.size() - 4;

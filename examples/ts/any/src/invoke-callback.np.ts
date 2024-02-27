@@ -25,7 +25,7 @@ class InvokeCallback implements NanoPackMessage {
     const handle = reader.readInt32(ptr);
     ptr += 4;
 
-    const argsByteLength = reader.readFieldSize(0);
+    const argsByteLength = reader.readFieldSize(1);
     const args = reader.newReaderAt(ptr, ptr + argsByteLength);
     ptr += argsByteLength;
 
@@ -41,9 +41,9 @@ class InvokeCallback implements NanoPackMessage {
     writer.writeTypeId(2013877267);
 
     writer.appendInt32(this.handle);
-    writer.writeFieldSize(-1, 4);
+    writer.writeFieldSize(0, 4);
 
-    writer.writeFieldSize(0, this.args.bytes.byteLength);
+    writer.writeFieldSize(1, this.args.bytes.byteLength);
     writer.appendBytes(this.args.bytes);
 
     return writer.bytes;
@@ -54,9 +54,9 @@ class InvokeCallback implements NanoPackMessage {
     writer.writeTypeId(2013877267);
 
     writer.appendInt32(this.handle);
-    writer.writeFieldSize(-1, 4);
+    writer.writeFieldSize(0, 4);
 
-    writer.writeFieldSize(0, this.args.bytes.byteLength);
+    writer.writeFieldSize(1, this.args.bytes.byteLength);
     writer.appendBytes(this.args.bytes);
 
     writer.writeLengthPrefix(writer.currentSize - 4);

@@ -63,13 +63,13 @@ class ClickEvent: NanoPackMessage {
     data.append(typeID: TypeID(ClickEvent_typeID))
     data.append([0], count: 3 * 4)
 
-    data.write(size: 8, ofField: -1, offset: offset)
+    data.write(size: 8, ofField: 0, offset: offset)
     data.append(double: x)
 
-    data.write(size: 8, ofField: 0, offset: offset)
+    data.write(size: 8, ofField: 1, offset: offset)
     data.append(double: y)
 
-    data.write(size: 8, ofField: 1, offset: offset)
+    data.write(size: 8, ofField: 2, offset: offset)
     data.append(int: timestamp)
 
     return data
@@ -85,13 +85,13 @@ class ClickEvent: NanoPackMessage {
     data.append(typeID: TypeID(ClickEvent_typeID))
     data.append([0], count: 3 * 4)
 
-    data.write(size: 8, ofField: -1, offset: offset)
+    data.write(size: 8, ofField: 0, offset: offset)
     data.append(double: x)
 
-    data.write(size: 8, ofField: 0, offset: offset)
+    data.write(size: 8, ofField: 1, offset: offset)
     data.append(double: y)
 
-    data.write(size: 8, ofField: 1, offset: offset)
+    data.write(size: 8, ofField: 2, offset: offset)
     data.append(int: timestamp)
 
     data.write(size: data.count, at: 0)

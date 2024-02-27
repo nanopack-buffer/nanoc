@@ -44,13 +44,13 @@ class ClickEvent implements NanoPackMessage {
     writer.writeTypeId(837166865);
 
     writer.appendDouble(this.x);
-    writer.writeFieldSize(-1, 8);
-
-    writer.appendDouble(this.y);
     writer.writeFieldSize(0, 8);
 
-    writer.appendInt64(this.timestamp);
+    writer.appendDouble(this.y);
     writer.writeFieldSize(1, 8);
+
+    writer.appendInt64(this.timestamp);
+    writer.writeFieldSize(2, 8);
 
     return writer.bytes;
   }
@@ -60,13 +60,13 @@ class ClickEvent implements NanoPackMessage {
     writer.writeTypeId(837166865);
 
     writer.appendDouble(this.x);
-    writer.writeFieldSize(-1, 8);
-
-    writer.appendDouble(this.y);
     writer.writeFieldSize(0, 8);
 
-    writer.appendInt64(this.timestamp);
+    writer.appendDouble(this.y);
     writer.writeFieldSize(1, 8);
+
+    writer.appendInt64(this.timestamp);
+    writer.writeFieldSize(2, 8);
 
     writer.writeLengthPrefix(writer.currentSize - 4);
 

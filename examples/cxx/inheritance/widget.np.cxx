@@ -29,7 +29,7 @@ std::vector<uint8_t> Widget::data() const {
 
   writer.write_type_id(TYPE_ID);
 
-  writer.write_field_size(-1, 4);
+  writer.write_field_size(0, 4);
   writer.append_int32(id);
 
   return buf;
@@ -41,7 +41,7 @@ std::vector<uint8_t> Widget::data_with_length_prefix() const {
 
   writer.write_type_id(TYPE_ID);
 
-  writer.write_field_size(-1, 4);
+  writer.write_field_size(0, 4);
   writer.append_int32(id);
 
   const size_t byte_size = buf.size() - 4;

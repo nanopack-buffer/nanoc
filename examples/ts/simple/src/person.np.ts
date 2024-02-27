@@ -25,20 +25,20 @@ class Person implements NanoPackMessage {
   ): { bytesRead: number; result: Person } | null {
     let ptr = 24;
 
-    const firstNameByteLength = reader.readFieldSize(-1);
+    const firstNameByteLength = reader.readFieldSize(0);
     const firstName = reader.readString(ptr, firstNameByteLength);
     ptr += firstNameByteLength;
 
     let middleName: string | null;
-    if (reader.readFieldSize(0) >= 0) {
-      const middleNameByteLength = reader.readFieldSize(0);
+    if (reader.readFieldSize(1) >= 0) {
+      const middleNameByteLength = reader.readFieldSize(1);
       middleName = reader.readString(ptr, middleNameByteLength);
       ptr += middleNameByteLength;
     } else {
       middleName = null;
     }
 
-    const lastNameByteLength = reader.readFieldSize(1);
+    const lastNameByteLength = reader.readFieldSize(2);
     const lastName = reader.readString(ptr, lastNameByteLength);
     ptr += lastNameByteLength;
 
@@ -46,7 +46,7 @@ class Person implements NanoPackMessage {
     ptr += 1;
 
     let otherFriend: Person | null;
-    if (reader.readFieldSize(3) >= 0) {
+    if (reader.readFieldSize(4) >= 0) {
       const maybeOtherFriend = Person.fromReader(reader.newReaderAt(ptr));
       if (!maybeOtherFriend) {
         return null;
@@ -72,27 +72,27 @@ class Person implements NanoPackMessage {
     writer.writeTypeId(1225883824);
 
     const firstNameByteLength = writer.appendString(this.firstName);
-    writer.writeFieldSize(-1, firstNameByteLength);
+    writer.writeFieldSize(0, firstNameByteLength);
 
     if (this.middleName) {
       const middleNameByteLength = writer.appendString(this.middleName);
-      writer.writeFieldSize(0, middleNameByteLength);
+      writer.writeFieldSize(1, middleNameByteLength);
     } else {
-      writer.writeFieldSize(0, -1);
+      writer.writeFieldSize(1, -1);
     }
 
     const lastNameByteLength = writer.appendString(this.lastName);
-    writer.writeFieldSize(1, lastNameByteLength);
+    writer.writeFieldSize(2, lastNameByteLength);
 
     writer.appendInt8(this.age);
-    writer.writeFieldSize(2, 1);
+    writer.writeFieldSize(3, 1);
 
     if (this.otherFriend) {
       const otherFriendData = this.otherFriend.bytes();
       writer.appendBytes(otherFriendData);
-      writer.writeFieldSize(3, otherFriendData.byteLength);
+      writer.writeFieldSize(4, otherFriendData.byteLength);
     } else {
-      writer.writeFieldSize(3, -1);
+      writer.writeFieldSize(4, -1);
     }
 
     return writer.bytes;
@@ -103,27 +103,27 @@ class Person implements NanoPackMessage {
     writer.writeTypeId(1225883824);
 
     const firstNameByteLength = writer.appendString(this.firstName);
-    writer.writeFieldSize(-1, firstNameByteLength);
+    writer.writeFieldSize(0, firstNameByteLength);
 
     if (this.middleName) {
       const middleNameByteLength = writer.appendString(this.middleName);
-      writer.writeFieldSize(0, middleNameByteLength);
+      writer.writeFieldSize(1, middleNameByteLength);
     } else {
-      writer.writeFieldSize(0, -1);
+      writer.writeFieldSize(1, -1);
     }
 
     const lastNameByteLength = writer.appendString(this.lastName);
-    writer.writeFieldSize(1, lastNameByteLength);
+    writer.writeFieldSize(2, lastNameByteLength);
 
     writer.appendInt8(this.age);
-    writer.writeFieldSize(2, 1);
+    writer.writeFieldSize(3, 1);
 
     if (this.otherFriend) {
       const otherFriendData = this.otherFriend.bytes();
       writer.appendBytes(otherFriendData);
-      writer.writeFieldSize(3, otherFriendData.byteLength);
+      writer.writeFieldSize(4, otherFriendData.byteLength);
     } else {
-      writer.writeFieldSize(3, -1);
+      writer.writeFieldSize(4, -1);
     }
 
     writer.writeLengthPrefix(writer.currentSize - 4);

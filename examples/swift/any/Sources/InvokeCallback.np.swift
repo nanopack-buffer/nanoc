@@ -22,7 +22,7 @@ class InvokeCallback: NanoPackMessage {
     let handle: Int32 = data.read(at: ptr)
     ptr += 4
 
-    let argsByteSize = data.readSize(ofField: 0)
+    let argsByteSize = data.readSize(ofField: 1)
     let args = data[ptr..<ptr + argsByteSize]
     ptr += argsByteSize
 
@@ -36,7 +36,7 @@ class InvokeCallback: NanoPackMessage {
     let handle: Int32 = data.read(at: ptr)
     ptr += 4
 
-    let argsByteSize = data.readSize(ofField: 0)
+    let argsByteSize = data.readSize(ofField: 1)
     let args = data[ptr..<ptr + argsByteSize]
     ptr += argsByteSize
 
@@ -55,10 +55,10 @@ class InvokeCallback: NanoPackMessage {
     data.append(typeID: TypeID(InvokeCallback_typeID))
     data.append([0], count: 2 * 4)
 
-    data.write(size: 4, ofField: -1, offset: offset)
+    data.write(size: 4, ofField: 0, offset: offset)
     data.append(int: handle)
 
-    data.write(size: args.count, ofField: 0, offset: offset)
+    data.write(size: args.count, ofField: 1, offset: offset)
     data.append(args)
 
     return data
@@ -74,10 +74,10 @@ class InvokeCallback: NanoPackMessage {
     data.append(typeID: TypeID(InvokeCallback_typeID))
     data.append([0], count: 2 * 4)
 
-    data.write(size: 4, ofField: -1, offset: offset)
+    data.write(size: 4, ofField: 0, offset: offset)
     data.append(int: handle)
 
-    data.write(size: args.count, ofField: 0, offset: offset)
+    data.write(size: args.count, ofField: 1, offset: offset)
     data.append(args)
 
     data.write(size: data.count, at: 0)

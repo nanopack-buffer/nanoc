@@ -42,16 +42,16 @@ std::vector<uint8_t> NpDate::data() const {
 
   writer.write_type_id(TYPE_ID);
 
-  writer.write_field_size(-1, 1);
+  writer.write_field_size(0, 1);
   writer.append_int8(day);
 
-  writer.write_field_size(0, 1);
+  writer.write_field_size(1, 1);
   writer.append_int8(week.value());
 
-  writer.write_field_size(1, 1);
+  writer.write_field_size(2, 1);
   writer.append_int8(month.value());
 
-  writer.write_field_size(2, 4);
+  writer.write_field_size(3, 4);
   writer.append_int32(year);
 
   return buf;
@@ -63,16 +63,16 @@ std::vector<uint8_t> NpDate::data_with_length_prefix() const {
 
   writer.write_type_id(TYPE_ID);
 
-  writer.write_field_size(-1, 1);
+  writer.write_field_size(0, 1);
   writer.append_int8(day);
 
-  writer.write_field_size(0, 1);
+  writer.write_field_size(1, 1);
   writer.append_int8(week.value());
 
-  writer.write_field_size(1, 1);
+  writer.write_field_size(2, 1);
   writer.append_int8(month.value());
 
-  writer.write_field_size(2, 4);
+  writer.write_field_size(3, 4);
   writer.append_int32(year);
 
   const size_t byte_size = buf.size() - 4;

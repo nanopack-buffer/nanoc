@@ -25,17 +25,17 @@ class Person: NanoPackMessage {
   required init?(data: Data) {
     var ptr = data.startIndex + 24
 
-    let firstNameSize = data.readSize(ofField: -1)
+    let firstNameSize = data.readSize(ofField: 0)
     guard let firstName = data.read(at: ptr, withLength: firstNameSize) else {
       return nil
     }
     ptr += firstNameSize
 
     var middleName: String?
-    if data.readSize(ofField: 0) < 0 {
+    if data.readSize(ofField: 1) < 0 {
       middleName = nil
     } else {
-      let middleNameSize = data.readSize(ofField: 0)
+      let middleNameSize = data.readSize(ofField: 1)
       guard let middleName_ = data.read(at: ptr, withLength: middleNameSize) else {
         return nil
       }
@@ -43,7 +43,7 @@ class Person: NanoPackMessage {
       ptr += middleNameSize
     }
 
-    let lastNameSize = data.readSize(ofField: 1)
+    let lastNameSize = data.readSize(ofField: 2)
     guard let lastName = data.read(at: ptr, withLength: lastNameSize) else {
       return nil
     }
@@ -53,10 +53,10 @@ class Person: NanoPackMessage {
     ptr += 1
 
     var otherFriend: Person?
-    if data.readSize(ofField: 3) < 0 {
+    if data.readSize(ofField: 4) < 0 {
       otherFriend = nil
     } else {
-      let otherFriendByteSize = data.readSize(ofField: 3)
+      let otherFriendByteSize = data.readSize(ofField: 4)
       guard let otherFriend_ = Person(data: data[ptr...]) else {
         return nil
       }
@@ -74,17 +74,17 @@ class Person: NanoPackMessage {
   required init?(data: Data, bytesRead: inout Int) {
     var ptr = data.startIndex + 24
 
-    let firstNameSize = data.readSize(ofField: -1)
+    let firstNameSize = data.readSize(ofField: 0)
     guard let firstName = data.read(at: ptr, withLength: firstNameSize) else {
       return nil
     }
     ptr += firstNameSize
 
     var middleName: String?
-    if data.readSize(ofField: 0) < 0 {
+    if data.readSize(ofField: 1) < 0 {
       middleName = nil
     } else {
-      let middleNameSize = data.readSize(ofField: 0)
+      let middleNameSize = data.readSize(ofField: 1)
       guard let middleName_ = data.read(at: ptr, withLength: middleNameSize) else {
         return nil
       }
@@ -92,7 +92,7 @@ class Person: NanoPackMessage {
       ptr += middleNameSize
     }
 
-    let lastNameSize = data.readSize(ofField: 1)
+    let lastNameSize = data.readSize(ofField: 2)
     guard let lastName = data.read(at: ptr, withLength: lastNameSize) else {
       return nil
     }
@@ -102,10 +102,10 @@ class Person: NanoPackMessage {
     ptr += 1
 
     var otherFriend: Person?
-    if data.readSize(ofField: 3) < 0 {
+    if data.readSize(ofField: 4) < 0 {
       otherFriend = nil
     } else {
-      let otherFriendByteSize = data.readSize(ofField: 3)
+      let otherFriendByteSize = data.readSize(ofField: 4)
       guard let otherFriend_ = Person(data: data[ptr...]) else {
         return nil
       }
@@ -131,30 +131,30 @@ class Person: NanoPackMessage {
     data.append(typeID: TypeID(Person_typeID))
     data.append([0], count: 5 * 4)
 
-    data.write(size: firstName.lengthOfBytes(using: .utf8), ofField: -1, offset: offset)
+    data.write(size: firstName.lengthOfBytes(using: .utf8), ofField: 0, offset: offset)
     data.append(string: firstName)
 
     if let middleName = self.middleName {
-      data.write(size: middleName.lengthOfBytes(using: .utf8), ofField: 0, offset: offset)
+      data.write(size: middleName.lengthOfBytes(using: .utf8), ofField: 1, offset: offset)
       data.append(string: middleName)
     } else {
-      data.write(size: -1, ofField: 0, offset: offset)
+      data.write(size: -1, ofField: 1, offset: offset)
     }
 
-    data.write(size: lastName.lengthOfBytes(using: .utf8), ofField: 1, offset: offset)
+    data.write(size: lastName.lengthOfBytes(using: .utf8), ofField: 2, offset: offset)
     data.append(string: lastName)
 
-    data.write(size: 1, ofField: 2, offset: offset)
+    data.write(size: 1, ofField: 3, offset: offset)
     data.append(int: age)
 
     if let otherFriend = self.otherFriend {
       guard let otherFriendData = otherFriend.data() else {
         return nil
       }
-      data.write(size: otherFriendData.count, ofField: 3, offset: offset)
+      data.write(size: otherFriendData.count, ofField: 4, offset: offset)
       data.append(otherFriendData)
     } else {
-      data.write(size: -1, ofField: 3, offset: offset)
+      data.write(size: -1, ofField: 4, offset: offset)
     }
 
     return data
@@ -170,30 +170,30 @@ class Person: NanoPackMessage {
     data.append(typeID: TypeID(Person_typeID))
     data.append([0], count: 5 * 4)
 
-    data.write(size: firstName.lengthOfBytes(using: .utf8), ofField: -1, offset: offset)
+    data.write(size: firstName.lengthOfBytes(using: .utf8), ofField: 0, offset: offset)
     data.append(string: firstName)
 
     if let middleName = self.middleName {
-      data.write(size: middleName.lengthOfBytes(using: .utf8), ofField: 0, offset: offset)
+      data.write(size: middleName.lengthOfBytes(using: .utf8), ofField: 1, offset: offset)
       data.append(string: middleName)
     } else {
-      data.write(size: -1, ofField: 0, offset: offset)
+      data.write(size: -1, ofField: 1, offset: offset)
     }
 
-    data.write(size: lastName.lengthOfBytes(using: .utf8), ofField: 1, offset: offset)
+    data.write(size: lastName.lengthOfBytes(using: .utf8), ofField: 2, offset: offset)
     data.append(string: lastName)
 
-    data.write(size: 1, ofField: 2, offset: offset)
+    data.write(size: 1, ofField: 3, offset: offset)
     data.append(int: age)
 
     if let otherFriend = self.otherFriend {
       guard let otherFriendData = otherFriend.data() else {
         return nil
       }
-      data.write(size: otherFriendData.count, ofField: 3, offset: offset)
+      data.write(size: otherFriendData.count, ofField: 4, offset: offset)
       data.append(otherFriendData)
     } else {
-      data.write(size: -1, ofField: 3, offset: offset)
+      data.write(size: -1, ofField: 4, offset: offset)
     }
 
     data.write(size: data.count, at: 0)

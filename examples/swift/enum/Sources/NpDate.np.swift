@@ -85,16 +85,16 @@ class NpDate: NanoPackMessage {
     data.append(typeID: TypeID(NpDate_typeID))
     data.append([0], count: 4 * 4)
 
-    data.write(size: 1, ofField: -1, offset: offset)
+    data.write(size: 1, ofField: 0, offset: offset)
     data.append(int: day)
 
-    data.write(size: 1, ofField: 0, offset: offset)
+    data.write(size: 1, ofField: 1, offset: offset)
     data.append(int: week.rawValue)
 
-    data.write(size: 1, ofField: 1, offset: offset)
+    data.write(size: 1, ofField: 2, offset: offset)
     data.append(int: month.rawValue)
 
-    data.write(size: 4, ofField: 2, offset: offset)
+    data.write(size: 4, ofField: 3, offset: offset)
     data.append(int: year)
 
     return data
@@ -110,16 +110,16 @@ class NpDate: NanoPackMessage {
     data.append(typeID: TypeID(NpDate_typeID))
     data.append([0], count: 4 * 4)
 
-    data.write(size: 1, ofField: -1, offset: offset)
+    data.write(size: 1, ofField: 0, offset: offset)
     data.append(int: day)
 
-    data.write(size: 1, ofField: 0, offset: offset)
+    data.write(size: 1, ofField: 1, offset: offset)
     data.append(int: week.rawValue)
 
-    data.write(size: 1, ofField: 1, offset: offset)
+    data.write(size: 1, ofField: 2, offset: offset)
     data.append(int: month.rawValue)
 
-    data.write(size: 4, ofField: 2, offset: offset)
+    data.write(size: 4, ofField: 3, offset: offset)
     data.append(int: year)
 
     data.write(size: data.count, at: 0)

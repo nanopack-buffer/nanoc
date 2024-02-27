@@ -34,7 +34,7 @@ class Widget implements NanoPackMessage {
     writer.writeTypeId(1676374721);
 
     writer.appendInt32(this.id);
-    writer.writeFieldSize(-1, 4);
+    writer.writeFieldSize(0, 4);
 
     return writer.bytes;
   }
@@ -44,7 +44,7 @@ class Widget implements NanoPackMessage {
     writer.writeTypeId(1676374721);
 
     writer.appendInt32(this.id);
-    writer.writeFieldSize(-1, 4);
+    writer.writeFieldSize(0, 4);
 
     writer.writeLengthPrefix(writer.currentSize - 4);
 
