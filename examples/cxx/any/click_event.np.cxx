@@ -31,7 +31,7 @@ ClickEvent::ClickEvent(std::vector<uint8_t>::const_iterator begin,
                        int &bytes_read)
     : ClickEvent(NanoPack::Reader(begin), bytes_read) {}
 
-int32_t ClickEvent::type_id() const { return TYPE_ID; }
+NanoPack::TypeId ClickEvent::type_id() const { return TYPE_ID; }
 
 std::vector<uint8_t> ClickEvent::data() const {
   std::vector<uint8_t> buf(16);
@@ -47,6 +47,30 @@ std::vector<uint8_t> ClickEvent::data() const {
 
   writer.write_field_size(2, 8);
   writer.append_int64(timestamp);
+
+  return buf;
+}
+
+std::vector<uint8_t> ClickEvent::data_with_length_prefix() const {
+  std::vector<uint8_t> buf(16 + 4);
+  NanoPack::Writer writer(&buf, 4);
+
+  writer.write_type_id(TYPE_ID);
+
+  writer.write_field_size(0, 8);
+  writer.append_double(x);
+
+  writer.write_field_size(1, 8);
+  writer.append_double(y);
+
+  writer.write_field_size(2, 8);
+  writer.append_int64(timestamp);
+
+  const size_t byte_size = buf.size() - 4;
+  buf[0] = byte_size & 0xFF;
+  buf[1] = byte_size & 0xFF00;
+  buf[2] = byte_size & 0xFF0000;
+  buf[3] = byte_size & 0xFF000000;
 
   return buf;
 }

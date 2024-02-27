@@ -4,13 +4,14 @@
 #define COLUMN_NP_HXX
 
 #include <nanopack/message.hxx>
+#include <nanopack/nanopack.hxx>
 #include <nanopack/reader.hxx>
 #include <vector>
 
 #include "alignment.np.hxx"
 
 struct Column : NanoPack::Message {
-  static constexpr int32_t TYPE_ID = 2;
+  static constexpr NanoPack::TypeId TYPE_ID = 2;
 
   Alignment alignment;
 
@@ -22,9 +23,11 @@ struct Column : NanoPack::Message {
 
   Column(const NanoPack::Reader &reader, int &bytes_read);
 
-  [[nodiscard]] int32_t type_id() const override;
+  [[nodiscard]] NanoPack::TypeId type_id() const override;
 
   [[nodiscard]] std::vector<uint8_t> data() const override;
+
+  [[nodiscard]] std::vector<uint8_t> data_with_length_prefix() const override;
 };
 
 #endif

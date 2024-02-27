@@ -16,6 +16,9 @@ var intTypes = map[datatype.Kind]string{
 	datatype.Int8:   "Int8",
 	datatype.Int32:  "Int32",
 	datatype.Int64:  "Int64",
+	datatype.UInt8:  "UInt8",
+	datatype.UInt32: "UInt32",
+	datatype.UInt64: "UInt64",
 	datatype.Double: "Double",
 }
 

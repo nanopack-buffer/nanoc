@@ -13,6 +13,9 @@ var cxxIntTypes = map[datatype.Kind]string{
 	datatype.Int32:  "int32_t",
 	datatype.Int64:  "int64_t",
 	datatype.Double: "double",
+	datatype.UInt8:  "uint8_t",
+	datatype.UInt32: "uint32_t",
+	datatype.UInt64: "uint64_t",
 }
 
 // numberGenerator is a DataTypeMessageCodeGenerator for NanoPack number types.

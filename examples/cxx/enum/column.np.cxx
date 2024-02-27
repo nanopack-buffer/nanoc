@@ -23,7 +23,7 @@ Column::Column(const NanoPack::Reader &reader, int &bytes_read) {
 Column::Column(std::vector<uint8_t>::const_iterator begin, int &bytes_read)
     : Column(NanoPack::Reader(begin), bytes_read) {}
 
-int32_t Column::type_id() const { return TYPE_ID; }
+NanoPack::TypeId Column::type_id() const { return TYPE_ID; }
 
 std::vector<uint8_t> Column::data() const {
   std::vector<uint8_t> buf(8);
@@ -33,6 +33,24 @@ std::vector<uint8_t> Column::data() const {
 
   writer.write_field_size(0, alignment.value().size());
   writer.append_string(alignment.value());
+
+  return buf;
+}
+
+std::vector<uint8_t> Column::data_with_length_prefix() const {
+  std::vector<uint8_t> buf(8 + 4);
+  NanoPack::Writer writer(&buf, 4);
+
+  writer.write_type_id(TYPE_ID);
+
+  writer.write_field_size(0, alignment.value().size());
+  writer.append_string(alignment.value());
+
+  const size_t byte_size = buf.size() - 4;
+  buf[0] = byte_size & 0xFF;
+  buf[1] = byte_size & 0xFF00;
+  buf[2] = byte_size & 0xFF0000;
+  buf[3] = byte_size & 0xFF000000;
 
   return buf;
 }

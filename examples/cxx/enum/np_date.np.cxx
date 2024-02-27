@@ -34,7 +34,7 @@ NpDate::NpDate(const NanoPack::Reader &reader, int &bytes_read) {
 NpDate::NpDate(std::vector<uint8_t>::const_iterator begin, int &bytes_read)
     : NpDate(NanoPack::Reader(begin), bytes_read) {}
 
-int32_t NpDate::type_id() const { return TYPE_ID; }
+NanoPack::TypeId NpDate::type_id() const { return TYPE_ID; }
 
 std::vector<uint8_t> NpDate::data() const {
   std::vector<uint8_t> buf(20);
@@ -53,6 +53,33 @@ std::vector<uint8_t> NpDate::data() const {
 
   writer.write_field_size(3, 4);
   writer.append_int32(year);
+
+  return buf;
+}
+
+std::vector<uint8_t> NpDate::data_with_length_prefix() const {
+  std::vector<uint8_t> buf(20 + 4);
+  NanoPack::Writer writer(&buf, 4);
+
+  writer.write_type_id(TYPE_ID);
+
+  writer.write_field_size(0, 1);
+  writer.append_int8(day);
+
+  writer.write_field_size(1, 1);
+  writer.append_int8(week.value());
+
+  writer.write_field_size(2, 1);
+  writer.append_int8(month.value());
+
+  writer.write_field_size(3, 4);
+  writer.append_int32(year);
+
+  const size_t byte_size = buf.size() - 4;
+  buf[0] = byte_size & 0xFF;
+  buf[1] = byte_size & 0xFF00;
+  buf[2] = byte_size & 0xFF0000;
+  buf[3] = byte_size & 0xFF000000;
 
   return buf;
 }

@@ -5,13 +5,14 @@
 
 #include <memory>
 #include <nanopack/message.hxx>
+#include <nanopack/nanopack.hxx>
 #include <nanopack/reader.hxx>
 #include <optional>
 #include <string>
 #include <vector>
 
 struct Person : NanoPack::Message {
-  static constexpr int32_t TYPE_ID = 1;
+  static constexpr NanoPack::TypeId TYPE_ID = 1;
 
   std::string first_name;
   std::optional<std::string> middle_name;
@@ -21,7 +22,7 @@ struct Person : NanoPack::Message {
 
   Person() = default;
 
-  Person(std::string first_name, std::optional<std::string> middle_name,
+  Person(std::string first_name, std::optional<std::string  > middle_name,
          std::string last_name, int8_t age,
          std::shared_ptr<Person> other_friend);
 
@@ -29,9 +30,11 @@ struct Person : NanoPack::Message {
 
   Person(const NanoPack::Reader &reader, int &bytes_read);
 
-  [[nodiscard]] int32_t type_id() const override;
+  [[nodiscard]] NanoPack::TypeId type_id() const override;
 
   [[nodiscard]] std::vector<uint8_t> data() const override;
+
+  [[nodiscard]] std::vector<uint8_t> data_with_length_prefix() const override;
 };
 
 #endif

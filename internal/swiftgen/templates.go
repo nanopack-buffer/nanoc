@@ -124,7 +124,7 @@ class {{.Schema.Name}}: {{if .Schema.HasParentMessage}}{{.Schema.ParentMessage.N
         var data = Data()
         data.reserveCapacity({{.InitialWriteBufferSize}})
 
-        data.append(int: Int32({{.Schema.Name}}_typeID))
+        data.append(typeID: TypeID({{.Schema.Name}}_typeID))
 		data.append([0], count: {{len .Schema.AllFields}} * 4)
 
         {{range .FieldWriteCodeFragments}}
@@ -142,7 +142,7 @@ class {{.Schema.Name}}: {{if .Schema.HasParentMessage}}{{.Schema.ParentMessage.N
         data.reserveCapacity({{.InitialWriteBufferSize}} + 4)
 
         data.append(int: Int32(0))
-        data.append(int: Int32({{.Schema.Name}}_typeID))
+        data.append(typeID: TypeID({{.Schema.Name}}_typeID))
         data.append([0], count: {{len .Schema.AllFields}} * 4)
 
         {{range .FieldWriteCodeFragments}}
