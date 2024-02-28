@@ -12,7 +12,7 @@
 #include "week.np.hxx"
 
 struct NpDate : NanoPack::Message {
-  static constexpr NanoPack::TypeId TYPE_ID = 1;
+  static constexpr NanoPack::TypeId TYPE_ID = 1732634645;
 
   int8_t day;
   Week week;

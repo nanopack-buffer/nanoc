@@ -6,7 +6,7 @@ import type { TWeek } from "./week.np.js";
 import type { TMonth } from "./month.np.js";
 
 class NpDate implements NanoPackMessage {
-  public static TYPE_ID = 1;
+  public static TYPE_ID = 1732634645;
 
   constructor(
     public day: number,
@@ -43,12 +43,12 @@ class NpDate implements NanoPackMessage {
   }
 
   public get typeId(): number {
-    return 1;
+    return 1732634645;
   }
 
   public bytes(): Uint8Array {
     const writer = new NanoBufWriter(20);
-    writer.writeTypeId(1);
+    writer.writeTypeId(1732634645);
 
     writer.appendInt8(this.day);
     writer.writeFieldSize(0, 1);
@@ -67,7 +67,7 @@ class NpDate implements NanoPackMessage {
 
   public bytesWithLengthPrefix(): Uint8Array {
     const writer = new NanoBufWriter(20 + 4, true);
-    writer.writeTypeId(1);
+    writer.writeTypeId(1732634645);
 
     writer.appendInt8(this.day);
     writer.writeFieldSize(0, 1);

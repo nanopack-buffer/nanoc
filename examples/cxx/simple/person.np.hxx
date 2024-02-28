@@ -12,7 +12,7 @@
 #include <vector>
 
 struct Person : NanoPack::Message {
-  static constexpr NanoPack::TypeId TYPE_ID = 1;
+  static constexpr NanoPack::TypeId TYPE_ID = 1225883824;
 
   std::string first_name;
   std::optional<std::string> middle_name;
@@ -22,7 +22,7 @@ struct Person : NanoPack::Message {
 
   Person() = default;
 
-  Person(std::string first_name, std::optional<std::string  > middle_name,
+  Person(std::string first_name, std::optional<std::string> middle_name,
          std::string last_name, int8_t age,
          std::shared_ptr<Person> other_friend);
 

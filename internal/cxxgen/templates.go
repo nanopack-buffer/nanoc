@@ -1,13 +1,16 @@
 package cxxgen
 
-import "nanoc/internal/npschema"
+import (
+	"nanoc/internal/datatype"
+	"nanoc/internal/npschema"
+)
 
 type messageHeaderFileTemplateInfo struct {
 	Namespace         string
 	MessageName       string
 	HasParentMessage  bool
 	ParentMessageName string
-	TypeID            int
+	TypeID            datatype.TypeID
 	IncludeGuardName  string
 	LibraryImports    []string
 	RelativeImports   []string

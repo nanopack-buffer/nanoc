@@ -10,7 +10,7 @@
 #include <vector>
 
 struct InvokeCallback : NanoPack::Message {
-  static constexpr NanoPack::TypeId TYPE_ID = 1;
+  static constexpr NanoPack::TypeId TYPE_ID = 2013877267;
 
   int32_t handle;
   NanoPack::Any args;

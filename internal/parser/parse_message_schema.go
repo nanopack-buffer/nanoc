@@ -3,7 +3,9 @@ package parser
 import (
 	"errors"
 	"fmt"
+	"github.com/twmb/murmur3"
 	"gopkg.in/yaml.v2"
+	"nanoc/internal/datatype"
 	"nanoc/internal/npschema"
 	"nanoc/internal/symbol"
 	"strconv"
@@ -19,8 +21,10 @@ func parseMessageSchema(header string, body yaml.MapSlice) (*npschema.PartialMes
 
 	schema := npschema.PartialMessage{
 		Name:   ps[0],
-		TypeID: -1,
+		TypeID: 0,
 	}
+	typeIDDeclared := false
+
 	if l == 2 {
 		schema.ParentMessageName = ps[1]
 	}
@@ -36,17 +40,15 @@ func parseMessageSchema(header string, body yaml.MapSlice) (*npschema.PartialMes
 					OffendingCode: fmt.Sprintf("%v: %v", k, v),
 				}
 			}
-			schema.TypeID = typeID
+			typeIDDeclared = true
+			schema.TypeID = datatype.TypeID(typeID)
 		} else if s, ok := v.(string); ok {
 			typeName, fieldNumber, err := parseFieldType(s)
 			if err != nil {
 				return nil, err
 			}
-
 			if fieldNumber < 0 {
-				// field number is not declared, use the declaration order of the field in the schema as its field number
-				// i starts with 1 because typeid field precedes message fields.
-				fieldNumber = i - 1
+				fieldNumber = i
 			}
 			schema.DeclaredFields = append(schema.DeclaredFields, npschema.PartialMessageField{
 				Name:     k,
@@ -61,8 +63,8 @@ func parseMessageSchema(header string, body yaml.MapSlice) (*npschema.PartialMes
 		}
 	}
 
-	if schema.TypeID < 0 {
-		return nil, errors.New("type ID not defined")
+	if !typeIDDeclared {
+		schema.TypeID = calculateTypeID(schema.Name)
 	}
 
 	return &schema, nil
@@ -82,4 +84,8 @@ func parseFieldType(str string) (string, int, error) {
 	}
 
 	return ps[0], fieldNumber, nil
+}
+
+func calculateTypeID(msgName string) datatype.TypeID {
+	return murmur3.Sum32([]byte(msgName))
 }

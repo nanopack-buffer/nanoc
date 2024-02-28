@@ -3,10 +3,10 @@
 import Foundation
 import NanoPack
 
-let Person_typeID: TypeID = 1
+let Person_typeID: TypeID = 1_225_883_824
 
 class Person: NanoPackMessage {
-  var typeID: TypeID { return 1 }
+  var typeID: TypeID { return 1_225_883_824 }
 
   let firstName: String
   let middleName: String?
@@ -128,7 +128,7 @@ class Person: NanoPackMessage {
     var data = Data()
     data.reserveCapacity(24)
 
-    data.append(int: Int32(Person_typeID))
+    data.append(typeID: TypeID(Person_typeID))
     data.append([0], count: 5 * 4)
 
     data.write(size: firstName.lengthOfBytes(using: .utf8), ofField: 0, offset: offset)
@@ -167,7 +167,7 @@ class Person: NanoPackMessage {
     data.reserveCapacity(24 + 4)
 
     data.append(int: Int32(0))
-    data.append(int: Int32(Person_typeID))
+    data.append(typeID: TypeID(Person_typeID))
     data.append([0], count: 5 * 4)
 
     data.write(size: firstName.lengthOfBytes(using: .utf8), ofField: 0, offset: offset)

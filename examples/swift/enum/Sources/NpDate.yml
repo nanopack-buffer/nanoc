@@ -1,5 +1,4 @@
 NpDate:
-  typeid: 1
   day: int8
   week: Week
   month: Month

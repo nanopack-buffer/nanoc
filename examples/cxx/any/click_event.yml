@@ -1,5 +1,4 @@
 ClickEvent:
-  typeid: 2
   x: double
   "y": double
   timestamp: int64

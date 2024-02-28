@@ -3,7 +3,7 @@
 import { NanoBufReader, NanoBufWriter, type NanoPackMessage } from "nanopack";
 
 class Person implements NanoPackMessage {
-  public static TYPE_ID = 1;
+  public static TYPE_ID = 1225883824;
 
   constructor(
     public firstName: string,
@@ -64,12 +64,12 @@ class Person implements NanoPackMessage {
   }
 
   public get typeId(): number {
-    return 1;
+    return 1225883824;
   }
 
   public bytes(): Uint8Array {
     const writer = new NanoBufWriter(24);
-    writer.writeTypeId(1);
+    writer.writeTypeId(1225883824);
 
     const firstNameByteLength = writer.appendString(this.firstName);
     writer.writeFieldSize(0, firstNameByteLength);
@@ -100,7 +100,7 @@ class Person implements NanoPackMessage {
 
   public bytesWithLengthPrefix(): Uint8Array {
     const writer = new NanoBufWriter(24 + 4, true);
-    writer.writeTypeId(1);
+    writer.writeTypeId(1225883824);
 
     const firstNameByteLength = writer.appendString(this.firstName);
     writer.writeFieldSize(0, firstNameByteLength);

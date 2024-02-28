@@ -9,7 +9,7 @@ type PartialMessage struct {
 
 	ImportedTypeNames []string
 	Name              string
-	TypeID            int
+	TypeID            datatype.TypeID
 
 	ParentMessageName string
 
@@ -21,7 +21,7 @@ type Message struct {
 
 	ImportedTypes []datatype.Schema
 	Name          string
-	TypeID        int
+	TypeID        datatype.TypeID
 
 	IsInherited   bool
 	ChildMessages []*Message

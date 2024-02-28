@@ -3,10 +3,10 @@
 import Foundation
 import NanoPack
 
-let Text_typeID: TypeID = 2
+let Text_typeID: TypeID = 3_495_336_243
 
 class Text: Widget {
-  override var typeID: TypeID { return 2 }
+  override var typeID: TypeID { return 3_495_336_243 }
 
   let content: String
 
@@ -55,7 +55,7 @@ class Text: Widget {
     var data = Data()
     data.reserveCapacity(12)
 
-    data.append(int: Int32(Text_typeID))
+    data.append(typeID: TypeID(Text_typeID))
     data.append([0], count: 2 * 4)
 
     data.write(size: 4, ofField: 0, offset: offset)
@@ -74,7 +74,7 @@ class Text: Widget {
     data.reserveCapacity(12 + 4)
 
     data.append(int: Int32(0))
-    data.append(int: Int32(Text_typeID))
+    data.append(typeID: TypeID(Text_typeID))
     data.append([0], count: 2 * 4)
 
     data.write(size: 4, ofField: 0, offset: offset)

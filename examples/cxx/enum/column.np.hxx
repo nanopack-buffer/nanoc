@@ -11,7 +11,7 @@
 #include "alignment.np.hxx"
 
 struct Column : NanoPack::Message {
-  static constexpr NanoPack::TypeId TYPE_ID = 2;
+  static constexpr NanoPack::TypeId TYPE_ID = 2415007766;
 
   Alignment alignment;
 
