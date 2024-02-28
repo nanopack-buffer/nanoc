@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"errors"
 	"gopkg.in/yaml.v2"
 	"nanoc/internal/datatype"
 	"nanoc/internal/symbol"
@@ -29,7 +28,10 @@ func ParseSchema(path string) (datatype.PartialSchema, error) {
 		if strings.HasPrefix(k, symbol.Enum+" ") {
 			s, err := parseEnumSchema(k, v)
 			if err != nil {
-				return nil, err
+				return nil, &SyntaxError{
+					SchemaPathAbs: path,
+					ErrorMessage:  err.Error(),
+				}
 			}
 
 			s.SchemaPath = path
@@ -37,12 +39,18 @@ func ParseSchema(path string) (datatype.PartialSchema, error) {
 		} else {
 			body, ok := v.(yaml.MapSlice)
 			if !ok {
-				return nil, errors.New("invalid message schema body")
+				return nil, &SyntaxError{
+					SchemaPathAbs: path,
+					ErrorMessage:  errMsgInvalidMessageSchemaBody,
+				}
 			}
 
 			s, err := parseMessageSchema(k, body)
 			if err != nil {
-				return nil, err
+				return nil, &SyntaxError{
+					SchemaPathAbs: path,
+					ErrorMessage:  err.Error(),
+				}
 			}
 
 			s.SchemaPath = path
@@ -62,9 +70,9 @@ func ParseType(expr string, sm datatype.SchemaMap) (*datatype.DataType, datatype
 		return &t, s, nil
 	}
 
-	prim := datatype.FromIdentifier(expr)
-	if prim != nil {
-		return prim, nil, nil
+	builtin := datatype.FromIdentifier(expr)
+	if builtin != nil {
+		return builtin, nil, nil
 	}
 
 	if strings.HasSuffix(expr, symbol.Optional) {
@@ -89,9 +97,8 @@ func ParseType(expr string, sm datatype.SchemaMap) (*datatype.DataType, datatype
 		inner := expr[1 : len(expr)-len(symbol.MapBracketEnd)]
 		ps := strings.Split(symbol.MapKeyValTypeSep, inner)
 		if len(ps) != 2 {
-			return nil, nil, SyntaxError{
-				Msg:           "Expected a key type and a value type separated by a comma (',')",
-				OffendingCode: expr,
+			return nil, nil, &invalidMapTypeDeclaration{
+				providedDeclaration: expr,
 			}
 		}
 
@@ -109,8 +116,7 @@ func ParseType(expr string, sm datatype.SchemaMap) (*datatype.DataType, datatype
 		return &mt, s, nil
 	}
 
-	return nil, nil, &SyntaxError{
-		Msg:           "Invalid type expression",
-		OffendingCode: expr,
+	return nil, nil, &invalidTypeDeclaration{
+		providedDeclaration: expr,
 	}
 }

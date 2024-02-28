@@ -147,7 +147,7 @@ func FromKind(kind Kind) *DataType {
 }
 
 // FromIdentifier returns the correct instance of DataType from the given identifier.
-// Returns nil for non-string or non-primitive types.
+// Returns nil for non-built-in types.
 func FromIdentifier(identifier string) *DataType {
 	switch identifier {
 	case npint8.Identifier:

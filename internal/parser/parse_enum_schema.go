@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"errors"
 	"fmt"
 	"gopkg.in/yaml.v2"
 	"nanoc/internal/npschema"
@@ -13,12 +12,12 @@ import (
 func parseEnumSchema(header string, body any) (*npschema.PartialEnum, error) {
 	ps := strings.Split(header, " ")
 	if len(ps) != 2 {
-		return nil, errors.New("invalid enum header declaration: expected enum EnumName, or enum EnumName::ValueType, received " + header)
+		return nil, &invalidEnumHeader{header}
 	}
 
 	ps = strings.Split(ps[1], symbol.TypeSeparator)
 	if len(ps) > 2 {
-		return nil, errors.New("invalid enum header declaration: expected enum EnumName, or enum EnumName::ValueType, received " + header)
+		return nil, &invalidEnumHeader{header}
 	}
 
 	schema := npschema.PartialEnum{
@@ -44,10 +43,7 @@ func parseEnumSchema(header string, body any) (*npschema.PartialEnum, error) {
 			case int:
 				l = strconv.Itoa(v)
 			default:
-				return nil, SyntaxError{
-					Msg:           "invalid enum value",
-					OffendingCode: fmt.Sprintf("%v", v),
-				}
+				return nil, &invalidEnumValue{k}
 			}
 
 			schema.Members = append(schema.Members, npschema.EnumMember{
@@ -64,13 +60,8 @@ func parseEnumSchema(header string, body any) (*npschema.PartialEnum, error) {
 			switch v := v.(type) {
 			case string:
 				l = v
-			case int:
-				l = strconv.Itoa(v)
 			default:
-				return nil, SyntaxError{
-					Msg:           "invalid enum value",
-					OffendingCode: fmt.Sprintf("%v", v),
-				}
+				return nil, &invalidEnumMemberName{i}
 			}
 
 			schema.Members = append(schema.Members, npschema.EnumMember{

@@ -1,0 +1,5 @@
+enum InvalidEnum:
+  MEMBER1: value
+  MEMBER2:
+    nested: 1
+  MEMBER3: "2"

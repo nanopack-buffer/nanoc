@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Test invalid examples" type="GoApplicationRunConfiguration" factoryName="Go Application">
+    <module name="nanoc" />
+    <working_directory value="$PROJECT_DIR$/examples/invalid_schemas" />
+    <parameters value="--language=c++ invalid_enum.yml invalid_enum_header.yml invalid_implicit_enum.yml" />
+    <kind value="PACKAGE" />
+    <package value="nanoc/cmd/nanoc" />
+    <directory value="$PROJECT_DIR$" />
+    <filePath value="$PROJECT_DIR$" />
+    <method v="2" />
+  </configuration>
+</component>

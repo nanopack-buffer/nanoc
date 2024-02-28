@@ -2,7 +2,6 @@ package parser
 
 import (
 	"errors"
-	"fmt"
 	"github.com/twmb/murmur3"
 	"gopkg.in/yaml.v2"
 	"nanoc/internal/datatype"
@@ -12,22 +11,26 @@ import (
 	"strings"
 )
 
+const noFieldNumberProvided = -1
+
 func parseMessageSchema(header string, body yaml.MapSlice) (*npschema.PartialMessage, error) {
 	ps := strings.Split(header, symbol.TypeSeparator)
 	l := len(ps)
 	if l > 2 || l <= 0 {
-		return nil, errors.New("invalid message header syntax. received: " + header)
+		return nil, &invalidMessageHeader{header}
 	}
 
 	schema := npschema.PartialMessage{
 		Name:   ps[0],
 		TypeID: 0,
 	}
-	typeIDDeclared := false
 
 	if l == 2 {
 		schema.ParentMessageName = ps[1]
 	}
+
+	useImplicitFieldNumber := true
+	typeIDDeclared := false
 
 	for i, e := range body {
 		k := e.Key.(string)
@@ -35,10 +38,7 @@ func parseMessageSchema(header string, body yaml.MapSlice) (*npschema.PartialMes
 		if k == symbol.TypeID {
 			typeID, ok := v.(int)
 			if !ok {
-				return nil, SyntaxError{
-					Msg:           "non-numeric type ID received",
-					OffendingCode: fmt.Sprintf("%v: %v", k, v),
-				}
+				return nil, &invalidTypeID{}
 			}
 			typeIDDeclared = true
 			schema.TypeID = datatype.TypeID(typeID)
@@ -47,18 +47,22 @@ func parseMessageSchema(header string, body yaml.MapSlice) (*npschema.PartialMes
 			if err != nil {
 				return nil, err
 			}
-			if fieldNumber < 0 {
+
+			if fieldNumber == noFieldNumberProvided {
+				useImplicitFieldNumber = true
 				fieldNumber = i
+			} else if useImplicitFieldNumber {
+				return nil, &mixUseOfImplicitAndExplicitFieldNumber{}
 			}
+
 			schema.DeclaredFields = append(schema.DeclaredFields, npschema.PartialMessageField{
 				Name:     k,
 				TypeName: typeName,
 				Number:   fieldNumber,
 			})
 		} else {
-			return nil, SyntaxError{
-				Msg:           "Invalid message schema body.",
-				OffendingCode: fmt.Sprintf("%v: %v", k, v),
+			return nil, &invalidMessageFieldDeclaration{
+				fieldName: k,
 			}
 		}
 	}
@@ -75,7 +79,7 @@ func parseMessageSchema(header string, body yaml.MapSlice) (*npschema.PartialMes
 func parseFieldType(str string) (string, int, error) {
 	ps := strings.Split(str, symbol.FieldNumberSeparator)
 	if len(ps) != 2 {
-		return ps[0], -1, nil
+		return ps[0], noFieldNumberProvided, nil
 	}
 
 	fieldNumber, err := strconv.Atoi(ps[1])
