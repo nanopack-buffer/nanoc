@@ -39,13 +39,15 @@ func (g arrayGenerator) FieldDeclaration(field npschema.MessageField) string {
 
 func (g arrayGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
 	s := strcase.ToSnake(field.Name)
-	var l2 string
+	var l1 string
 	if field.Type.ElemType.ByteSize != datatype.DynamicSize {
 		// for arrays with fixed size items, the number of elements in the array can be calculated.
-		l2 = fmt.Sprintf("const int32_t %v_vec_size = %v_byte_size / %d;", s, s, field.Type.ElemType.ByteSize)
+		l1 = fmt.Sprintf("const int32_t %v_vec_size = %v_byte_size / %d;", s, s, field.Type.ElemType.ByteSize)
+		ctx.AddVariableToScope(s + "_vec_size")
 	}
 	return generator.Lines(
-		l2,
+		fmt.Sprintf("const int32_t %v_byte_size = reader.read_field_size(%d);", s, field.Number),
+		l1,
 		g.ReadValueFromBuffer(field.Type, s, ctx),
 		fmt.Sprintf("this->%v = std::move(%v);", s, s))
 }
@@ -110,7 +112,7 @@ func (g arrayGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx gene
 		lv := ctx.NewLoopVar()
 		ig := g.gm[field.Type.ElemType.Kind]
 		ls := generator.Lines(
-			fmt.Sprintf("writer.write_field_size(%d, %v.size() * %d;", field.Number, s, field.Type.ElemType.ByteSize),
+			fmt.Sprintf("writer.write_field_size(%d, %v.size() * %d);", field.Number, s, field.Type.ElemType.ByteSize),
 			fmt.Sprintf("for (const auto &%v : %v) {", lv, s),
 			ig.WriteVariableToBuffer(*field.Type.ElemType, lv, ctx),
 			"}")
