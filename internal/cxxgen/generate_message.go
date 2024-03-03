@@ -142,27 +142,34 @@ func generateMessageHeaderFile(msgSchema *npschema.Message, gm generator.Message
 			continue
 		}
 
-		switch field.Type.Kind {
-		case datatype.String:
-			libimp["string"] = struct{}{}
+		var collectImport func(t datatype.DataType)
+		collectImport = func(t datatype.DataType) {
+			switch t.Kind {
+			case datatype.String:
+				libimp["string"] = struct{}{}
 
-		case datatype.Map:
-			libimp["unordered_map"] = struct{}{}
+			case datatype.Map:
+				libimp["unordered_map"] = struct{}{}
+				collectImport(*t.ElemType)
 
-		case datatype.Optional:
-			libimp["optional"] = struct{}{}
+			case datatype.Optional:
+				libimp["optional"] = struct{}{}
+				collectImport(*t.ElemType)
 
-		case datatype.Any:
-			libimp["nanopack/any.hxx"] = struct{}{}
+			case datatype.Any:
+				libimp["nanopack/any.hxx"] = struct{}{}
 
-		case datatype.Message:
-			if field.Type.Schema.(*npschema.Message).IsInherited {
-				libimp["memory"] = struct{}{}
+			case datatype.Message:
+				if field.Type.Schema.(*npschema.Message).IsInherited {
+					libimp["memory"] = struct{}{}
+				}
+
+			default:
+				break
 			}
-
-		default:
-			continue
 		}
+
+		collectImport(field.Type)
 	}
 
 	if msgSchema.HasParentMessage {
