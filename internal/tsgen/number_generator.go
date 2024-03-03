@@ -15,6 +15,9 @@ var appendMethodName = map[datatype.Kind]string{
 	datatype.Int8:   "appendInt8",
 	datatype.Int32:  "appendInt32",
 	datatype.Int64:  "appendInt64",
+	datatype.UInt8:  "appendUint8",
+	datatype.UInt32: "appendUint32",
+	datatype.UInt64: "appendUint64",
 	datatype.Double: "appendDouble",
 }
 
@@ -22,6 +25,9 @@ var readMethodName = map[datatype.Kind]string{
 	datatype.Int8:   "readInt8",
 	datatype.Int32:  "readInt32",
 	datatype.Int64:  "readInt64",
+	datatype.UInt8:  "readUint8",
+	datatype.UInt32: "readUint32",
+	datatype.UInt64: "readUint64",
 	datatype.Double: "readDouble",
 }
 
