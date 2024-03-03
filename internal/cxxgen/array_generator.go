@@ -42,11 +42,12 @@ func (g arrayGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx gen
 	var l1 string
 	if field.Type.ElemType.ByteSize != datatype.DynamicSize {
 		// for arrays with fixed size items, the number of elements in the array can be calculated.
-		l1 = fmt.Sprintf("const int32_t %v_vec_size = %v_byte_size / %d;", s, s, field.Type.ElemType.ByteSize)
+		l1 = generator.Lines(
+			fmt.Sprintf("const int32_t %v_vec_size = %v_byte_size / %d;", s, s, field.Type.ElemType.ByteSize),
+			fmt.Sprintf("const int32_t %v_byte_size = reader.read_field_size(%d);", s, field.Number))
 		ctx.AddVariableToScope(s + "_vec_size")
 	}
 	return generator.Lines(
-		fmt.Sprintf("const int32_t %v_byte_size = reader.read_field_size(%d);", s, field.Number),
 		l1,
 		g.ReadValueFromBuffer(field.Type, s, ctx),
 		fmt.Sprintf("this->%v = std::move(%v);", s, s))
