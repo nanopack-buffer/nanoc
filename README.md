@@ -13,7 +13,9 @@ serialization/deserialization in NanoPack.
 
 ## Installation
 
-Currently, the only way to use nanoc is to build the source code and install the binary via `go install`:
+`nanoc` is available as pre-built binaries on the [GitHub Releases page](https://github.com/poly-gui/nanoc/releases).
+
+### Compiling the Compiler
 
 ```
 # Assuming the cwd is in the project directory where go.mod is
