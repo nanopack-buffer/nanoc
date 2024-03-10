@@ -23,32 +23,23 @@ Widget::Widget(std::vector<uint8_t>::const_iterator begin, int &bytes_read)
 
 NanoPack::TypeId Widget::type_id() const { return TYPE_ID; }
 
-std::vector<uint8_t> Widget::data() const {
-  std::vector<uint8_t> buf(8);
-  NanoPack::Writer writer(&buf);
+int Widget::header_size() const { return 8; }
 
-  writer.write_type_id(TYPE_ID);
+size_t Widget::write_to(std::vector<uint8_t> &buf, int offset) const {
+  const size_t buf_size_before = buf.size();
 
-  writer.write_field_size(0, 4);
-  writer.append_int32(id);
+  buf.resize(offset + 8);
 
-  return buf;
+  NanoPack::write_type_id(TYPE_ID, offset, buf);
+
+  NanoPack::write_field_size(0, 4, offset, buf);
+  NanoPack::append_int32(id, buf);
+
+  return buf.size() - buf_size_before;
 }
 
-std::vector<uint8_t> Widget::data_with_length_prefix() const {
-  std::vector<uint8_t> buf(8 + 4);
-  NanoPack::Writer writer(&buf, 4);
-
-  writer.write_type_id(TYPE_ID);
-
-  writer.write_field_size(0, 4);
-  writer.append_int32(id);
-
-  const size_t byte_size = buf.size() - 4;
-  buf[0] = byte_size & 0xFF;
-  buf[1] = byte_size & 0xFF00;
-  buf[2] = byte_size & 0xFF0000;
-  buf[3] = byte_size & 0xFF000000;
-
+std::vector<uint8_t> Widget::data() const {
+  std::vector<uint8_t> buf(8);
+  write_to(buf, 0);
   return buf;
 }

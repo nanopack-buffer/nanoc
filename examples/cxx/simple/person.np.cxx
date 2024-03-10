@@ -53,76 +53,46 @@ Person::Person(std::vector<uint8_t>::const_iterator begin, int &bytes_read)
 
 NanoPack::TypeId Person::type_id() const { return TYPE_ID; }
 
-std::vector<uint8_t> Person::data() const {
-  std::vector<uint8_t> buf(24);
-  NanoPack::Writer writer(&buf);
+int Person::header_size() const { return 24; }
 
-  writer.write_type_id(TYPE_ID);
+size_t Person::write_to(std::vector<uint8_t> &buf, int offset) const {
+  const size_t buf_size_before = buf.size();
 
-  writer.write_field_size(0, first_name.size());
-  writer.append_string(first_name);
+  buf.resize(offset + 24);
+
+  NanoPack::write_type_id(TYPE_ID, offset, buf);
+
+  NanoPack::write_field_size(0, first_name.size(), offset, buf);
+  NanoPack::append_string(first_name, buf);
 
   if (middle_name.has_value()) {
     const auto middle_name = this->middle_name.value();
-    writer.write_field_size(1, middle_name.size());
-    writer.append_string(middle_name);
+    NanoPack::write_field_size(1, middle_name.size(), offset, buf);
+    NanoPack::append_string(middle_name, buf);
   } else {
-    writer.write_field_size(1, -1);
+    NanoPack::write_field_size(1, -1, offset, buf);
   }
 
-  writer.write_field_size(2, last_name.size());
-  writer.append_string(last_name);
+  NanoPack::write_field_size(2, last_name.size(), offset, buf);
+  NanoPack::append_string(last_name, buf);
 
-  writer.write_field_size(3, 1);
-  writer.append_int8(age);
+  NanoPack::write_field_size(3, 1, offset, buf);
+  NanoPack::append_int8(age, buf);
 
   if (other_friend != nullptr) {
-    const std::vector<uint8_t> other_friend_data = other_friend->data();
-    writer.append_bytes(other_friend_data);
-    writer.write_field_size(4, other_friend_data.size());
+    const size_t before_other_friend_size = buf.size();
+    other_friend->write_to(buf, before_other_friend_size);
+    NanoPack::write_field_size(4, buf.size() - before_other_friend_size, offset,
+                               buf);
   } else {
-    writer.write_field_size(4, -1);
+    NanoPack::write_field_size(4, -1, offset, buf);
   }
 
-  return buf;
+  return buf.size() - buf_size_before;
 }
 
-std::vector<uint8_t> Person::data_with_length_prefix() const {
-  std::vector<uint8_t> buf(24 + 4);
-  NanoPack::Writer writer(&buf, 4);
-
-  writer.write_type_id(TYPE_ID);
-
-  writer.write_field_size(0, first_name.size());
-  writer.append_string(first_name);
-
-  if (middle_name.has_value()) {
-    const auto middle_name = this->middle_name.value();
-    writer.write_field_size(1, middle_name.size());
-    writer.append_string(middle_name);
-  } else {
-    writer.write_field_size(1, -1);
-  }
-
-  writer.write_field_size(2, last_name.size());
-  writer.append_string(last_name);
-
-  writer.write_field_size(3, 1);
-  writer.append_int8(age);
-
-  if (other_friend != nullptr) {
-    const std::vector<uint8_t> other_friend_data = other_friend->data();
-    writer.append_bytes(other_friend_data);
-    writer.write_field_size(4, other_friend_data.size());
-  } else {
-    writer.write_field_size(4, -1);
-  }
-
-  const size_t byte_size = buf.size() - 4;
-  buf[0] = byte_size & 0xFF;
-  buf[1] = byte_size & 0xFF00;
-  buf[2] = byte_size & 0xFF0000;
-  buf[3] = byte_size & 0xFF000000;
-
+std::vector<uint8_t> Person::data() const {
+  std::vector<uint8_t> buf(24);
+  write_to(buf, 0);
   return buf;
 }

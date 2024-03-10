@@ -28,38 +28,26 @@ Text::Text(std::vector<uint8_t>::const_iterator begin, int &bytes_read)
 
 NanoPack::TypeId Text::type_id() const { return TYPE_ID; }
 
-std::vector<uint8_t> Text::data() const {
-  std::vector<uint8_t> buf(12);
-  NanoPack::Writer writer(&buf);
+int Text::header_size() const { return 12; }
 
-  writer.write_type_id(TYPE_ID);
+size_t Text::write_to(std::vector<uint8_t> &buf, int offset) const {
+  const size_t buf_size_before = buf.size();
 
-  writer.write_field_size(0, 4);
-  writer.append_int32(id);
+  buf.resize(offset + 12);
 
-  writer.write_field_size(1, content.size());
-  writer.append_string(content);
+  NanoPack::write_type_id(TYPE_ID, offset, buf);
 
-  return buf;
+  NanoPack::write_field_size(0, 4, offset, buf);
+  NanoPack::append_int32(id, buf);
+
+  NanoPack::write_field_size(1, content.size(), offset, buf);
+  NanoPack::append_string(content, buf);
+
+  return buf.size() - buf_size_before;
 }
 
-std::vector<uint8_t> Text::data_with_length_prefix() const {
-  std::vector<uint8_t> buf(12 + 4);
-  NanoPack::Writer writer(&buf, 4);
-
-  writer.write_type_id(TYPE_ID);
-
-  writer.write_field_size(0, 4);
-  writer.append_int32(id);
-
-  writer.write_field_size(1, content.size());
-  writer.append_string(content);
-
-  const size_t byte_size = buf.size() - 4;
-  buf[0] = byte_size & 0xFF;
-  buf[1] = byte_size & 0xFF00;
-  buf[2] = byte_size & 0xFF0000;
-  buf[3] = byte_size & 0xFF000000;
-
+std::vector<uint8_t> Text::data() const {
+  std::vector<uint8_t> buf(12);
+  write_to(buf, 0);
   return buf;
 }

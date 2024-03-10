@@ -49,6 +49,8 @@ let {{.Schema.Name}}_typeID: TypeID = {{.Schema.TypeID}}
 class {{.Schema.Name}}: {{if .Schema.HasParentMessage}}{{.Schema.ParentMessage.Name}}{{else}}NanoPackMessage{{end}} {
     {{if .Schema.HasParentMessage}}override{{end}} var typeID: TypeID { return {{.Schema.TypeID}} }
 
+    {{if .Schema.HasParentMessage}}override{{end}} var headerSize: Int { return {{.Schema.HeaderSize}} }
+
     {{range .FieldDeclarationLines}}
     {{.}}
     {{- end}}
@@ -118,13 +120,12 @@ class {{.Schema.Name}}: {{if .Schema.HasParentMessage}}{{.Schema.ParentMessage.N
         bytesRead = ptr - data.startIndex
     }
 
-    {{if .Schema.HasParentMessage}}override{{end}} func data() -> Data? {
-        let offset = 0
+    {{if .Schema.HasParentMessage}}override{{end}} func write(to data: inout Data, offset: Int) -> Int {
+        let dataCountBefore = data.count
 
-        var data = Data()
-        data.reserveCapacity({{.InitialWriteBufferSize}})
+		data.reserveCapacity(offset + {{.InitialWriteBufferSize}})
 
-        data.append(typeID: TypeID({{.Schema.Name}}_typeID))
+		data.append(typeID: TypeID({{.Schema.Name}}_typeID))
 		data.append([0], count: {{len .Schema.AllFields}} * 4)
 
         {{range .FieldWriteCodeFragments}}
@@ -132,26 +133,12 @@ class {{.Schema.Name}}: {{if .Schema.HasParentMessage}}{{.Schema.ParentMessage.N
 
         {{end}}
 
-        return data
+        return data.count - dataCountBefore
     }
 
-    {{if .Schema.HasParentMessage}}override{{end}} func dataWithLengthPrefix() -> Data? {
-		let offset = 4        
-
-		var data = Data()
-        data.reserveCapacity({{.InitialWriteBufferSize}} + 4)
-
-        data.append(int: Int32(0))
-        data.append(typeID: TypeID({{.Schema.Name}}_typeID))
-        data.append([0], count: {{len .Schema.AllFields}} * 4)
-
-        {{range .FieldWriteCodeFragments}}
-        {{.}}
-
-        {{end}}
-
-        data.write(size: data.count, at: 0)
-
+    {{if .Schema.HasParentMessage}}override{{end}} func data() -> Data? {
+        var data = Data()
+        _ = write(to: &data, offset: 0)
         return data
     }
 }

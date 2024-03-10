@@ -81,7 +81,7 @@ func (g optionalGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx g
 		fmt.Sprintf("    const auto %v = this->%v.value();", s, s),
 		ig.WriteFieldToBuffer(vf, ctx),
 		"} else {",
-		fmt.Sprintf("writer.write_field_size(%d, -1);", field.Number),
+		fmt.Sprintf("NanoPack::write_field_size(%d, -1, offset, buf);", field.Number),
 		"}")
 }
 
@@ -89,10 +89,10 @@ func (g optionalGenerator) WriteVariableToBuffer(dataType datatype.DataType, var
 	ig := g.gm[dataType.ElemType.Kind]
 	return generator.Lines(
 		fmt.Sprintf("if (%v.has_value()) {", varName),
-		"    writer.append_int8(1);",
+		"    NanoPack::append_int8(1, buf);",
 		fmt.Sprintf("    const auto %v_value = %v.value();", varName, varName),
 		ig.WriteVariableToBuffer(*dataType.ElemType, varName+"_value", ctx),
 		"} else {",
-		"    writer.appendInt8(0);",
+		"    NanoPack::appendInt8(0, buf);",
 		"}")
 }

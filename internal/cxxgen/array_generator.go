@@ -113,7 +113,7 @@ func (g arrayGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx gene
 		lv := ctx.NewLoopVar()
 		ig := g.gm[field.Type.ElemType.Kind]
 		ls := generator.Lines(
-			fmt.Sprintf("writer.write_field_size(%d, %v.size() * %d);", field.Number, s, field.Type.ElemType.ByteSize),
+			fmt.Sprintf("NanoPack::write_field_size(%d, %v.size() * %d, offset, buf);", field.Number, s, field.Type.ElemType.ByteSize),
 			fmt.Sprintf("for (const auto &%v : %v) {", lv, s),
 			ig.WriteVariableToBuffer(*field.Type.ElemType, lv, ctx),
 			"}")
@@ -123,7 +123,7 @@ func (g arrayGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx gene
 
 	return generator.Lines(
 		g.WriteVariableToBuffer(field.Type, s, ctx),
-		fmt.Sprintf("writer.write_field_size(%d, %v);", field.Number, s+"_byte_size"))
+		fmt.Sprintf("NanoPack::write_field_size(%d, %v, offset, buf);", field.Number, s+"_byte_size"))
 }
 
 func (g arrayGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {

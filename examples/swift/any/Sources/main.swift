@@ -15,3 +15,10 @@ for b in invokeCallbackData {
 }
 print("")
 print("Total bytes:", invokeCallbackData.count)
+print("===================================")
+
+let invokeCallbackParsed = InvokeCallback(data: invokeCallbackData)!
+print("callback handle: \(String(describing: invokeCallbackParsed.handle))")
+let clickEventParsed = ClickEvent(data: invokeCallbackParsed.args)!
+print("click event x, y: \(clickEventParsed.x), \(clickEventParsed.y)")
+print("timestamp: \(clickEventParsed.timestamp)")

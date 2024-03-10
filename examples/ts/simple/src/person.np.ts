@@ -5,6 +5,10 @@ import { NanoBufReader, NanoBufWriter, type NanoPackMessage } from "nanopack";
 class Person implements NanoPackMessage {
   public static TYPE_ID = 1225883824;
 
+  public readonly typeId: number = 1225883824;
+
+  public readonly headerSize: number = 24;
+
   constructor(
     public firstName: string,
     public middleName: string | null,
@@ -63,71 +67,46 @@ class Person implements NanoPackMessage {
     };
   }
 
-  public get typeId(): number {
-    return 1225883824;
+  public writeTo(writer: NanoBufWriter, offset: number = 0): number {
+    let bytesWritten = 24;
+
+    writer.writeTypeId(1225883824, offset);
+
+    const firstNameByteLength = writer.appendString(this.firstName);
+    writer.writeFieldSize(0, firstNameByteLength, offset);
+    bytesWritten += firstNameByteLength;
+
+    if (this.middleName) {
+      const middleNameByteLength = writer.appendString(this.middleName);
+      writer.writeFieldSize(1, middleNameByteLength, offset);
+      bytesWritten += middleNameByteLength;
+    } else {
+      writer.writeFieldSize(1, -1, offset);
+    }
+
+    const lastNameByteLength = writer.appendString(this.lastName);
+    writer.writeFieldSize(2, lastNameByteLength, offset);
+    bytesWritten += lastNameByteLength;
+
+    writer.appendInt8(this.age);
+    writer.writeFieldSize(3, 1, offset);
+    bytesWritten += 1;
+
+    if (this.otherFriend) {
+      const otherFriendData = this.otherFriend.bytes();
+      writer.appendBytes(otherFriendData);
+      writer.writeFieldSize(4, otherFriendData.byteLength, offset);
+      bytesWritten += otherFriendData.byteLength;
+    } else {
+      writer.writeFieldSize(4, -1, offset);
+    }
+
+    return bytesWritten;
   }
 
   public bytes(): Uint8Array {
     const writer = new NanoBufWriter(24);
-    writer.writeTypeId(1225883824);
-
-    const firstNameByteLength = writer.appendString(this.firstName);
-    writer.writeFieldSize(0, firstNameByteLength);
-
-    if (this.middleName) {
-      const middleNameByteLength = writer.appendString(this.middleName);
-      writer.writeFieldSize(1, middleNameByteLength);
-    } else {
-      writer.writeFieldSize(1, -1);
-    }
-
-    const lastNameByteLength = writer.appendString(this.lastName);
-    writer.writeFieldSize(2, lastNameByteLength);
-
-    writer.appendInt8(this.age);
-    writer.writeFieldSize(3, 1);
-
-    if (this.otherFriend) {
-      const otherFriendData = this.otherFriend.bytes();
-      writer.appendBytes(otherFriendData);
-      writer.writeFieldSize(4, otherFriendData.byteLength);
-    } else {
-      writer.writeFieldSize(4, -1);
-    }
-
-    return writer.bytes;
-  }
-
-  public bytesWithLengthPrefix(): Uint8Array {
-    const writer = new NanoBufWriter(24 + 4, true);
-    writer.writeTypeId(1225883824);
-
-    const firstNameByteLength = writer.appendString(this.firstName);
-    writer.writeFieldSize(0, firstNameByteLength);
-
-    if (this.middleName) {
-      const middleNameByteLength = writer.appendString(this.middleName);
-      writer.writeFieldSize(1, middleNameByteLength);
-    } else {
-      writer.writeFieldSize(1, -1);
-    }
-
-    const lastNameByteLength = writer.appendString(this.lastName);
-    writer.writeFieldSize(2, lastNameByteLength);
-
-    writer.appendInt8(this.age);
-    writer.writeFieldSize(3, 1);
-
-    if (this.otherFriend) {
-      const otherFriendData = this.otherFriend.bytes();
-      writer.appendBytes(otherFriendData);
-      writer.writeFieldSize(4, otherFriendData.byteLength);
-    } else {
-      writer.writeFieldSize(4, -1);
-    }
-
-    writer.writeLengthPrefix(writer.currentSize - 4);
-
+    this.writeTo(writer);
     return writer.bytes;
   }
 }

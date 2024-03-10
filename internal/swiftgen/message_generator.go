@@ -15,7 +15,7 @@ func (g messageGenerator) TypeDeclaration(dataType datatype.DataType) string {
 }
 
 func (g messageGenerator) ReadSizeExpression(dataType datatype.DataType, varName string) string {
-	return fmt.Sprintf("%vData.count", varName)
+	return fmt.Sprintf("%vByteSize", varName)
 }
 
 func (g messageGenerator) ConstructorFieldParameter(field npschema.MessageField) string {
@@ -85,19 +85,12 @@ func (g messageGenerator) ReadValueFromBuffer(dataType datatype.DataType, varNam
 }
 
 func (g messageGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
-	c := strcase.ToLowerCamel(field.Name)
+	lc := strcase.ToLowerCamel(field.Name)
 	return generator.Lines(
-		fmt.Sprintf("guard let %vData = %v.data() else {", c, c),
-		"    return nil",
-		"}",
-		fmt.Sprintf("data.write(size: %vData.count, ofField: %d, offset: offset)", c, field.Number),
-		fmt.Sprintf("data.append(%vData)", c))
+		fmt.Sprintf("let %vByteSize = %v.write(to: &data, offset: data.count)", lc, lc),
+		fmt.Sprintf("data.write(size: %vByteSize, ofField: %d, offset: offset)", lc, field.Number))
 }
 
 func (g messageGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
-	return generator.Lines(
-		fmt.Sprintf("guard let %vData = %v.data() else {", varName, varName),
-		"    return nil",
-		"}",
-		fmt.Sprintf("data.append(%vData)", varName))
+	return fmt.Sprintf("let %vByteSize = %v.write(to: &data, offset: data.count)", varName, varName)
 }

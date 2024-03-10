@@ -112,13 +112,8 @@ func generateMessageClass(msgSchema *npschema.Message, opts Options) error {
 	gm[datatype.Map] = mapGenerator{gm}
 	gm[datatype.Enum] = enumGenerator{gm}
 
-	// the message header byte size includes 4 bytes for the type ID and 4 bytes to store the byte size of each field
-	npHeaderByteSize := (len(msgSchema.AllFields) + 1) * 4
-
 	info := messageClassTemplateInfo{
-		Schema:                 msgSchema,
-		ReadPtrStart:           npHeaderByteSize,
-		InitialWriteBufferSize: npHeaderByteSize,
+		Schema: msgSchema,
 	}
 
 	for _, s := range msgSchema.ImportedTypes {

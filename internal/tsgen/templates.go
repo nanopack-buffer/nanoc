@@ -10,10 +10,7 @@ type messageClassTemplateInfo struct {
 	ConstructorArgs       []string
 	SuperConstructorArgs  []string
 
-	ReadPtrStart           int
-	FieldReadCodeFragments []string
-
-	InitialWriteBufferSize  int
+	FieldReadCodeFragments  []string
 	FieldWriteCodeFragments []string
 }
 
@@ -62,6 +59,10 @@ import { NanoBufReader, NanoBufWriter{{if not .Schema.HasParentMessage}}, type N
 class {{.Schema.Name}} {{if .Schema.HasParentMessage}}extends {{.Schema.ParentMessage.Name}}{{else}}implements NanoPackMessage{{end}} {
   public static TYPE_ID = {{.Schema.TypeID}};
 
+  public {{if .Schema.HasParentMessage}}override {{end}}readonly typeId: number = {{.Schema.TypeID}};
+
+  public {{if .Schema.HasParentMessage}}override {{end}}readonly headerSize: number = {{.Schema.HeaderSize}};
+
   {{if .Schema.HasParentMessage -}}
   constructor({{join .ConstructorParameters ", "}}) {
     super({{join .SuperConstructorArgs ", "}})
@@ -76,7 +77,7 @@ class {{.Schema.Name}} {{if .Schema.HasParentMessage}}extends {{.Schema.ParentMe
   }
 
   public static fromReader(reader: NanoBufReader): { bytesRead: number, result: {{.Schema.Name}} } | null {
-    let ptr = {{.ReadPtrStart}};
+    let ptr = {{.Schema.HeaderSize}};
 
     {{range .FieldReadCodeFragments}}
     {{.}}
@@ -86,33 +87,22 @@ class {{.Schema.Name}} {{if .Schema.HasParentMessage}}extends {{.Schema.ParentMe
     return { bytesRead: ptr, result: new {{.Schema.Name}}({{join .ConstructorArgs ", "}}) };
   }
 
-  {{if .Schema.HasParentMessage}}override {{end}}public get typeId(): number {
-    return {{.Schema.TypeID}}; 
+  {{if .Schema.HasParentMessage}}override {{end}}public writeTo(writer: NanoBufWriter, offset: number = 0): number {
+    let bytesWritten = {{.Schema.HeaderSize}};
+
+    writer.writeTypeId({{.Schema.TypeID}}, offset);
+
+    {{range .FieldWriteCodeFragments}}
+    {{.}}
+
+    {{end}}
+
+    return bytesWritten;
   }
 
   {{if .Schema.HasParentMessage}}override {{end}}public bytes(): Uint8Array {
-    const writer = new NanoBufWriter({{.InitialWriteBufferSize}});
-    writer.writeTypeId({{.Schema.TypeID}});
-
-    {{range .FieldWriteCodeFragments}}
-    {{.}}
-
-    {{end}}
-
-    return writer.bytes;
-  }
-
-  {{if .Schema.HasParentMessage}}override {{end}}public bytesWithLengthPrefix(): Uint8Array {
-    const writer = new NanoBufWriter({{.InitialWriteBufferSize}} + 4, true);
-    writer.writeTypeId({{.Schema.TypeID}});
-
-    {{range .FieldWriteCodeFragments}}
-    {{.}}
-
-    {{end}}
-
-    writer.writeLengthPrefix(writer.currentSize - 4);
-
+    const writer = new NanoBufWriter({{.Schema.HeaderSize}});
+    this.writeTo(writer)
     return writer.bytes;
   }
 }

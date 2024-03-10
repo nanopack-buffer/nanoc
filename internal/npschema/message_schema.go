@@ -22,6 +22,7 @@ type Message struct {
 	ImportedTypes []datatype.Schema
 	Name          string
 	TypeID        datatype.TypeID
+	HeaderSize    int
 
 	IsInherited   bool
 	ChildMessages []*Message

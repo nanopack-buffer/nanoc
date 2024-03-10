@@ -8,6 +8,8 @@ let Text_typeID: TypeID = 3_495_336_243
 class Text: Widget {
   override var typeID: TypeID { return 3_495_336_243 }
 
+  override var headerSize: Int { return 12 }
+
   let content: String
 
   init(id: Int32, content: String) {
@@ -49,11 +51,10 @@ class Text: Widget {
     bytesRead = ptr - data.startIndex
   }
 
-  override func data() -> Data? {
-    let offset = 0
+  override func write(to data: inout Data, offset: Int) -> Int {
+    let dataCountBefore = data.count
 
-    var data = Data()
-    data.reserveCapacity(12)
+    data.reserveCapacity(offset + 12)
 
     data.append(typeID: TypeID(Text_typeID))
     data.append([0], count: 2 * 4)
@@ -64,27 +65,12 @@ class Text: Widget {
     data.write(size: content.lengthOfBytes(using: .utf8), ofField: 1, offset: offset)
     data.append(string: content)
 
-    return data
+    return data.count - dataCountBefore
   }
 
-  override func dataWithLengthPrefix() -> Data? {
-    let offset = 4
-
+  override func data() -> Data? {
     var data = Data()
-    data.reserveCapacity(12 + 4)
-
-    data.append(int: Int32(0))
-    data.append(typeID: TypeID(Text_typeID))
-    data.append([0], count: 2 * 4)
-
-    data.write(size: 4, ofField: 0, offset: offset)
-    data.append(int: id)
-
-    data.write(size: content.lengthOfBytes(using: .utf8), ofField: 1, offset: offset)
-    data.append(string: content)
-
-    data.write(size: data.count, at: 0)
-
+    _ = write(to: &data, offset: 0)
     return data
   }
 }

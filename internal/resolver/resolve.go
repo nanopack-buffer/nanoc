@@ -263,4 +263,6 @@ func resolveMessageInheritance(msgSchema *npschema.Message) {
 	sort.Slice(msgSchema.ChildMessages, func(i, j int) bool {
 		return msgSchema.ChildMessages[i].TypeID < msgSchema.ChildMessages[j].TypeID
 	})
+
+	msgSchema.HeaderSize = len(msgSchema.AllFields)*4 + 4
 }

@@ -36,50 +36,32 @@ NpDate::NpDate(std::vector<uint8_t>::const_iterator begin, int &bytes_read)
 
 NanoPack::TypeId NpDate::type_id() const { return TYPE_ID; }
 
-std::vector<uint8_t> NpDate::data() const {
-  std::vector<uint8_t> buf(20);
-  NanoPack::Writer writer(&buf);
+int NpDate::header_size() const { return 20; }
 
-  writer.write_type_id(TYPE_ID);
+size_t NpDate::write_to(std::vector<uint8_t> &buf, int offset) const {
+  const size_t buf_size_before = buf.size();
 
-  writer.write_field_size(0, 1);
-  writer.append_int8(day);
+  buf.resize(offset + 20);
 
-  writer.write_field_size(1, 1);
-  writer.append_int8(week.value());
+  NanoPack::write_type_id(TYPE_ID, offset, buf);
 
-  writer.write_field_size(2, 1);
-  writer.append_int8(month.value());
+  NanoPack::write_field_size(0, 1, offset, buf);
+  NanoPack::append_int8(day, buf);
 
-  writer.write_field_size(3, 4);
-  writer.append_int32(year);
+  NanoPack::write_field_size(1, 1, offset, buf);
+  NanoPack::append_int8(week.value(), buf);
 
-  return buf;
+  NanoPack::write_field_size(2, 1, offset, buf);
+  NanoPack::append_int8(month.value(), buf);
+
+  NanoPack::write_field_size(3, 4, offset, buf);
+  NanoPack::append_int32(year, buf);
+
+  return buf.size() - buf_size_before;
 }
 
-std::vector<uint8_t> NpDate::data_with_length_prefix() const {
-  std::vector<uint8_t> buf(20 + 4);
-  NanoPack::Writer writer(&buf, 4);
-
-  writer.write_type_id(TYPE_ID);
-
-  writer.write_field_size(0, 1);
-  writer.append_int8(day);
-
-  writer.write_field_size(1, 1);
-  writer.append_int8(week.value());
-
-  writer.write_field_size(2, 1);
-  writer.append_int8(month.value());
-
-  writer.write_field_size(3, 4);
-  writer.append_int32(year);
-
-  const size_t byte_size = buf.size() - 4;
-  buf[0] = byte_size & 0xFF;
-  buf[1] = byte_size & 0xFF00;
-  buf[2] = byte_size & 0xFF0000;
-  buf[3] = byte_size & 0xFF000000;
-
+std::vector<uint8_t> NpDate::data() const {
+  std::vector<uint8_t> buf(20);
+  write_to(buf, 0);
   return buf;
 }

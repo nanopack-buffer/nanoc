@@ -8,6 +8,8 @@ let NpDate_typeID: TypeID = 1_732_634_645
 class NpDate: NanoPackMessage {
   var typeID: TypeID { return 1_732_634_645 }
 
+  var headerSize: Int { return 20 }
+
   let day: Int8
   let week: Week
   let month: Month
@@ -76,11 +78,10 @@ class NpDate: NanoPackMessage {
     bytesRead = ptr - data.startIndex
   }
 
-  func data() -> Data? {
-    let offset = 0
+  func write(to data: inout Data, offset: Int) -> Int {
+    let dataCountBefore = data.count
 
-    var data = Data()
-    data.reserveCapacity(20)
+    data.reserveCapacity(offset + 20)
 
     data.append(typeID: TypeID(NpDate_typeID))
     data.append([0], count: 4 * 4)
@@ -97,33 +98,12 @@ class NpDate: NanoPackMessage {
     data.write(size: 4, ofField: 3, offset: offset)
     data.append(int: year)
 
-    return data
+    return data.count - dataCountBefore
   }
 
-  func dataWithLengthPrefix() -> Data? {
-    let offset = 4
-
+  func data() -> Data? {
     var data = Data()
-    data.reserveCapacity(20 + 4)
-
-    data.append(int: Int32(0))
-    data.append(typeID: TypeID(NpDate_typeID))
-    data.append([0], count: 4 * 4)
-
-    data.write(size: 1, ofField: 0, offset: offset)
-    data.append(int: day)
-
-    data.write(size: 1, ofField: 1, offset: offset)
-    data.append(int: week.rawValue)
-
-    data.write(size: 1, ofField: 2, offset: offset)
-    data.append(int: month.rawValue)
-
-    data.write(size: 4, ofField: 3, offset: offset)
-    data.append(int: year)
-
-    data.write(size: data.count, at: 0)
-
+    _ = write(to: &data, offset: 0)
     return data
   }
 }

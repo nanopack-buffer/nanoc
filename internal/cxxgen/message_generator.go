@@ -18,7 +18,7 @@ func (g messageGenerator) TypeDeclaration(dataType datatype.DataType) string {
 }
 
 func (g messageGenerator) ReadSizeExpression(dataType datatype.DataType, varName string) string {
-	return fmt.Sprintf("%v_data.size()", varName)
+	return fmt.Sprintf("%v_byte_size", varName)
 }
 
 func (g messageGenerator) ConstructorFieldParameter(field npschema.MessageField) string {
@@ -111,40 +111,33 @@ func (g messageGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx ge
 	if field.IsSelfReferencing() {
 		return generator.Lines(
 			fmt.Sprintf("if (%v != nullptr) {", s),
-			fmt.Sprintf("    const std::vector<uint8_t> %v_data = %v->data();", s, s),
-			fmt.Sprintf("    writer.append_bytes(%v_data);", s),
-			fmt.Sprintf("    writer.write_field_size(%d, %v_data.size());", field.Number, s),
+			fmt.Sprintf("    const size_t before_%v_size = buf.size();", s),
+			fmt.Sprintf("    %v->write_to(buf, before_%v_size);", s, s),
+			fmt.Sprintf("    NanoPack::write_field_size(%d, buf.size() - before_%v_size, offset, buf);", field.Number, s),
 			"} else {",
-			fmt.Sprintf("    writer.write_field_size(%d, -1);", field.Number),
+			fmt.Sprintf("    NanoPack::write_field_size(%d, -1, offset, buf);", field.Number),
 			"}")
 	}
 
 	ms := field.Type.Schema.(*npschema.Message)
 
-	var l0 string
+	var l1 string
 	if ms.IsInherited {
-		l0 = fmt.Sprintf("const std::vector<uint8_t> %v_data = %v->data();", s, s)
+		l1 = fmt.Sprintf("%v->write_to(buf, before_%v_size);", s, s)
 	} else {
-		l0 = fmt.Sprintf("const std::vector<uint8_t> %v_data = %v.data();", s, s)
+		l1 = fmt.Sprintf("%v.write_to(buf, before_%v_size);", s, s)
 	}
 
 	return generator.Lines(
-		l0,
-		fmt.Sprintf("writer.append_bytes(%v_data);", s),
-		fmt.Sprintf("writer.write_field_size(%d, %v_data.size());", field.Number, s))
+		fmt.Sprintf("    const size_t before_%v_size = buf.size();", s),
+		l1,
+		fmt.Sprintf("NanoPack::write_field_size(%d, buf.size() - before_%v_size, offset, buf);", field.Number, s))
 }
 
 func (g messageGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
 	ms := dataType.Schema.(*npschema.Message)
-
-	var l0 string
 	if ms.IsInherited {
-		l0 = fmt.Sprintf("const std::vector<uint8_t> %v_data = %v->data();", varName, varName)
-	} else {
-		l0 = fmt.Sprintf("const std::vector<uint8_t> %v_data = %v.data();", varName, varName)
+		return fmt.Sprintf("%v->write_to(buf, buf.size());", varName)
 	}
-
-	return generator.Lines(
-		l0,
-		fmt.Sprintf("writer.append_bytes(%v_data);", varName))
+	return fmt.Sprintf("const size_t %v_byte_size = %v.write_to(buf, buf.size());", varName, varName)
 }

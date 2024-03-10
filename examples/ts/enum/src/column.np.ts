@@ -7,6 +7,10 @@ import type { TAlignment } from "./alignment.np.js";
 class Column implements NanoPackMessage {
   public static TYPE_ID = 2415007766;
 
+  public readonly typeId: number = 2415007766;
+
+  public readonly headerSize: number = 8;
+
   constructor(public alignment: TAlignment) {}
 
   public static fromBytes(
@@ -28,29 +32,21 @@ class Column implements NanoPackMessage {
     return { bytesRead: ptr, result: new Column(alignment) };
   }
 
-  public get typeId(): number {
-    return 2415007766;
+  public writeTo(writer: NanoBufWriter, offset: number = 0): number {
+    let bytesWritten = 8;
+
+    writer.writeTypeId(2415007766, offset);
+
+    const alignmentByteLength = writer.appendString(this.alignment);
+    writer.writeFieldSize(0, alignmentByteLength, offset);
+    bytesWritten += alignmentByteLength;
+
+    return bytesWritten;
   }
 
   public bytes(): Uint8Array {
     const writer = new NanoBufWriter(8);
-    writer.writeTypeId(2415007766);
-
-    const alignmentByteLength = writer.appendString(this.alignment);
-    writer.writeFieldSize(0, alignmentByteLength);
-
-    return writer.bytes;
-  }
-
-  public bytesWithLengthPrefix(): Uint8Array {
-    const writer = new NanoBufWriter(8 + 4, true);
-    writer.writeTypeId(2415007766);
-
-    const alignmentByteLength = writer.appendString(this.alignment);
-    writer.writeFieldSize(0, alignmentByteLength);
-
-    writer.writeLengthPrefix(writer.currentSize - 4);
-
+    this.writeTo(writer);
     return writer.bytes;
   }
 }

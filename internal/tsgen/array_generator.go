@@ -103,14 +103,17 @@ func (g arrayGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx gene
 			ig.WriteVariableToBuffer(*field.Type.ElemType, lv, ctx),
 			fmt.Sprintf("%vByteLength += %v;", c, ig.ReadSizeExpression(*field.Type.ElemType, lv)),
 			"}",
-			fmt.Sprintf("writer.writeFieldSize(%d, %vByteLength);", field.Number, c))
+			fmt.Sprintf("writer.writeFieldSize(%d, %vByteLength, offset);", field.Number, c),
+			fmt.Sprintf("bytesWritten += %vByteLength;", c))
 		ctx.RemoveVariableFromScope(c + "ByteLength")
 	} else {
 		ls = generator.Lines(
-			fmt.Sprintf("writer.writeFieldSize(%d, this.%v.length * %d);", field.Number, c, field.Type.ElemType.ByteSize),
+			fmt.Sprintf("const %vByteLength = this.%v.length * %d", c, c, field.Type.ElemType.ByteSize),
+			fmt.Sprintf("writer.writeFieldSize(%d, %vByteLength, offset);", field.Number, c),
 			fmt.Sprintf("for (const %v of this.%v) {", c, c),
 			ig.WriteVariableToBuffer(*field.Type.ElemType, c, ctx),
-			"}")
+			"}",
+			fmt.Sprintf("bytesWritten += %vByteLength;", c))
 	}
 
 	ctx.RemoveVariableFromScope(lv)

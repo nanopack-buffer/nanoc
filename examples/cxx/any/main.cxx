@@ -24,5 +24,14 @@ int main()
         std::cout << +b << " ";
     }
     std::cout << std::endl;
-    std::cout << "Total bytes: " << invoke_callback_data.size() << std::endl << std::endl;
+    std::cout << "Total bytes: " << invoke_callback_data.size() << std::endl;
+    std::cout << "=========================" << std::endl;
+
+    int bytes_read;
+    const InvokeCallback invoke_callback_parsed(invoke_callback_data.begin(), bytes_read);
+    std::cout << "callback handle: " << invoke_callback_parsed.handle << std::endl;
+
+    const ClickEvent click_event_parsed(invoke_callback_parsed.args.as_reader(), bytes_read);
+    std::cout << "click event x, y: " << click_event_parsed.x << ", " << click_event_parsed.y << std::endl;
+    std::cout << "timestamp: " << click_event_parsed.timestamp << std::endl;
 }

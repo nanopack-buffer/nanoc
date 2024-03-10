@@ -33,44 +33,29 @@ ClickEvent::ClickEvent(std::vector<uint8_t>::const_iterator begin,
 
 NanoPack::TypeId ClickEvent::type_id() const { return TYPE_ID; }
 
-std::vector<uint8_t> ClickEvent::data() const {
-  std::vector<uint8_t> buf(16);
-  NanoPack::Writer writer(&buf);
+int ClickEvent::header_size() const { return 16; }
 
-  writer.write_type_id(TYPE_ID);
+size_t ClickEvent::write_to(std::vector<uint8_t> &buf, int offset) const {
+  const size_t buf_size_before = buf.size();
 
-  writer.write_field_size(0, 8);
-  writer.append_double(x);
+  buf.resize(offset + 16);
 
-  writer.write_field_size(1, 8);
-  writer.append_double(y);
+  NanoPack::write_type_id(TYPE_ID, offset, buf);
 
-  writer.write_field_size(2, 8);
-  writer.append_int64(timestamp);
+  NanoPack::write_field_size(0, 8, offset, buf);
+  NanoPack::append_double(x, buf);
 
-  return buf;
+  NanoPack::write_field_size(1, 8, offset, buf);
+  NanoPack::append_double(y, buf);
+
+  NanoPack::write_field_size(2, 8, offset, buf);
+  NanoPack::append_int64(timestamp, buf);
+
+  return buf.size() - buf_size_before;
 }
 
-std::vector<uint8_t> ClickEvent::data_with_length_prefix() const {
-  std::vector<uint8_t> buf(16 + 4);
-  NanoPack::Writer writer(&buf, 4);
-
-  writer.write_type_id(TYPE_ID);
-
-  writer.write_field_size(0, 8);
-  writer.append_double(x);
-
-  writer.write_field_size(1, 8);
-  writer.append_double(y);
-
-  writer.write_field_size(2, 8);
-  writer.append_int64(timestamp);
-
-  const size_t byte_size = buf.size() - 4;
-  buf[0] = byte_size & 0xFF;
-  buf[1] = byte_size & 0xFF00;
-  buf[2] = byte_size & 0xFF0000;
-  buf[3] = byte_size & 0xFF000000;
-
+std::vector<uint8_t> ClickEvent::data() const {
+  std::vector<uint8_t> buf(16);
+  write_to(buf, 0);
   return buf;
 }

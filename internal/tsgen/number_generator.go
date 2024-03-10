@@ -85,7 +85,8 @@ func (g numberGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName
 func (g numberGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
 	return generator.Lines(
 		fmt.Sprintf("writer.%v(this.%v);", appendMethodName[field.Type.Kind], strcase.ToLowerCamel(field.Name)),
-		fmt.Sprintf("writer.writeFieldSize(%d, %d);", field.Number, field.Type.ByteSize))
+		fmt.Sprintf("writer.writeFieldSize(%d, %d, offset);", field.Number, field.Type.ByteSize),
+		fmt.Sprintf("bytesWritten += %d", field.Type.ByteSize))
 }
 
 func (g numberGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {

@@ -132,11 +132,13 @@ struct {{.MessageName}} : {{if .HasParentMessage}}{{.ParentMessageName}}{{else}}
   {{.}}
   {{- end}}
 
+  size_t write_to(std::vector<uint8_t> &buf, int offset) const override;
+
   [[nodiscard]] NanoPack::TypeId type_id() const override;
 
-  [[nodiscard]] std::vector<uint8_t> data() const override;
+  [[nodiscard]] int header_size() const override;
 
-  [[nodiscard]] std::vector<uint8_t> data_with_length_prefix() const override;
+  [[nodiscard]] std::vector<uint8_t> data() const override;
 };
 
 {{if .Namespace}}} // namespace {{.Namespace}}{{end}}
@@ -177,37 +179,28 @@ NanoPack::TypeId {{if .Namespace}}{{.Namespace}}::{{end}}{{.MessageName}}::type_
   return TYPE_ID;
 }
 
-std::vector<uint8_t> {{if .Namespace}}{{.Namespace}}::{{end}}{{.MessageName}}::data() const {
-  std::vector<uint8_t> buf({{.InitialWriteBufferSize}});
-  NanoPack::Writer writer(&buf);
-
-  writer.write_type_id(TYPE_ID);
-
-  {{range .FieldWriteCodeFragments}}
-  {{.}}
-
-  {{end}}
-
-  return buf;
+int {{if .Namespace}}{{.Namespace}}::{{end}}{{.MessageName}}::header_size() const {
+  return {{.InitialWriteBufferSize}};
 }
 
-std::vector<uint8_t> {{if .Namespace}}{{.Namespace}}::{{end}}{{.MessageName}}::data_with_length_prefix() const {
-  std::vector<uint8_t> buf({{.InitialWriteBufferSize}} + 4);
-  NanoPack::Writer writer(&buf, 4);
+size_t {{if .Namespace}}{{.Namespace}}::{{end}}{{.MessageName}}::write_to(std::vector<uint8_t> &buf, int offset) const {
+  const size_t buf_size_before = buf.size(); 
 
-  writer.write_type_id(TYPE_ID);
+  buf.resize(offset + {{.InitialWriteBufferSize}});
+
+  NanoPack::write_type_id(TYPE_ID, offset, buf);
 
   {{range .FieldWriteCodeFragments}}
   {{.}}
 
   {{end}}
 
-  const size_t byte_size = buf.size() - 4;
-  buf[0] = byte_size & 0xFF;
-  buf[1] = byte_size & 0xFF00;
-  buf[2] = byte_size & 0xFF0000;
-  buf[3] = byte_size & 0xFF000000;
+  return buf.size() - buf_size_before;
+}
 
+std::vector<uint8_t> {{if .Namespace}}{{.Namespace}}::{{end}}{{.MessageName}}::data() const {
+  std::vector<uint8_t> buf({{.InitialWriteBufferSize}});
+  write_to(buf, 0);
   return buf;
 }
 `

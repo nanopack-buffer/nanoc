@@ -8,6 +8,8 @@ let Widget_typeID: TypeID = 1_676_374_721
 class Widget: NanoPackMessage {
   var typeID: TypeID { return 1_676_374_721 }
 
+  var headerSize: Int { return 8 }
+
   let id: Int32
 
   static func from(data: Data) -> Widget? {
@@ -50,11 +52,10 @@ class Widget: NanoPackMessage {
     bytesRead = ptr - data.startIndex
   }
 
-  func data() -> Data? {
-    let offset = 0
+  func write(to data: inout Data, offset: Int) -> Int {
+    let dataCountBefore = data.count
 
-    var data = Data()
-    data.reserveCapacity(8)
+    data.reserveCapacity(offset + 8)
 
     data.append(typeID: TypeID(Widget_typeID))
     data.append([0], count: 1 * 4)
@@ -62,24 +63,12 @@ class Widget: NanoPackMessage {
     data.write(size: 4, ofField: 0, offset: offset)
     data.append(int: id)
 
-    return data
+    return data.count - dataCountBefore
   }
 
-  func dataWithLengthPrefix() -> Data? {
-    let offset = 4
-
+  func data() -> Data? {
     var data = Data()
-    data.reserveCapacity(8 + 4)
-
-    data.append(int: Int32(0))
-    data.append(typeID: TypeID(Widget_typeID))
-    data.append([0], count: 1 * 4)
-
-    data.write(size: 4, ofField: 0, offset: offset)
-    data.append(int: id)
-
-    data.write(size: data.count, at: 0)
-
+    _ = write(to: &data, offset: 0)
     return data
   }
 }

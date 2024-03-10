@@ -77,7 +77,8 @@ func (g stringGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx gen
 	c := strcase.ToLowerCamel(field.Name)
 	return generator.Lines(
 		fmt.Sprintf("const %vByteLength = writer.appendString(this.%v);", c, c),
-		fmt.Sprintf("writer.writeFieldSize(%d, %vByteLength);", field.Number, c))
+		fmt.Sprintf("writer.writeFieldSize(%d, %vByteLength, offset);", field.Number, c),
+		fmt.Sprintf("bytesWritten += %vByteLength;", c))
 }
 
 func (g stringGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {

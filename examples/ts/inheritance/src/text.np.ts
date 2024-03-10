@@ -7,6 +7,10 @@ import { Widget } from "./widget.np.js";
 class Text extends Widget {
   public static TYPE_ID = 3495336243;
 
+  public override readonly typeId: number = 3495336243;
+
+  public override readonly headerSize: number = 12;
+
   constructor(
     public id: number,
     public content: string,
@@ -36,35 +40,25 @@ class Text extends Widget {
     return { bytesRead: ptr, result: new Text(id, content) };
   }
 
-  public override get typeId(): number {
-    return 3495336243;
+  public override writeTo(writer: NanoBufWriter, offset: number = 0): number {
+    let bytesWritten = 12;
+
+    writer.writeTypeId(3495336243, offset);
+
+    writer.appendInt32(this.id);
+    writer.writeFieldSize(0, 4, offset);
+    bytesWritten += 4;
+
+    const contentByteLength = writer.appendString(this.content);
+    writer.writeFieldSize(1, contentByteLength, offset);
+    bytesWritten += contentByteLength;
+
+    return bytesWritten;
   }
 
   public override bytes(): Uint8Array {
     const writer = new NanoBufWriter(12);
-    writer.writeTypeId(3495336243);
-
-    writer.appendInt32(this.id);
-    writer.writeFieldSize(0, 4);
-
-    const contentByteLength = writer.appendString(this.content);
-    writer.writeFieldSize(1, contentByteLength);
-
-    return writer.bytes;
-  }
-
-  public override bytesWithLengthPrefix(): Uint8Array {
-    const writer = new NanoBufWriter(12 + 4, true);
-    writer.writeTypeId(3495336243);
-
-    writer.appendInt32(this.id);
-    writer.writeFieldSize(0, 4);
-
-    const contentByteLength = writer.appendString(this.content);
-    writer.writeFieldSize(1, contentByteLength);
-
-    writer.writeLengthPrefix(writer.currentSize - 4);
-
+    this.writeTo(writer);
     return writer.bytes;
   }
 }

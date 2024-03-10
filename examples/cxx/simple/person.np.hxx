@@ -30,11 +30,13 @@ struct Person : NanoPack::Message {
 
   Person(const NanoPack::Reader &reader, int &bytes_read);
 
+  size_t write_to(std::vector<uint8_t> &buf, int offset) const override;
+
   [[nodiscard]] NanoPack::TypeId type_id() const override;
 
-  [[nodiscard]] std::vector<uint8_t> data() const override;
+  [[nodiscard]] int header_size() const override;
 
-  [[nodiscard]] std::vector<uint8_t> data_with_length_prefix() const override;
+  [[nodiscard]] std::vector<uint8_t> data() const override;
 };
 
 #endif

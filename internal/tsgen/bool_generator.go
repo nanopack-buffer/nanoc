@@ -45,7 +45,8 @@ func (g boolGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName s
 func (g boolGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
 	return generator.Lines(
 		fmt.Sprintf("writer.appendBoolean(this.%v);", strcase.ToLowerCamel(field.Name)),
-		fmt.Sprintf("writer.writeFieldSize(%d, 1);", field.Number))
+		fmt.Sprintf("writer.writeFieldSize(%d, 1, offset);", field.Number),
+		"bytesWritten += 1;")
 }
 
 func (g boolGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {

@@ -5,6 +5,10 @@ import { NanoBufReader, NanoBufWriter, type NanoPackMessage } from "nanopack";
 class Widget implements NanoPackMessage {
   public static TYPE_ID = 1676374721;
 
+  public readonly typeId: number = 1676374721;
+
+  public readonly headerSize: number = 8;
+
   constructor(public id: number) {}
 
   public static fromBytes(
@@ -25,29 +29,21 @@ class Widget implements NanoPackMessage {
     return { bytesRead: ptr, result: new Widget(id) };
   }
 
-  public get typeId(): number {
-    return 1676374721;
+  public writeTo(writer: NanoBufWriter, offset: number = 0): number {
+    let bytesWritten = 8;
+
+    writer.writeTypeId(1676374721, offset);
+
+    writer.appendInt32(this.id);
+    writer.writeFieldSize(0, 4, offset);
+    bytesWritten += 4;
+
+    return bytesWritten;
   }
 
   public bytes(): Uint8Array {
     const writer = new NanoBufWriter(8);
-    writer.writeTypeId(1676374721);
-
-    writer.appendInt32(this.id);
-    writer.writeFieldSize(0, 4);
-
-    return writer.bytes;
-  }
-
-  public bytesWithLengthPrefix(): Uint8Array {
-    const writer = new NanoBufWriter(8 + 4, true);
-    writer.writeTypeId(1676374721);
-
-    writer.appendInt32(this.id);
-    writer.writeFieldSize(0, 4);
-
-    writer.writeLengthPrefix(writer.currentSize - 4);
-
+    this.writeTo(writer);
     return writer.bytes;
   }
 }

@@ -8,6 +8,8 @@ let Person_typeID: TypeID = 1_225_883_824
 class Person: NanoPackMessage {
   var typeID: TypeID { return 1_225_883_824 }
 
+  var headerSize: Int { return 24 }
+
   let firstName: String
   let middleName: String?
   let lastName: String
@@ -122,11 +124,10 @@ class Person: NanoPackMessage {
     bytesRead = ptr - data.startIndex
   }
 
-  func data() -> Data? {
-    let offset = 0
+  func write(to data: inout Data, offset: Int) -> Int {
+    let dataCountBefore = data.count
 
-    var data = Data()
-    data.reserveCapacity(24)
+    data.reserveCapacity(offset + 24)
 
     data.append(typeID: TypeID(Person_typeID))
     data.append([0], count: 5 * 4)
@@ -148,56 +149,18 @@ class Person: NanoPackMessage {
     data.append(int: age)
 
     if let otherFriend = self.otherFriend {
-      guard let otherFriendData = otherFriend.data() else {
-        return nil
-      }
-      data.write(size: otherFriendData.count, ofField: 4, offset: offset)
-      data.append(otherFriendData)
+      let otherFriendByteSize = otherFriend.write(to: &data, offset: data.count)
+      data.write(size: otherFriendByteSize, ofField: 4, offset: offset)
     } else {
       data.write(size: -1, ofField: 4, offset: offset)
     }
 
-    return data
+    return data.count - dataCountBefore
   }
 
-  func dataWithLengthPrefix() -> Data? {
-    let offset = 4
-
+  func data() -> Data? {
     var data = Data()
-    data.reserveCapacity(24 + 4)
-
-    data.append(int: Int32(0))
-    data.append(typeID: TypeID(Person_typeID))
-    data.append([0], count: 5 * 4)
-
-    data.write(size: firstName.lengthOfBytes(using: .utf8), ofField: 0, offset: offset)
-    data.append(string: firstName)
-
-    if let middleName = self.middleName {
-      data.write(size: middleName.lengthOfBytes(using: .utf8), ofField: 1, offset: offset)
-      data.append(string: middleName)
-    } else {
-      data.write(size: -1, ofField: 1, offset: offset)
-    }
-
-    data.write(size: lastName.lengthOfBytes(using: .utf8), ofField: 2, offset: offset)
-    data.append(string: lastName)
-
-    data.write(size: 1, ofField: 3, offset: offset)
-    data.append(int: age)
-
-    if let otherFriend = self.otherFriend {
-      guard let otherFriendData = otherFriend.data() else {
-        return nil
-      }
-      data.write(size: otherFriendData.count, ofField: 4, offset: offset)
-      data.append(otherFriendData)
-    } else {
-      data.write(size: -1, ofField: 4, offset: offset)
-    }
-
-    data.write(size: data.count, at: 0)
-
+    _ = write(to: &data, offset: 0)
     return data
   }
 }

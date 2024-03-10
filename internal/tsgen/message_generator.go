@@ -59,7 +59,8 @@ func (g messageGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx ge
 	return generator.Lines(
 		fmt.Sprintf("const %vData = this.%v.bytes();", c, c),
 		fmt.Sprintf("writer.appendBytes(%vData);", c),
-		fmt.Sprintf("writer.writeFieldSize(%d, %vData.byteLength)", field.Number, c))
+		fmt.Sprintf("writer.writeFieldSize(%d, %vData.byteLength, offset)", field.Number, c),
+		fmt.Sprintf("bytesWritten += %vData.byteLength;", c))
 }
 
 func (g messageGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {

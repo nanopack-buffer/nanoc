@@ -69,17 +69,17 @@ func (g numberGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName
 func (g numberGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
 	if field.Type.Kind == datatype.Enum {
 		return generator.Lines(
-			fmt.Sprintf("writer.write_field_size(%d, %d);", field.Number, field.Type.ByteSize),
-			fmt.Sprintf("writer.append_%v(%v.value());", field.Type.ElemType.Identifier, strcase.ToSnake(field.Name)))
+			fmt.Sprintf("NanoPack::write_field_size(%d, %d, offset, buf);", field.Number, field.Type.ByteSize),
+			fmt.Sprintf("NanoPack::append_%v(%v.value(), buf);", field.Type.ElemType.Identifier, strcase.ToSnake(field.Name)))
 	}
 	return generator.Lines(
-		fmt.Sprintf("writer.write_field_size(%d, %d);", field.Number, field.Type.ByteSize),
-		fmt.Sprintf("writer.append_%v(%v);", field.Type.Identifier, strcase.ToSnake(field.Name)))
+		fmt.Sprintf("NanoPack::write_field_size(%d, %d, offset, buf);", field.Number, field.Type.ByteSize),
+		fmt.Sprintf("NanoPack::append_%v(%v, buf);", field.Type.Identifier, strcase.ToSnake(field.Name)))
 }
 
 func (g numberGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
 	if dataType.Kind == datatype.Enum {
-		return fmt.Sprintf("writer.append_%v(%v.value());", dataType.ElemType.Identifier, varName)
+		return fmt.Sprintf("NanoPack::append_%v(%v.value(), buf);", dataType.ElemType.Identifier, varName)
 	}
-	return fmt.Sprintf("writer.append_%v(%v);", dataType.Identifier, varName)
+	return fmt.Sprintf("NanoPack::append_%v(%v, buf);", dataType.Identifier, varName)
 }

@@ -8,6 +8,10 @@ import type { TMonth } from "./month.np.js";
 class NpDate implements NanoPackMessage {
   public static TYPE_ID = 1732634645;
 
+  public readonly typeId: number = 1732634645;
+
+  public readonly headerSize: number = 20;
+
   constructor(
     public day: number,
     public week: TWeek,
@@ -42,47 +46,33 @@ class NpDate implements NanoPackMessage {
     return { bytesRead: ptr, result: new NpDate(day, week, month, year) };
   }
 
-  public get typeId(): number {
-    return 1732634645;
+  public writeTo(writer: NanoBufWriter, offset: number = 0): number {
+    let bytesWritten = 20;
+
+    writer.writeTypeId(1732634645, offset);
+
+    writer.appendInt8(this.day);
+    writer.writeFieldSize(0, 1, offset);
+    bytesWritten += 1;
+
+    writer.appendInt8(this.week);
+    writer.writeFieldSize(1, 1, offset);
+    bytesWritten += 1;
+
+    writer.appendInt8(this.month);
+    writer.writeFieldSize(2, 1, offset);
+    bytesWritten += 1;
+
+    writer.appendInt32(this.year);
+    writer.writeFieldSize(3, 4, offset);
+    bytesWritten += 4;
+
+    return bytesWritten;
   }
 
   public bytes(): Uint8Array {
     const writer = new NanoBufWriter(20);
-    writer.writeTypeId(1732634645);
-
-    writer.appendInt8(this.day);
-    writer.writeFieldSize(0, 1);
-
-    writer.appendInt8(this.week);
-    writer.writeFieldSize(1, 1);
-
-    writer.appendInt8(this.month);
-    writer.writeFieldSize(2, 1);
-
-    writer.appendInt32(this.year);
-    writer.writeFieldSize(3, 4);
-
-    return writer.bytes;
-  }
-
-  public bytesWithLengthPrefix(): Uint8Array {
-    const writer = new NanoBufWriter(20 + 4, true);
-    writer.writeTypeId(1732634645);
-
-    writer.appendInt8(this.day);
-    writer.writeFieldSize(0, 1);
-
-    writer.appendInt8(this.week);
-    writer.writeFieldSize(1, 1);
-
-    writer.appendInt8(this.month);
-    writer.writeFieldSize(2, 1);
-
-    writer.appendInt32(this.year);
-    writer.writeFieldSize(3, 4);
-
-    writer.writeLengthPrefix(writer.currentSize - 4);
-
+    this.writeTo(writer);
     return writer.bytes;
   }
 }
