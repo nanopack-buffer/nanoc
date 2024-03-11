@@ -70,11 +70,13 @@ func (g numberGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx gen
 	if field.Type.Kind == datatype.Enum {
 		return generator.Lines(
 			fmt.Sprintf("NanoPack::write_field_size(%d, %d, offset, buf);", field.Number, field.Type.ByteSize),
-			fmt.Sprintf("NanoPack::append_%v(%v.value(), buf);", field.Type.ElemType.Identifier, strcase.ToSnake(field.Name)))
+			fmt.Sprintf("NanoPack::append_%v(%v.value(), buf);", field.Type.ElemType.Identifier, strcase.ToSnake(field.Name)),
+			fmt.Sprintf("bytes_written += %d;", field.Type.ElemType.ByteSize))
 	}
 	return generator.Lines(
 		fmt.Sprintf("NanoPack::write_field_size(%d, %d, offset, buf);", field.Number, field.Type.ByteSize),
-		fmt.Sprintf("NanoPack::append_%v(%v, buf);", field.Type.Identifier, strcase.ToSnake(field.Name)))
+		fmt.Sprintf("NanoPack::append_%v(%v, buf);", field.Type.Identifier, strcase.ToSnake(field.Name)),
+		fmt.Sprintf("bytes_written += %d;", field.Type.ByteSize))
 }
 
 func (g numberGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {

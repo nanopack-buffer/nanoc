@@ -48,7 +48,8 @@ func (g boolGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName s
 func (g boolGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
 	return generator.Lines(
 		fmt.Sprintf("NanoPack::write_field_size(%d, %d, offset, buf);", field.Number, field.Type.ByteSize),
-		fmt.Sprintf("NanoPack::append_bool(%v, buf);", strcase.ToSnake(field.Name)))
+		fmt.Sprintf("NanoPack::append_bool(%v, buf);", strcase.ToSnake(field.Name)),
+		"++bytes_written;")
 }
 
 func (g boolGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {

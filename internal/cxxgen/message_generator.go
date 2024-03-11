@@ -111,9 +111,8 @@ func (g messageGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx ge
 	if field.IsSelfReferencing() {
 		return generator.Lines(
 			fmt.Sprintf("if (%v != nullptr) {", s),
-			fmt.Sprintf("    const size_t before_%v_size = buf.size();", s),
-			fmt.Sprintf("    %v->write_to(buf, before_%v_size);", s, s),
-			fmt.Sprintf("    NanoPack::write_field_size(%d, buf.size() - before_%v_size, offset, buf);", field.Number, s),
+			fmt.Sprintf("    const size_t %v_byte_size = %v->write_to(buf, buf.size());", s, s),
+			fmt.Sprintf("    NanoPack::write_field_size(%d, %v_byte_size, offset, buf);", field.Number, s),
 			"} else {",
 			fmt.Sprintf("    NanoPack::write_field_size(%d, -1, offset, buf);", field.Number),
 			"}")
@@ -121,23 +120,22 @@ func (g messageGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx ge
 
 	ms := field.Type.Schema.(*npschema.Message)
 
-	var l1 string
+	var l0 string
 	if ms.IsInherited {
-		l1 = fmt.Sprintf("%v->write_to(buf, before_%v_size);", s, s)
+		l0 = fmt.Sprintf("const size_t %v_byte_size = %v->write_to(buf, buf.size());", s, s)
 	} else {
-		l1 = fmt.Sprintf("%v.write_to(buf, before_%v_size);", s, s)
+		l0 = fmt.Sprintf("const size_t %v_byte_size = %v.write_to(buf, buf.size());", s, s)
 	}
 
 	return generator.Lines(
-		fmt.Sprintf("    const size_t before_%v_size = buf.size();", s),
-		l1,
-		fmt.Sprintf("NanoPack::write_field_size(%d, buf.size() - before_%v_size, offset, buf);", field.Number, s))
+		l0,
+		fmt.Sprintf("NanoPack::write_field_size(%d, %v_byte_size, offset, buf);", field.Number, s))
 }
 
 func (g messageGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
 	ms := dataType.Schema.(*npschema.Message)
 	if ms.IsInherited {
-		return fmt.Sprintf("%v->write_to(buf, buf.size());", varName)
+		return fmt.Sprintf("const size_t %v_byte_size = %v->write_to(buf, buf.size());", varName, varName)
 	}
 	return fmt.Sprintf("const size_t %v_byte_size = %v.write_to(buf, buf.size());", varName, varName)
 }

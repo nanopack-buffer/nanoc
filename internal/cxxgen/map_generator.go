@@ -103,13 +103,15 @@ func (g mapGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx genera
 		ctx.AddVariableToScope(lvv)
 
 		ls := generator.Lines(
-			fmt.Sprintf("NanoPack::write_field_size(%d, %v.size() * %d, offset, buf);", field.Number, s, field.Type.ElemType.ByteSize+field.Type.KeyType.ByteSize),
+			fmt.Sprintf("const int32_t %v_byte_size = %v.size() * %d;", s, s, field.Type.ElemType.ByteSize+field.Type.KeyType.ByteSize),
+			fmt.Sprintf("NanoPack::write_field_size(%d, %v_byte_size, offset, buf);", field.Number, s),
 			fmt.Sprintf("for (const auto &%v : %v) {", lv, s),
 			fmt.Sprintf("  const auto %v = %v.first;", lvk, lv),
 			fmt.Sprintf("  const auto %v = %v.second;", lvv, lv),
 			kg.WriteVariableToBuffer(*field.Type.KeyType, lvk, ctx),
 			ig.WriteVariableToBuffer(*field.Type.ElemType, lvv, ctx),
-			"}")
+			"}",
+			fmt.Sprintf("bytes_written += %v_byte_size;", s))
 
 		ctx.RemoveVariableFromScope(lv)
 		ctx.RemoveVariableFromScope(lvk)
@@ -120,7 +122,8 @@ func (g mapGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx genera
 
 	return generator.Lines(
 		g.WriteVariableToBuffer(field.Type, s, ctx),
-		fmt.Sprintf("NanoPack::write_field_size(%d, %v, offset, buf);", field.Number, s+"_byte_size"))
+		fmt.Sprintf("NanoPack::write_field_size(%d, %v_byte_size, offset, buf);", field.Number, s),
+		fmt.Sprintf("bytes_written += %v_byte_size", s))
 }
 
 func (g mapGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {

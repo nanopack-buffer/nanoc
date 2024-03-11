@@ -74,7 +74,8 @@ func (g stringGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx gen
 
 	return generator.Lines(
 		fmt.Sprintf("NanoPack::write_field_size(%d, %v.size(), offset, buf);", field.Number, expr),
-		fmt.Sprintf("NanoPack::append_string(%v, buf);", expr))
+		fmt.Sprintf("NanoPack::append_string(%v, buf);", expr),
+		fmt.Sprintf("bytes_written += %v.size();", s))
 }
 
 func (g stringGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {

@@ -184,7 +184,7 @@ int {{if .Namespace}}{{.Namespace}}::{{end}}{{.MessageName}}::header_size() cons
 }
 
 size_t {{if .Namespace}}{{.Namespace}}::{{end}}{{.MessageName}}::write_to(std::vector<uint8_t> &buf, int offset) const {
-  const size_t buf_size_before = buf.size(); 
+  size_t bytes_written = {{.InitialWriteBufferSize}};
 
   buf.resize(offset + {{.InitialWriteBufferSize}});
 
@@ -195,7 +195,7 @@ size_t {{if .Namespace}}{{.Namespace}}::{{end}}{{.MessageName}}::write_to(std::v
 
   {{end}}
 
-  return buf.size() - buf_size_before;
+  return bytes_written;
 }
 
 std::vector<uint8_t> {{if .Namespace}}{{.Namespace}}::{{end}}{{.MessageName}}::data() const {
