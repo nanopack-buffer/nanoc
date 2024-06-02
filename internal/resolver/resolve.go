@@ -198,9 +198,11 @@ func resolveMessageSchemaTypeInfo(partialMsg *npschema.PartialMessage, sm dataty
 				name = sp.Name
 			}
 
-			if _, ok := imported[name]; !ok {
-				fullSchema.ImportedTypes = append(fullSchema.ImportedTypes, s)
-				imported[name] = struct{}{}
+			if name != partialMsg.Name {
+				if _, ok := imported[name]; !ok {
+					fullSchema.ImportedTypes = append(fullSchema.ImportedTypes, s)
+					imported[name] = struct{}{}
+				}
 			}
 		}
 
