@@ -2,10 +2,11 @@ package cxxgen
 
 import (
 	"fmt"
-	"github.com/iancoleman/strcase"
 	"nanoc/internal/datatype"
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
+
+	"github.com/iancoleman/strcase"
 )
 
 type anyGenerator struct{}
@@ -35,20 +36,21 @@ func (g anyGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx gener
 	s := strcase.ToSnake(field.Name)
 	return generator.Lines(
 		fmt.Sprintf("const int32_t %v_byte_size = reader.read_field_size(%d);", s, field.Number),
-		fmt.Sprintf("%v = %v(begin + ptr, begin + ptr + %v_byte_size);", s, g.TypeDeclaration(field.Type), s),
+		fmt.Sprintf("%v = %v(reader.buffer + ptr, %v_byte_size);", s, g.TypeDeclaration(field.Type), s),
 		fmt.Sprintf("ptr += %v_byte_size;", s))
 }
 
 func (g anyGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
 	var l2 string
 	if ctx.IsVariableInScope(varName) {
-		l2 = fmt.Sprintf("%v = %v(begin + ptr, begin + ptr + %v_byte_size);", varName, g.TypeDeclaration(dataType), varName)
+		l2 = fmt.Sprintf("%v = %v(reader.buffer + ptr, %v_byte_size);", varName, g.TypeDeclaration(dataType), varName)
 	} else {
-		l2 = fmt.Sprintf("%v %v(begin + ptr, begin + ptr + %v_byte_size);", g.TypeDeclaration(dataType), varName, varName)
+		l2 = fmt.Sprintf("%v %v(reader.buffer + ptr, %v_byte_size);", g.TypeDeclaration(dataType), varName, varName)
 	}
 
 	return generator.Lines(
-		fmt.Sprintf("const int32_t %v_byte_size = reader.read_int32(ptr);", varName),
+		fmt.Sprintf("const int32_t %v_byte_size;", varName),
+		fmt.Sprintf("reader.read_int32(ptr, %v_byte_size);", varName),
 		"ptr += 4;",
 		l2,
 		fmt.Sprintf("ptr += %v_byte_size;", varName))
@@ -57,13 +59,12 @@ func (g anyGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName st
 func (g anyGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
 	s := strcase.ToSnake(field.Name)
 	return generator.Lines(
-		fmt.Sprintf("NanoPack::write_field_size(%d, %v.size(), offset, buf);", field.Number, s),
-		fmt.Sprintf("NanoPack::append_bytes(%v.data(), buf);", s),
-		fmt.Sprintf("bytes_written += %v.size();", s))
+		fmt.Sprintf("writer.write_field_size(%d, %v.size(), offset);", field.Number, s),
+		fmt.Sprintf("writer.append_bytes(%v.data(), %v.size());", s, s))
 }
 
 func (g anyGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
 	return generator.Lines(
-		fmt.Sprintf("NanoPack::append_int32(%v.size(), buf);", varName),
-		fmt.Sprintf("NanoPack::append_bytes(%v.data(), buf);", varName))
+		fmt.Sprintf("writer.append_int32(%v.size());", varName),
+		fmt.Sprintf("writer::append_bytes(%v.data(), %v.size());", varName, varName))
 }

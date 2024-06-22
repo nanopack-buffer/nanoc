@@ -14,7 +14,7 @@ add_executable(any
         click_event.np.cxx
         invoke_callback.np.cxx)
 
-add_subdirectory(${SHARED_LIB_DIR}/nanopack ./nanopack)
+add_subdirectory(${SHARED_LIB_DIR}/cxx-nanopack ./cxx-nanopack)
 
 target_include_directories(any PUBLIC ${SHARED_LIB_DIR}/nanopack/include)
 target_link_libraries(any nanopack)

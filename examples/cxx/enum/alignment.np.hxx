@@ -4,7 +4,8 @@
 #define ALIGNMENT_ENUM_NP_HXX
 
 #include <array>
-#include <stdexcept>
+#include <string_view>
+#include <unordered_map>
 
 class Alignment {
 public:

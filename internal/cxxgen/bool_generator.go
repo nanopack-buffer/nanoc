@@ -2,10 +2,11 @@ package cxxgen
 
 import (
 	"fmt"
-	"github.com/iancoleman/strcase"
 	"nanoc/internal/datatype"
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
+
+	"github.com/iancoleman/strcase"
 )
 
 type boolGenerator struct{}
@@ -32,26 +33,25 @@ func (g boolGenerator) FieldDeclaration(field npschema.MessageField) string {
 }
 
 func (g boolGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
-	s := strcase.ToSnake(field.Name)
-	return generator.Lines(
-		g.ReadValueFromBuffer(field.Type, s, ctx),
-		fmt.Sprintf("this->%v = %v", s, s))
+	return fmt.Sprintf("reader.read_bool(ptr++, %v);", strcase.ToSnake(field.Name))
 }
 
 func (g boolGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
-	if ctx.IsVariableInScope(varName) {
-		return fmt.Sprintf("%v = reader.read_bool(ptr++);", varName)
+	var declr string
+	if !ctx.IsVariableInScope(varName) {
+		declr = fmt.Sprintf("%v %v;", g.TypeDeclaration(dataType), varName)
 	}
-	return fmt.Sprintf("const %v %v = reader.read_bool(ptr++);", g.TypeDeclaration(dataType), varName)
+	return generator.Lines(
+		declr,
+		fmt.Sprintf("reader.read_bool(ptr++, %v);", varName))
 }
 
 func (g boolGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
 	return generator.Lines(
-		fmt.Sprintf("NanoPack::write_field_size(%d, %d, offset, buf);", field.Number, field.Type.ByteSize),
-		fmt.Sprintf("NanoPack::append_bool(%v, buf);", strcase.ToSnake(field.Name)),
-		"++bytes_written;")
+		fmt.Sprintf("writer.write_field_size(%d, %d, offset);", field.Number, field.Type.ByteSize),
+		fmt.Sprintf("writer.append_bool(%v);", strcase.ToSnake(field.Name)))
 }
 
 func (g boolGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
-	return fmt.Sprintf("NanoPack::append_bool(%v, buf);", varName)
+	return fmt.Sprintf("writer::append_bool(%v);", varName)
 }

@@ -2,12 +2,12 @@
 
 #ifndef PERSON_NP_HXX
 #define PERSON_NP_HXX
-#include <memory>
 #include <nanopack/message.hxx>
 #include <nanopack/nanopack.hxx>
 #include <nanopack/reader.hxx>
 #include <optional>
 #include <string>
+#include <vector>
 
 struct Person : NanoPack::Message {
   static constexpr NanoPack::TypeId TYPE_ID = 1225883824;
@@ -16,13 +16,12 @@ struct Person : NanoPack::Message {
   std::optional<std::string> middle_name;
   std::string last_name;
   int8_t age;
-  std::unique_ptr<Person> other_friend;
+  std::vector<Person> friends;
 
   Person() = default;
 
   Person(std::string first_name, std::optional<std::string> middle_name,
-         std::string last_name, int8_t age,
-         std::unique_ptr<Person> other_friend);
+         std::string last_name, int8_t age, std::vector<Person> friends);
 
   size_t read_from(NanoPack::Reader &reader);
 

@@ -6,11 +6,9 @@
 #include "person.np.hxx"
 
 Person::Person(std::string first_name, std::optional<std::string> middle_name,
-               std::string last_name, int8_t age,
-               std::unique_ptr<Person> other_friend)
+               std::string last_name, int8_t age, std::vector<Person> friends)
     : first_name(std::move(first_name)), middle_name(std::move(middle_name)),
-      last_name(std::move(last_name)), age(age),
-      other_friend(std::move(other_friend)) {}
+      last_name(std::move(last_name)), age(age), friends(std::move(friends)) {}
 
 size_t Person::read_from(NanoPack::Reader &reader) {
   uint8_t *buf = reader.buffer;
@@ -36,14 +34,16 @@ size_t Person::read_from(NanoPack::Reader &reader) {
   reader.read_int8(ptr, age);
   ptr += 1;
 
-  if (reader.read_field_size(4) < 0) {
-    other_friend = nullptr;
-  } else {
-    other_friend = std::make_unique<Person>();
+  int32_t friends_vec_size;
+  reader.read_int32(ptr, friends_vec_size);
+  ptr += 4;
+  friends.resize(friends_vec_size);
+  for (int i = 0; i < friends_vec_size; ++i) {
+    auto &i_item = friends[i];
     reader.buffer += ptr;
-    const size_t other_friend_bytes_read = other_friend->read_from(reader);
+    const size_t i_item_bytes_read = i_item.read_from(reader);
     reader.buffer = buf;
-    ptr += other_friend_bytes_read;
+    ptr += i_item_bytes_read;
   }
 
   return ptr;
@@ -76,13 +76,14 @@ size_t Person::write_to(NanoPack::Writer &writer, int offset) const {
   writer.write_field_size(3, 1, offset);
   writer.append_int8(age);
 
-  if (other_friend != nullptr) {
-    const size_t other_friend_byte_size =
-        other_friend->write_to(writer, writer.size());
-    writer.write_field_size(4, other_friend_byte_size, offset);
-  } else {
-    writer.write_field_size(4, -1, offset);
+  const size_t friends_vec_size = friends.size();
+  writer.append_int32(friends_vec_size);
+  int32_t friends_byte_size = sizeof(int32_t);
+  for (auto &i : friends) {
+    const size_t i_byte_size = i.write_to(writer, writer.size());
+    friends_byte_size += i_byte_size;
   }
+  writer.write_field_size(4, friends_byte_size, offset);
 
   return writer.size() - writer_size_before;
 }

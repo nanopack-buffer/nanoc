@@ -2,10 +2,11 @@ package cxxgen
 
 import (
 	"fmt"
-	"github.com/iancoleman/strcase"
 	"nanoc/internal/datatype"
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
+
+	"github.com/iancoleman/strcase"
 )
 
 type stringGenerator struct{}
@@ -34,48 +35,62 @@ func (g stringGenerator) FieldDeclaration(field npschema.MessageField) string {
 func (g stringGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
 	s := strcase.ToSnake(field.Name)
 
-	if field.Type.Kind == datatype.Enum {
+	switch field.Type.Kind {
+	case datatype.Enum:
 		return generator.Lines(
 			fmt.Sprintf("const int32_t %v_size = reader.read_field_size(%d);", s, field.Number),
-			fmt.Sprintf("const %v %v_raw_value = reader.read_string(ptr, %v_size);", g.TypeDeclaration(*field.Type.ElemType), s, s),
+			fmt.Sprintf("%v %v_raw_value;", g.TypeDeclaration(*field.Type.ElemType), s),
+			fmt.Sprintf("reader.read_string(ptr, %v_size, %v_raw_value);", s, s),
+			fmt.Sprintf("ptr += %v_size;", s))
+
+	case datatype.Optional:
+		return generator.Lines(
+			fmt.Sprintf("%v = std::move(std::string());", s),
+			fmt.Sprintf("const int32_t %v_size = reader.read_field_size(%d);", s, field.Number),
+			fmt.Sprintf("reader.read_string(ptr, %v_size, %v);", s, s),
+			fmt.Sprintf("ptr += %v_size;", s))
+
+	default:
+		return generator.Lines(
+			fmt.Sprintf("const int32_t %v_size = reader.read_field_size(%d);", s, field.Number),
+			fmt.Sprintf("reader.read_string(ptr, %v_size, %v);", s, s),
 			fmt.Sprintf("ptr += %v_size;", s))
 	}
-
-	return generator.Lines(
-		fmt.Sprintf("const int32_t %v_size = reader.read_field_size(%d);", s, field.Number),
-		fmt.Sprintf("%v = reader.read_string(ptr, %v_size);", s, s),
-		fmt.Sprintf("ptr += %v_size;", s))
 }
 
 func (g stringGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
-	var l2 string
-	if ctx.IsVariableInScope(varName) {
-		l2 = fmt.Sprintf("%v = reader.read_string(ptr, %v_size);", varName, varName)
-	} else {
-		l2 = fmt.Sprintf("%v %v = reader.read_string(ptr, %v_size);", g.TypeDeclaration(dataType), varName)
+	var declr string
+	if !ctx.IsVariableInScope(varName) {
+		declr = fmt.Sprintf("%v %v;", g.TypeDeclaration(dataType), varName)
 	}
 
 	return generator.Lines(
 		fmt.Sprintf("const int32_t %v_size = reader.read_int32(ptr);", varName),
 		"ptr += 4;",
-		l2,
+		declr,
+		fmt.Sprintf("reader.read_string(ptr, %v_size, %v);", varName, varName),
 		fmt.Sprintf("ptr += %v_size;", varName))
 }
 
 func (g stringGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
 	s := strcase.ToSnake(field.Name)
 
-	var expr string
-	if field.Type.Kind == datatype.Enum {
-		expr = s + ".value()"
-	} else {
-		expr = s
-	}
+	switch field.Type.Kind {
+	case datatype.Enum:
+		return generator.Lines(
+			fmt.Sprintf("writer.write_field_size(%d, %v.value().size(), offset);", field.Number, s),
+			fmt.Sprintf("writer.append_string(%v.value());", s))
 
-	return generator.Lines(
-		fmt.Sprintf("NanoPack::write_field_size(%d, %v.size(), offset, buf);", field.Number, expr),
-		fmt.Sprintf("NanoPack::append_string(%v, buf);", expr),
-		fmt.Sprintf("bytes_written += %v.size();", s))
+	case datatype.Optional:
+		return generator.Lines(
+			fmt.Sprintf("writer.write_field_size(%d, %v->size(), offset);", field.Number, s),
+			fmt.Sprintf("writer.append_string(*%v);", s))
+
+	default:
+		return generator.Lines(
+			fmt.Sprintf("writer.write_field_size(%d, %v.size(), offset);", field.Number, s),
+			fmt.Sprintf("writer.append_string(%v);", s))
+	}
 }
 
 func (g stringGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
@@ -87,6 +102,6 @@ func (g stringGenerator) WriteVariableToBuffer(dataType datatype.DataType, varNa
 	}
 
 	return generator.Lines(
-		fmt.Sprintf("NanoPack::append_int32(%v.size(), buf);", expr),
-		fmt.Sprintf("NanoPack::append_string(%v, buf);", expr))
+		fmt.Sprintf("writer.append_int32(%v.size());", expr),
+		fmt.Sprintf("writer.append_string(%v);", expr))
 }

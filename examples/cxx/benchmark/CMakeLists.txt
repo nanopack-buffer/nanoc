@@ -9,11 +9,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 get_filename_component(SHARED_LIB_DIR ../lib ABSOLUTE)
 
+include(FindProtobuf)
+find_package(Protobuf REQUIRED)
+include_directories(${PROTOBUF_INCLUDE_DIR})
+
 add_executable(benchmark
     main.cxx
-    )
+    person.np.cxx
+		person.pb.cc)
 
-add_subdirectory(${SHARED_LIB_DIR}/nanopack ./nanopack)
+add_subdirectory(${SHARED_LIB_DIR}/cxx-nanopack ./cxx-nanopack)
 
-target_include_directories(inheritance PUBLIC ${SHARED_LIB_DIR}/nanopack/include)
-target_link_libraries(inheritance nanopack)
+target_include_directories(benchmark PUBLIC ${SHARED_LIB_DIR}/nanopack/include)
+target_link_libraries(benchmark nanopack ${PROTOBUF_LIBRARY})

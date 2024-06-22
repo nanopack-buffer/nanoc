@@ -5,9 +5,9 @@
 
 #include <memory>
 #include <nanopack/message.hxx>
+#include <nanopack/reader.hxx>
 
 std::unique_ptr<NanoPack::Message>
-make_nanopack_message(std::vector<uint8_t>::const_iterator data_iter,
-                      int &bytes_read);
+make_nanopack_message(NanoPack::Reader &reader, size_t &bytes_read);
 
 #endif

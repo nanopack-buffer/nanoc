@@ -2,10 +2,11 @@ package cxxgen
 
 import (
 	"fmt"
-	"github.com/iancoleman/strcase"
 	"nanoc/internal/datatype"
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
+
+	"github.com/iancoleman/strcase"
 )
 
 type messageGenerator struct{}
@@ -25,7 +26,7 @@ func (g messageGenerator) ConstructorFieldParameter(field npschema.MessageField)
 	td := g.TypeDeclaration(field.Type)
 	s := strcase.ToSnake(field.Name)
 	if field.IsSelfReferencing() {
-		return fmt.Sprintf("std::shared_ptr<%v> %v", field.Type.ElemType.Identifier, s)
+		return fmt.Sprintf("std::unique_ptr<%v> %v", field.Type.ElemType.Identifier, s)
 	}
 	return td + " " + s
 }
@@ -44,7 +45,7 @@ func (g messageGenerator) FieldInitializer(field npschema.MessageField) string {
 func (g messageGenerator) FieldDeclaration(field npschema.MessageField) string {
 	s := strcase.ToSnake(field.Name)
 	if field.IsSelfReferencing() {
-		return fmt.Sprintf("std::shared_ptr<%v> %v;", field.Type.ElemType.Identifier, s)
+		return fmt.Sprintf("std::unique_ptr<%v> %v;", field.Type.ElemType.Identifier, s)
 	}
 	return g.TypeDeclaration(field.Type) + " " + s + ";"
 }
@@ -57,25 +58,29 @@ func (g messageGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx g
 			fmt.Sprintf("if (reader.read_field_size(%d) < 0) {", field.Number),
 			fmt.Sprintf("    %v = nullptr;", s),
 			"} else {",
-			fmt.Sprintf("    int %v_bytes_read = 0;", s),
-			fmt.Sprintf("    %v = std::make_shared<%v>(begin + ptr, %v_bytes_read);", s, field.Type.ElemType.Identifier, s),
+			fmt.Sprintf("    %v = std::make_unique<%v>();", s, field.Type.ElemType.Identifier),
+			"reader.buffer += ptr;",
+			fmt.Sprintf("    const size_t %v_bytes_read = %v->read_from(reader);", s, s),
+			"reader.buffer = buf;",
 			fmt.Sprintf("    ptr += %v_bytes_read;", s),
 			"}")
 	}
 
-	td := g.TypeDeclaration(field.Type)
 	ms := field.Type.Schema.(*npschema.Message)
 
-	var ctor string
 	if field.Type.Schema.(*npschema.Message).IsInherited {
-		ctor = fmt.Sprintf("std::move(make_%v(begin + ptr, %v_bytes_read))", strcase.ToSnake(ms.Name), s)
-	} else {
-		ctor = fmt.Sprintf("%v(begin + ptr, %v_bytes_read)", td, s)
+		return generator.Lines(
+			fmt.Sprintf("%v = std::move(make_%v(reader));", s, strcase.ToSnake(ms.Name)),
+			"reader.buffer += ptr;",
+			fmt.Sprintf("const size_t %v_bytes_read = %v->read_from(reader);", s, s),
+			"reader.buffer = buf;",
+			fmt.Sprintf("ptr += %v_bytes_read;", s))
 	}
 
 	return generator.Lines(
-		fmt.Sprintf("int %v_bytes_read = 0;", s),
-		fmt.Sprintf("%v = %v;", s, ctor),
+		"reader.buffer += ptr;",
+		fmt.Sprintf("const size_t %v_bytes_read = %v.read_from(reader);", s, s),
+		"reader.buffer = buf;",
 		fmt.Sprintf("ptr += %v_bytes_read;", s))
 }
 
@@ -83,25 +88,29 @@ func (g messageGenerator) ReadValueFromBuffer(dataType datatype.DataType, varNam
 	td := g.TypeDeclaration(dataType)
 	isPolymorphic := dataType.Schema.(*npschema.Message).IsInherited
 
-	var expr string
-	if isPolymorphic {
-		expr = fmt.Sprintf("std::move(make_%v(begin + ptr, %v_bytes_read))", strcase.ToSnake(dataType.Identifier), varName)
-	} else {
-		expr = fmt.Sprintf("%v(begin + ptr, %v_bytes_read)", td, varName)
-	}
-
-	var l1 string
+	var read string
 	if ctx.IsVariableInScope(varName) {
-		l1 = fmt.Sprintf("%v = %v", varName, expr)
-	} else if isPolymorphic {
-		l1 = fmt.Sprintf("std::unique_ptr %v = %v;", varName, expr)
+		if isPolymorphic {
+			read = generator.Lines(
+				fmt.Sprintf("size_t %v_bytes_read;", varName),
+				"reader.buffer += ptr;",
+				fmt.Sprintf("%v = std::move(make_%v(reader, %v_bytes_read));", varName, strcase.ToSnake(dataType.Identifier), varName),
+				"reader.buffer = buf;")
+		} else {
+			read = generator.Lines(
+				"reader.buffer += ptr;",
+				fmt.Sprintf("const size_t %v_bytes_read = %v.read_from(reader);", varName, varName),
+				"reader.buffer = buf;",
+			)
+		}
 	} else {
-		l1 = fmt.Sprintf("%v %v(begin + ptr, %v_bytes_read);", td, varName, varName)
+		read = generator.Lines(
+			fmt.Sprintf("%v %v;", td, varName),
+			fmt.Sprintf("const size_t %v_bytes_read = %v.read_from(reader);", varName, varName))
 	}
 
 	return generator.Lines(
-		fmt.Sprintf("int %v_bytes_read = 0;", varName),
-		l1,
+		read,
 		fmt.Sprintf("ptr += %v_bytes_read;", varName))
 }
 
@@ -111,31 +120,37 @@ func (g messageGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx ge
 	if field.IsSelfReferencing() {
 		return generator.Lines(
 			fmt.Sprintf("if (%v != nullptr) {", s),
-			fmt.Sprintf("    const size_t %v_byte_size = %v->write_to(buf, buf.size());", s, s),
-			fmt.Sprintf("    NanoPack::write_field_size(%d, %v_byte_size, offset, buf);", field.Number, s),
+			fmt.Sprintf("    const size_t %v_byte_size = %v->write_to(writer, writer.size());", s, s),
+			fmt.Sprintf("    writer.write_field_size(%d, %v_byte_size, offset);", field.Number, s),
 			"} else {",
-			fmt.Sprintf("    NanoPack::write_field_size(%d, -1, offset, buf);", field.Number),
+			fmt.Sprintf("    writer.write_field_size(%d, -1, offset);", field.Number),
 			"}")
+	}
+
+	if field.Type.Kind == datatype.Optional {
+		return generator.Lines(
+			fmt.Sprintf("const size_t %v_byte_size = %v->write_to(writer, writer.size());", s, s),
+			fmt.Sprintf("writer.write_field_size(%d, %v_byte_size, offset);", field.Number, s))
 	}
 
 	ms := field.Type.Schema.(*npschema.Message)
 
-	var l0 string
+	var sizeDeclr string
 	if ms.IsInherited {
-		l0 = fmt.Sprintf("const size_t %v_byte_size = %v->write_to(buf, buf.size());", s, s)
+		sizeDeclr = fmt.Sprintf("const size_t %v_byte_size = %v->write_to(writer, writer.size());", s, s)
 	} else {
-		l0 = fmt.Sprintf("const size_t %v_byte_size = %v.write_to(buf, buf.size());", s, s)
+		sizeDeclr = fmt.Sprintf("const size_t %v_byte_size = %v.write_to(writer, writer.size());", s, s)
 	}
 
 	return generator.Lines(
-		l0,
-		fmt.Sprintf("NanoPack::write_field_size(%d, %v_byte_size, offset, buf);", field.Number, s))
+		sizeDeclr,
+		fmt.Sprintf("writer.write_field_size(%d, %v_byte_size, offset);", field.Number, s))
 }
 
 func (g messageGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
 	ms := dataType.Schema.(*npschema.Message)
 	if ms.IsInherited {
-		return fmt.Sprintf("const size_t %v_byte_size = %v->write_to(buf, buf.size());", varName, varName)
+		return fmt.Sprintf("const size_t %v_byte_size = %v->write_to(writer, writer.size());", varName, varName)
 	}
-	return fmt.Sprintf("const size_t %v_byte_size = %v.write_to(buf, buf.size());", varName, varName)
+	return fmt.Sprintf("const size_t %v_byte_size = %v.write_to(writer, writer.size());", varName, varName)
 }

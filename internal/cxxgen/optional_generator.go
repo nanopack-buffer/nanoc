@@ -2,11 +2,12 @@ package cxxgen
 
 import (
 	"fmt"
-	"github.com/iancoleman/strcase"
 	"nanoc/internal/datatype"
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
 	"strings"
+
+	"github.com/iancoleman/strcase"
 )
 
 type optionalGenerator struct {
@@ -41,19 +42,12 @@ func (g optionalGenerator) FieldDeclaration(field npschema.MessageField) string 
 
 func (g optionalGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
 	ig := g.gm[field.Type.ElemType.Kind]
-	// if field has value, read it as if it is a non-optional field
-	vf := npschema.MessageField{
-		Name:   field.Name,
-		Type:   *field.Type.ElemType,
-		Number: field.Number,
-		Schema: field.Schema,
-	}
 	s := strcase.ToSnake(field.Name)
 	return generator.Lines(
 		fmt.Sprintf("if (reader.read_field_size(%d) < 0) {", field.Number),
-		fmt.Sprintf("    this->%v = std::nullopt;", s),
+		fmt.Sprintf("    %v = std::nullopt;", s),
 		"} else {",
-		ig.ReadFieldFromBuffer(vf, ctx),
+		ig.ReadFieldFromBuffer(field, ctx),
 		"}")
 }
 
@@ -62,7 +56,7 @@ func (g optionalGenerator) ReadValueFromBuffer(dataType datatype.DataType, varNa
 	ig := g.gm[dataType.ElemType.Kind]
 	return generator.Lines(
 		fmt.Sprintf("%v %v = std::nullopt;", g.TypeDeclaration(dataType), varName),
-		"if (buf[ptr] != 0) {",
+		"if (reader.buffer[ptr++] != 0) {",
 		ig.ReadValueFromBuffer(dataType, varName, ctx),
 		"}")
 }
@@ -70,18 +64,11 @@ func (g optionalGenerator) ReadValueFromBuffer(dataType datatype.DataType, varNa
 func (g optionalGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
 	s := strcase.ToSnake(field.Name)
 	ig := g.gm[field.Type.ElemType.Kind]
-	vf := npschema.MessageField{
-		Name:   field.Name,
-		Type:   *field.Type.ElemType,
-		Number: field.Number,
-		Schema: field.Schema,
-	}
 	return generator.Lines(
 		fmt.Sprintf("if (%v.has_value()) {", s),
-		fmt.Sprintf("    const auto %v = this->%v.value();", s, s),
-		ig.WriteFieldToBuffer(vf, ctx),
+		ig.WriteFieldToBuffer(field, ctx),
 		"} else {",
-		fmt.Sprintf("NanoPack::write_field_size(%d, -1, offset, buf);", field.Number),
+		fmt.Sprintf("writer.write_field_size(%d, -1, offset);", field.Number),
 		"}")
 }
 
@@ -89,10 +76,10 @@ func (g optionalGenerator) WriteVariableToBuffer(dataType datatype.DataType, var
 	ig := g.gm[dataType.ElemType.Kind]
 	return generator.Lines(
 		fmt.Sprintf("if (%v.has_value()) {", varName),
-		"    NanoPack::append_int8(1, buf);",
+		"    writer.append_uint8(1);",
 		fmt.Sprintf("    const auto %v_value = %v.value();", varName, varName),
 		ig.WriteVariableToBuffer(*dataType.ElemType, varName+"_value", ctx),
 		"} else {",
-		"    NanoPack::appendInt8(0, buf);",
+		"    writer.append_uint8(0);",
 		"}")
 }

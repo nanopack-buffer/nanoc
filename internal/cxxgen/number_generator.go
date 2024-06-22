@@ -2,10 +2,11 @@ package cxxgen
 
 import (
 	"fmt"
-	"github.com/iancoleman/strcase"
 	"nanoc/internal/datatype"
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
+
+	"github.com/iancoleman/strcase"
 )
 
 var cxxIntTypes = map[datatype.Kind]string{
@@ -45,43 +46,51 @@ func (g numberGenerator) FieldDeclaration(field npschema.MessageField) string {
 func (g numberGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
 	s := strcase.ToSnake(field.Name)
 
-	if field.Type.Kind == datatype.Enum {
+	switch field.Type.Kind {
+	case datatype.Enum:
 		return g.ReadValueFromBuffer(*field.Type.ElemType, s+"_raw_value", ctx)
-	}
 
-	return generator.Lines(
-		g.ReadValueFromBuffer(field.Type, s, ctx),
-		fmt.Sprintf("this->%v = %v;", s, s))
+	default:
+		return generator.Lines(
+			fmt.Sprintf("reader.read_%v(ptr, %v);", field.Type.Identifier, s),
+			fmt.Sprintf("ptr += %d;", field.Type.ByteSize))
+	}
 }
 
 func (g numberGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
-	var l string
-	if ctx.IsVariableInScope(varName) {
-		l = fmt.Sprintf("%v = reader.read_%v(ptr);", varName, dataType.Identifier)
-	} else {
-		l = fmt.Sprintf("const %v %v = reader.read_%v(ptr);", g.TypeDeclaration(dataType), varName, dataType.Identifier)
+	if dataType.Kind == datatype.Optional {
+		return generator.Lines(
+			fmt.Sprintf("%v %v_value;", cxxIntTypes[dataType.Kind], varName),
+			fmt.Sprintf("reader.read_%v(ptr, %v_value);", dataType.Identifier, varName),
+			fmt.Sprintf("%v = %v_value;", varName, varName),
+			fmt.Sprintf("ptr += %d;", dataType.ByteSize))
 	}
+
+	var declr string
+	if !ctx.IsVariableInScope(varName) {
+		declr = fmt.Sprintf("%v %v;", cxxIntTypes[dataType.Kind], varName)
+	}
+
 	return generator.Lines(
-		l,
+		declr,
+		fmt.Sprintf("reader.read_%v(ptr, %v);", dataType.Identifier, varName),
 		fmt.Sprintf("ptr += %d;", dataType.ByteSize))
 }
 
 func (g numberGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
 	if field.Type.Kind == datatype.Enum {
 		return generator.Lines(
-			fmt.Sprintf("NanoPack::write_field_size(%d, %d, offset, buf);", field.Number, field.Type.ByteSize),
-			fmt.Sprintf("NanoPack::append_%v(%v.value(), buf);", field.Type.ElemType.Identifier, strcase.ToSnake(field.Name)),
-			fmt.Sprintf("bytes_written += %d;", field.Type.ElemType.ByteSize))
+			fmt.Sprintf("writer.write_field_size(%d, %d, offset);", field.Number, field.Type.ElemType.ByteSize),
+			fmt.Sprintf("writer.append_%v(%v.value());", field.Type.ElemType.Identifier, strcase.ToSnake(field.Name)))
 	}
 	return generator.Lines(
-		fmt.Sprintf("NanoPack::write_field_size(%d, %d, offset, buf);", field.Number, field.Type.ByteSize),
-		fmt.Sprintf("NanoPack::append_%v(%v, buf);", field.Type.Identifier, strcase.ToSnake(field.Name)),
-		fmt.Sprintf("bytes_written += %d;", field.Type.ByteSize))
+		fmt.Sprintf("writer.write_field_size(%d, %d, offset);", field.Number, field.Type.ByteSize),
+		fmt.Sprintf("writer.append_%v(%v);", field.Type.Identifier, strcase.ToSnake(field.Name)))
 }
 
 func (g numberGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
 	if dataType.Kind == datatype.Enum {
-		return fmt.Sprintf("NanoPack::append_%v(%v.value(), buf);", dataType.ElemType.Identifier, varName)
+		return fmt.Sprintf("writer.append_%v(%v.value());", dataType.ElemType.Identifier, varName)
 	}
-	return fmt.Sprintf("NanoPack::append_%v(%v, buf);", dataType.Identifier, varName)
+	return fmt.Sprintf("writer.append_%v(%v);", dataType.Identifier, varName)
 }

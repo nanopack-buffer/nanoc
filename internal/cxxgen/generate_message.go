@@ -3,7 +3,6 @@ package cxxgen
 import (
 	"errors"
 	"fmt"
-	"github.com/iancoleman/strcase"
 	"nanoc/internal/datatype"
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
@@ -14,6 +13,8 @@ import (
 	"strings"
 	"sync"
 	"text/template"
+
+	"github.com/iancoleman/strcase"
 )
 
 // Options are parameters that can be tweaked to alter codegen.
@@ -266,7 +267,7 @@ func generateMessageImplFile(msgSchema *npschema.Message, gm generator.MessageCo
 		ConstructorParameters:   nil,
 		SuperConstructorArgs:    nil,
 		FieldInitializers:       nil,
-		InitialWriteBufferSize:  npHeaderByteSize,
+		HeaderSize:              npHeaderByteSize,
 		FieldReadCodeFragments:  nil,
 		FieldWriteCodeFragments: nil,
 	}
@@ -289,10 +290,19 @@ func generateMessageImplFile(msgSchema *npschema.Message, gm generator.MessageCo
 			// this field stores a polymorphic type which requires a unique_ptr to hold the value
 			// a getter is needed to expose the value as a reference
 			s := strcase.ToSnake(f.Name)
+
+			var l0 string
+			if info.Namespace == "" {
+				l0 = fmt.Sprintf("%v &%v::get_%v() const {", f.Type.Identifier, info.MessageName, s)
+			} else {
+				l0 = fmt.Sprintf("%v::%v &%v::%v::get_%v() const {", info.Namespace, f.Type.Identifier, info.Namespace, info.MessageName, s)
+			}
+
 			l := generator.Lines(
-				fmt.Sprintf("%v::%v &%v::%v::get_%v() const {", info.Namespace, f.Type.Identifier, info.Namespace, info.MessageName, s),
+				l0,
 				fmt.Sprintf("    return *%v;", s),
 				"}")
+
 			info.FieldGetters = append(info.FieldGetters, l)
 		}
 	}

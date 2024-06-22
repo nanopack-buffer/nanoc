@@ -1,3 +1,3 @@
-[submodule "examples/cxx/lib/nanopack"]
-	path = examples/cxx/lib/nanopack
-	url = https://github.com/poly-gui/nanopack
+[submodule "examples/cxx/lib/cxx-nanopack"]
+	path = examples/cxx/lib/cxx-nanopack
+	url = https://github.com/nanopack-buffer/cxx-nanopack

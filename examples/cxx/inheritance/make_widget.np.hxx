@@ -5,8 +5,9 @@
 
 #include "widget.np.hxx"
 #include <memory>
+#include <nanopack/reader.hxx>
 
-std::unique_ptr<Widget> make_widget(std::vector<uint8_t>::const_iterator begin,
-                                    int &bytes_read);
+std::unique_ptr<Widget> make_widget(NanoPack::Reader &reader,
+                                    size_t &bytes_read);
 
 #endif

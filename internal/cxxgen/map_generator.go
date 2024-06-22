@@ -2,11 +2,12 @@ package cxxgen
 
 import (
 	"fmt"
-	"github.com/iancoleman/strcase"
 	"nanoc/internal/datatype"
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
 	"strings"
+
+	"github.com/iancoleman/strcase"
 )
 
 type mapGenerator struct {
@@ -43,7 +44,7 @@ func (g mapGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx gener
 	s := strcase.ToSnake(field.Name)
 	var l1 string
 	if field.Type.ElemType.ByteSize != datatype.DynamicSize {
-		// for arrays with fixed size items, the number of elements in the array can be calculated.
+		// for maps with fixed size entries, the number of entries in the map can be calculated.
 		l1 = fmt.Sprintf("const int32_t %v_map_size = %v_byte_size / %d;", s, s, field.Type.KeyType.ByteSize+field.Type.ElemType.ByteSize)
 	}
 	return generator.Lines(
@@ -59,7 +60,7 @@ func (g mapGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName st
 	ig := g.gm[dataType.ElemType.Kind]
 	mapSizeVar := varName + "_map_size"
 
-	// If the number of elements in the vector is not read previously,
+	// If the number of elements in the map is not read previously,
 	// generate code to read it here.
 	var l0 string
 	if !ctx.IsVariableInScope(mapSizeVar) {
@@ -70,18 +71,24 @@ func (g mapGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName st
 	if ctx.IsVariableInScope(varName) {
 		l1 = fmt.Sprintf("%v = %v()", varName, g.TypeDeclaration(dataType))
 	} else {
-		l1 = fmt.Sprintf("%v %v()", varName, g.TypeDeclaration(dataType))
+		l1 = fmt.Sprintf("%v %v;", varName, g.TypeDeclaration(dataType))
 	}
 
 	lv := ctx.NewLoopVar()
+	ctx.AddVariableToScope(lv)
+	ctx.AddVariableToScope(lv + "_value")
+
 	ls := generator.Lines(
 		l0,
 		l1,
 		fmt.Sprintf("%v.reserve(%v);", varName, mapSizeVar),
 		fmt.Sprintf("for (int %v = 0; %v < %v; %v++) {", lv, lv, mapSizeVar, lv),
+		// read map key value from buffer
 		kg.ReadValueFromBuffer(*dataType.KeyType, lv+"_key", ctx),
+		// create map entry
+		fmt.Sprintf("    auto &%v_value = %v[%v_key];", lv, varName, lv),
+		// read value to entry
 		ig.ReadValueFromBuffer(*dataType.ElemType, lv+"_value", ctx),
-		fmt.Sprintf("%v.insert({%v_key, %v_value});", varName, lv, lv),
 		"}")
 
 	ctx.RemoveVariableFromScope(lv)

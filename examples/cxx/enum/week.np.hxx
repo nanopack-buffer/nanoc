@@ -4,7 +4,6 @@
 #define WEEK_ENUM_NP_HXX
 
 #include <array>
-#include <stdexcept>
 
 class Week {
 public:

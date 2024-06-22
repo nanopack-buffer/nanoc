@@ -5,7 +5,8 @@ project(nanoc_enum_example
         LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CXX_STANDARD_REQUIRED true)
+set(CMAKE_EXPORT_COMPILE_COMMANDS true)
 
 get_filename_component(SHARED_LIB_DIR ../lib ABSOLUTE)
 
@@ -14,7 +15,7 @@ add_executable(enum
         column.np.cxx
         np_date.np.cxx)
 
-add_subdirectory(${SHARED_LIB_DIR}/nanopack ./nanopack)
+add_subdirectory(${SHARED_LIB_DIR}/cxx-nanopack ./cxx-nanopack)
 
 target_include_directories(enum PUBLIC ${SHARED_LIB_DIR}/nanopack/include)
 target_link_libraries(enum nanopack)
