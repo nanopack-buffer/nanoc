@@ -1,6 +1,6 @@
 # nanoc
 
-nanoc is a compiler for NanoPack that compiles NanoPack schemas to code that enables portable data
+nanoc is a codegen tool for NanoPack that turns NanoPack schemas to code that enables portable data
 serialization/deserialization in NanoPack.
 
 ## Requirements
@@ -29,18 +29,19 @@ The above compiles the source code, produces an executable called `nanoc`, and t
 `nanoc` has the following arguments:
 - `--language` specifies the language of the generated code. Can be `c++`, `swift`, or `ts`.
 - `--factory-out` (optional) specifies the folder in which the message factory code file should be put.
-- The list of relative paths to the NanoPack schemas that should be compiled.
+- The list of relative paths to the NanoPack schemas for which code should be generated.
 
 ### Example
 
-Compiling `person.yml` and `car.yml` in the current  directory to C++:
+Generating c++ code for `person.yml` and `car.yml` in the current directory:
 
 ```
 nanoc --language=c++ ./person.yml ./car.yml
 ```
 
-Compiling `person.yml` and `car.yml` in the current directory to TypeScript, and generate the message factory in the current directory:
+Generating TypeScript code from `person.yml` and `car.yml` in the current directory, and also generate the message factory in the current directory:
 
 ```
 nanoc --language=ts --factory-out=. ./person.yml ./car.yml
 ```
+
