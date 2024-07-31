@@ -3,7 +3,6 @@ package tsgen
 import (
 	"errors"
 	"fmt"
-	"github.com/iancoleman/strcase"
 	"nanoc/internal/datatype"
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
@@ -12,6 +11,8 @@ import (
 	"strings"
 	"sync"
 	"text/template"
+
+	"github.com/iancoleman/strcase"
 )
 
 // Options are parameters that can be tweaked to alter codegen.
@@ -116,7 +117,18 @@ func generateMessageClass(msgSchema *npschema.Message, opts Options) error {
 		Schema: msgSchema,
 	}
 
-	for _, s := range msgSchema.ImportedTypes {
+	importedTypes := map[string]datatype.Schema{}
+	{
+		schema := msgSchema
+		for schema != nil {
+			for _, t := range schema.ImportedTypes {
+				importedTypes[t.DataType().Identifier] = t
+			}
+			schema = schema.ParentMessage
+		}
+	}
+
+	for _, s := range importedTypes {
 		p, err := resolveSchemaImportPath(s, msgSchema)
 		if err != nil {
 			return err
