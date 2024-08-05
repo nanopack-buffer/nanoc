@@ -42,16 +42,43 @@ func (g mapGenerator) FieldDeclaration(field npschema.MessageField) string {
 
 func (g mapGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
 	s := strcase.ToSnake(field.Name)
-	var l1 string
-	if field.Type.ElemType.ByteSize != datatype.DynamicSize {
+	kg := g.gm[field.Type.KeyType.Kind]
+	ig := g.gm[field.Type.ElemType.Kind]
+
+	mapSizeVar := s + "_map_size"
+	var readMapSize string
+	if field.Type.KeyType.ByteSize != datatype.DynamicSize && field.Type.ElemType.ByteSize != datatype.DynamicSize {
+		ctx.AddVariableToScope(mapSizeVar)
 		// for maps with fixed size entries, the number of entries in the map can be calculated.
-		l1 = fmt.Sprintf("const int32_t %v_map_size = %v_byte_size / %d;", s, s, field.Type.KeyType.ByteSize+field.Type.ElemType.ByteSize)
+		readMapSize = fmt.Sprintf("const uint32_t %v = %v_byte_size / %d;", mapSizeVar, s, field.Type.KeyType.ByteSize+field.Type.ElemType.ByteSize)
+	} else {
+		readMapSize = generator.Lines(
+			fmt.Sprintf("uint32_t %v;", mapSizeVar),
+			fmt.Sprintf("reader.read_uint32(ptr, %v);", mapSizeVar),
+			"ptr += 4;")
 	}
-	return generator.Lines(
-		fmt.Sprintf("const int32_t %v_byte_size = reader.read_field_size(%d);", s, field.Number),
-		l1,
-		g.ReadValueFromBuffer(field.Type, s, ctx),
-		fmt.Sprintf("this->%v = %v;", s, s))
+
+	lv := ctx.NewLoopVar()
+	ctx.AddVariableToScope(lv + "_value")
+
+	ls := generator.Lines(
+		readMapSize,
+		fmt.Sprintf("%v.reserve(%v);", s, mapSizeVar),
+		fmt.Sprintf("for (int %v = 0; %v < %v; %v++) {", lv, lv, mapSizeVar, lv),
+		// read map key value from buffer
+		kg.ReadValueFromBuffer(*field.Type.KeyType, lv+"_key", ctx),
+		// create map entry
+		fmt.Sprintf("    auto &%v_value = %v[%v_key];", lv, s, lv),
+		// read value to entry
+		ig.ReadValueFromBuffer(*field.Type.ElemType, lv+"_value", ctx),
+		"}",
+	)
+
+	ctx.RemoveVariableFromScope(lv)
+	ctx.RemoveVariableFromScope(lv + "_key")
+	ctx.RemoveVariableFromScope(lv + "_value")
+
+	return ls
 }
 
 func (g mapGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
@@ -111,14 +138,13 @@ func (g mapGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx genera
 
 		ls := generator.Lines(
 			fmt.Sprintf("const int32_t %v_byte_size = %v.size() * %d;", s, s, field.Type.ElemType.ByteSize+field.Type.KeyType.ByteSize),
-			fmt.Sprintf("NanoPack::write_field_size(%d, %v_byte_size, offset, buf);", field.Number, s),
+			fmt.Sprintf("writer.write_field_size(%d, %v_byte_size, offset, buf);", field.Number, s),
 			fmt.Sprintf("for (const auto &%v : %v) {", lv, s),
 			fmt.Sprintf("  const auto %v = %v.first;", lvk, lv),
 			fmt.Sprintf("  const auto %v = %v.second;", lvv, lv),
 			kg.WriteVariableToBuffer(*field.Type.KeyType, lvk, ctx),
 			ig.WriteVariableToBuffer(*field.Type.ElemType, lvv, ctx),
-			"}",
-			fmt.Sprintf("bytes_written += %v_byte_size;", s))
+			"}")
 
 		ctx.RemoveVariableFromScope(lv)
 		ctx.RemoveVariableFromScope(lvk)
@@ -129,8 +155,7 @@ func (g mapGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx genera
 
 	return generator.Lines(
 		g.WriteVariableToBuffer(field.Type, s, ctx),
-		fmt.Sprintf("NanoPack::write_field_size(%d, %v_byte_size, offset, buf);", field.Number, s),
-		fmt.Sprintf("bytes_written += %v_byte_size", s))
+		fmt.Sprintf("writer.write_field_size(%d, %v_byte_size, offset);", field.Number, s))
 }
 
 func (g mapGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
@@ -171,8 +196,8 @@ func (g mapGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName 
 		l1,
 		l2,
 		fmt.Sprintf("for (const auto &%v : %v) {", lv, varName),
-		fmt.Sprintf("auto %v = %v.first", lvk, lv),
-		fmt.Sprintf("auto %v = %v.second", lvv, lv),
+		fmt.Sprintf("auto %v = %v.first;", lvk, lv),
+		fmt.Sprintf("auto %v = %v.second;", lvv, lv),
 		kg.WriteVariableToBuffer(*dataType.KeyType, lvk, ctx),
 		ig.WriteVariableToBuffer(*dataType.ElemType, lvv, ctx))
 
@@ -185,6 +210,10 @@ func (g mapGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName 
 	if dataType.ElemType.ByteSize == datatype.DynamicSize {
 		l9 = fmt.Sprintf("%v_byte_size += %v;", varName, ig.ReadSizeExpression(*dataType.ElemType, lvv))
 	}
+
+	ctx.RemoveVariableFromScope(lv)
+	ctx.RemoveVariableFromScope(lvk)
+	ctx.RemoveVariableFromScope(lvv)
 
 	return generator.Lines(ls, l8, l9, "}")
 }

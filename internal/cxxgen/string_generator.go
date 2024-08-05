@@ -65,7 +65,8 @@ func (g stringGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName
 	}
 
 	return generator.Lines(
-		fmt.Sprintf("const int32_t %v_size = reader.read_int32(ptr);", varName),
+		fmt.Sprintf("uint32_t %v_size;", varName),
+		fmt.Sprintf("reader.read_uint32(ptr, %v_size);", varName),
 		"ptr += 4;",
 		declr,
 		fmt.Sprintf("reader.read_string(ptr, %v_size, %v);", varName, varName),
@@ -95,7 +96,7 @@ func (g stringGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx gen
 
 func (g stringGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
 	var expr string
-	if dataType.ElemType.Kind == datatype.Enum {
+	if dataType.Kind == datatype.Enum {
 		expr = varName + ".value()"
 	} else {
 		expr = varName

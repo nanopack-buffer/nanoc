@@ -200,7 +200,7 @@ func NewArrayType(elemType *DataType) DataType {
 
 func NewMapType(keyType *DataType, valueType *DataType) DataType {
 	return DataType{
-		Identifier: symbol.MapBracketStart + keyType.Identifier + symbol.MapKeyValTypeSep + " " + valueType.Identifier + symbol.MapBracketEnd,
+		Identifier: symbol.MapBracketStart + keyType.Identifier + symbol.MapKeyValTypeSeperator + " " + valueType.Identifier + symbol.MapBracketEnd,
 		Kind:       Map,
 		ByteSize:   DynamicSize,
 		Schema:     nil,

@@ -2,11 +2,13 @@ package parser
 
 import (
 	"errors"
-	"gopkg.in/yaml.v2"
+	"fmt"
 	"nanoc/internal/datatype"
 	"nanoc/internal/symbol"
 	"os"
 	"strings"
+
+	"gopkg.in/yaml.v2"
 )
 
 func ParseSchema(path string) (datatype.PartialSchema, error) {
@@ -87,10 +89,10 @@ func ParseType(expr string, sm datatype.SchemaMap) (*datatype.DataType, datatype
 
 	if strings.HasPrefix(expr, symbol.MapBracketStart) && strings.HasSuffix(expr, symbol.MapBracketEnd) {
 		inner := expr[1 : len(expr)-len(symbol.MapBracketEnd)]
-		ps := strings.Split(symbol.MapKeyValTypeSep, inner)
+		ps := strings.Split(inner, symbol.MapKeyValTypeSeperator)
 		if len(ps) != 2 {
 			return nil, nil, SyntaxError{
-				Msg:           "Expected a key type and a value type separated by a comma (',')",
+				Msg:           fmt.Sprintf("Expected a key type and a value type to be separated by '%v'", symbol.MapKeyValTypeSeperator),
 				OffendingCode: expr,
 			}
 		}

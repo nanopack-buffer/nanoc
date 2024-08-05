@@ -17,5 +17,5 @@ const (
 
 	MapBracketEnd = ">"
 
-	MapKeyValTypeSep = ":"
+	MapKeyValTypeSeperator = ":"
 )

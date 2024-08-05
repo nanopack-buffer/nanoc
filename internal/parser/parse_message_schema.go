@@ -3,13 +3,14 @@ package parser
 import (
 	"errors"
 	"fmt"
-	"github.com/twmb/murmur3"
-	"gopkg.in/yaml.v2"
 	"nanoc/internal/datatype"
 	"nanoc/internal/npschema"
 	"nanoc/internal/symbol"
 	"strconv"
 	"strings"
+
+	"github.com/twmb/murmur3"
+	"gopkg.in/yaml.v2"
 )
 
 func parseMessageSchema(header string, body yaml.MapSlice) (*npschema.PartialMessage, error) {
@@ -43,17 +44,10 @@ func parseMessageSchema(header string, body yaml.MapSlice) (*npschema.PartialMes
 			typeIDDeclared = true
 			schema.TypeID = datatype.TypeID(typeID)
 		} else if s, ok := v.(string); ok {
-			typeName, fieldNumber, err := parseFieldType(s)
-			if err != nil {
-				return nil, err
-			}
-			if fieldNumber < 0 {
-				fieldNumber = i
-			}
 			schema.DeclaredFields = append(schema.DeclaredFields, npschema.PartialMessageField{
 				Name:     k,
-				TypeName: typeName,
-				Number:   fieldNumber,
+				TypeName: s,
+				Number:   i,
 			})
 		} else {
 			return nil, SyntaxError{
