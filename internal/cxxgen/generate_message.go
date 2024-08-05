@@ -172,6 +172,9 @@ func generateMessageHeaderFile(msgSchema *npschema.Message, gm generator.Message
 					libimp["memory"] = struct{}{}
 				}
 
+			case datatype.Array:
+				libimp["vector"] = struct{}{}
+
 			default:
 				break
 			}
