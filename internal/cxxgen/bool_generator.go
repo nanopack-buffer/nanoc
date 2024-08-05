@@ -53,5 +53,5 @@ func (g boolGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx gener
 }
 
 func (g boolGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
-	return fmt.Sprintf("writer::append_bool(%v);", varName)
+	return fmt.Sprintf("writer.append_bool(%v);", varName)
 }
