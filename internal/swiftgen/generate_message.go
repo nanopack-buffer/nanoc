@@ -2,21 +2,25 @@ package swiftgen
 
 import (
 	"fmt"
-	"github.com/iancoleman/strcase"
 	"nanoc/internal/datatype"
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
+	"nanoc/internal/pathutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"text/template"
+
+	"github.com/iancoleman/strcase"
 )
 
 // Options are parameters that can be tweaked to alter codegen.
 type Options struct {
-	FormatterPath string
-	FormatterArgs []string
+	BaseDirectoryPath   string
+	OutputDirectoryPath string
+	FormatterPath       string
+	FormatterArgs       []string
 
 	// The absolute path to the directory where the factory file should be put in
 	// This is an empty string when it is not requested.
@@ -91,8 +95,8 @@ func GenerateMessageClass(msgSchema *npschema.Message, opts Options) error {
 	fname := filepath.Base(msgSchema.SchemaPath)
 	fname = strcase.ToCamel(strings.TrimSuffix(fname, filepath.Ext(fname))) + extSwift
 
-	op := strings.Replace(msgSchema.SchemaPath, filepath.Base(msgSchema.SchemaPath), fname, 1)
-	f, err := os.Create(op)
+	outPath := pathutil.ResolveCodeOutputPathForSchema(msgSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath, fname)
+	f, err := os.Create(outPath)
 	if err != nil {
 		return err
 	}
@@ -103,7 +107,7 @@ func GenerateMessageClass(msgSchema *npschema.Message, opts Options) error {
 		return err
 	}
 
-	err = formatCode(op, opts.FormatterPath, opts.FormatterArgs...)
+	err = formatCode(outPath, opts.FormatterPath, opts.FormatterArgs...)
 	if err != nil {
 		return err
 	}
@@ -126,8 +130,8 @@ func GenerateMessageFactory(schemas []*npschema.Message, opts Options) error {
 		return err
 	}
 
-	op := filepath.Join(opts.MessageFactoryPath, fileNameMessageFactoryFile+extSwift)
-	f, err := os.Create(op)
+	outPath := filepath.Join(opts.MessageFactoryPath, fileNameMessageFactoryFile+extSwift)
+	f, err := os.Create(outPath)
 	if err != nil {
 		return err
 	}

@@ -11,10 +11,12 @@ import (
 
 func runCxxSchemaGenerator(schema datatype.Schema, opts Options) error {
 	o := cxxgen.Options{
-		FormatterPath:      opts.CodeFormatterPath,
-		FormatterArgs:      opts.CodeFormatterArgs,
-		MessageFactoryPath: opts.MessageFactoryAbsFilePath,
-		Namespaces:         strings.Split(opts.Namespace, "."),
+		FormatterPath:       opts.CodeFormatterPath,
+		FormatterArgs:       opts.CodeFormatterArgs,
+		MessageFactoryPath:  opts.MessageFactoryAbsFilePath,
+		Namespaces:          strings.Split(opts.Namespace, "."),
+		BaseDirectoryPath:   opts.BaseDirectoryAbs,
+		OutputDirectoryPath: opts.OutputDirectoryAbs,
 	}
 
 	switch s := schema.(type) {

@@ -10,9 +10,11 @@ import (
 
 func runSwiftSchemaGenerator(schema datatype.Schema, opts Options) error {
 	o := swiftgen.Options{
-		FormatterPath:      opts.CodeFormatterPath,
-		FormatterArgs:      opts.CodeFormatterArgs,
-		MessageFactoryPath: opts.MessageFactoryAbsFilePath,
+		FormatterPath:       opts.CodeFormatterPath,
+		FormatterArgs:       opts.CodeFormatterArgs,
+		MessageFactoryPath:  opts.MessageFactoryAbsFilePath,
+		BaseDirectoryPath:   opts.BaseDirectoryAbs,
+		OutputDirectoryPath: opts.OutputDirectoryAbs,
 	}
 
 	switch s := schema.(type) {

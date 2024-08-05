@@ -10,9 +10,11 @@ import (
 
 func runTSSchemaGenerator(schema datatype.Schema, opts Options) error {
 	o := tsgen.Options{
-		FormatterPath:      opts.CodeFormatterPath,
-		FormatterArgs:      opts.CodeFormatterArgs,
-		MessageFactoryPath: opts.MessageFactoryAbsFilePath,
+		FormatterPath:       opts.CodeFormatterPath,
+		FormatterArgs:       opts.CodeFormatterArgs,
+		MessageFactoryPath:  opts.MessageFactoryAbsFilePath,
+		BaseDirectoryPath:   opts.BaseDirectoryAbs,
+		OutputDirectoryPath: opts.OutputDirectoryAbs,
 	}
 
 	switch s := schema.(type) {
@@ -29,8 +31,10 @@ func runTSSchemaGenerator(schema datatype.Schema, opts Options) error {
 
 func runTSMessageFactoryGenerator(schemas []*npschema.Message, opts Options) error {
 	return tsgen.GenerateMessageFactory(schemas, tsgen.Options{
-		FormatterPath:      opts.CodeFormatterPath,
-		FormatterArgs:      opts.CodeFormatterArgs,
-		MessageFactoryPath: opts.MessageFactoryAbsFilePath,
+		FormatterPath:       opts.CodeFormatterPath,
+		FormatterArgs:       opts.CodeFormatterArgs,
+		MessageFactoryPath:  opts.MessageFactoryAbsFilePath,
+		BaseDirectoryPath:   opts.BaseDirectoryAbs,
+		OutputDirectoryPath: opts.OutputDirectoryAbs,
 	})
 }

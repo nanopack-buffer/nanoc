@@ -6,6 +6,7 @@ import (
 	"nanoc/internal/datatype"
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
+	"nanoc/internal/pathutil"
 	"os"
 	"os/exec"
 	"path"
@@ -19,6 +20,9 @@ import (
 
 // Options are parameters that can be tweaked to alter codegen.
 type Options struct {
+	BaseDirectoryPath   string
+	OutputDirectoryPath string
+
 	FormatterPath string
 	FormatterArgs []string
 
@@ -229,13 +233,12 @@ func generateMessageHeaderFile(msgSchema *npschema.Message, gm generator.Message
 
 	fname := filepath.Base(msgSchema.SchemaPath)
 	fname = strcase.ToSnake(strings.TrimSuffix(fname, filepath.Ext(fname))) + extHeaderFile
+	outPath := pathutil.ResolveCodeOutputPathForSchema(msgSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath, fname)
 
-	op := strings.Replace(msgSchema.SchemaPath, filepath.Base(msgSchema.SchemaPath), fname, 1)
-	f, err := os.Create(op)
+	f, err := os.Create(outPath)
 	if err != nil {
 		return err
 	}
-
 	defer f.Close()
 
 	err = tmpl.Execute(f, info)
@@ -243,7 +246,7 @@ func generateMessageHeaderFile(msgSchema *npschema.Message, gm generator.Message
 		return err
 	}
 
-	err = formatCode(op, opts.FormatterPath, opts.FormatterArgs...)
+	err = formatCode(outPath, opts.FormatterPath, opts.FormatterArgs...)
 	if err != nil {
 		return err
 	}
@@ -330,8 +333,11 @@ func generateMessageImplFile(msgSchema *npschema.Message, gm generator.MessageCo
 		return err
 	}
 
-	op := strings.Replace(msgSchema.SchemaPath, filepath.Base(msgSchema.SchemaPath), fname, 1)
-	f, err := os.Create(op)
+	outPath := pathutil.ResolveCodeOutputPathForSchema(msgSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath, fname)
+	fmt.Println(opts.OutputDirectoryPath)
+	fmt.Println(outPath)
+
+	f, err := os.Create(outPath)
 	if err != nil {
 		return err
 	}
@@ -342,7 +348,7 @@ func generateMessageImplFile(msgSchema *npschema.Message, gm generator.MessageCo
 		return err
 	}
 
-	err = formatCode(op, opts.FormatterPath, opts.FormatterArgs...)
+	err = formatCode(outPath, opts.FormatterPath, opts.FormatterArgs...)
 	if err != nil {
 		return err
 	}
@@ -368,8 +374,8 @@ func generateChildMessageFactoryHeaderFile(msgSchema *npschema.Message, opts Opt
 	}
 
 	fname := fmt.Sprintf("make_%v%v", strcase.ToSnake(msgSchema.Name), extHeaderFile)
-	op := strings.Replace(msgSchema.SchemaPath, filepath.Base(msgSchema.SchemaPath), fname, 1)
-	f, err := os.Create(op)
+	outPath := pathutil.ResolveCodeOutputPathForSchema(msgSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath, fname)
+	f, err := os.Create(outPath)
 	if err != nil {
 		return err
 	}
@@ -380,7 +386,7 @@ func generateChildMessageFactoryHeaderFile(msgSchema *npschema.Message, opts Opt
 		return err
 	}
 
-	err = formatCode(op, opts.FormatterPath, opts.FormatterArgs...)
+	err = formatCode(outPath, opts.FormatterPath, opts.FormatterArgs...)
 	if err != nil {
 		return err
 	}
@@ -412,8 +418,8 @@ func generateChildMessageFactoryImplFile(msgSchema *npschema.Message, opts Optio
 		return err
 	}
 
-	op := strings.Replace(msgSchema.SchemaPath, filepath.Base(msgSchema.SchemaPath), fname, 1)
-	f, err := os.Create(op)
+	outPath := pathutil.ResolveCodeOutputPathForSchema(msgSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath, fname)
+	f, err := os.Create(outPath)
 	if err != nil {
 		return err
 	}
@@ -424,7 +430,7 @@ func generateChildMessageFactoryImplFile(msgSchema *npschema.Message, opts Optio
 		return err
 	}
 
-	err = formatCode(op, opts.FormatterPath, opts.FormatterArgs...)
+	err = formatCode(outPath, opts.FormatterPath, opts.FormatterArgs...)
 	if err != nil {
 		return err
 	}
@@ -437,14 +443,14 @@ func generateMessageFactoryHeaderFile(opts Options) error {
 		Namespace: strings.Join(opts.Namespaces, cxxSymbolMemberOf),
 	}
 
-	op := filepath.Join(opts.MessageFactoryPath, fileNameMessageFactory+extHeaderFile)
+	outPath := filepath.Join(opts.MessageFactoryPath, fileNameMessageFactory+extHeaderFile)
 
 	tmpl, err := template.New(templateNameMessageFactoryHeaderFile).Parse(messageFactoryHeaderFile)
 	if err != nil {
 		return err
 	}
 
-	f, err := os.Create(op)
+	f, err := os.Create(outPath)
 	if err != nil {
 		return err
 	}
@@ -455,11 +461,11 @@ func generateMessageFactoryHeaderFile(opts Options) error {
 		return err
 	}
 
-	return formatCode(op, opts.FormatterPath, opts.FormatterArgs...)
+	return formatCode(outPath, opts.FormatterPath, opts.FormatterArgs...)
 }
 
 func generateMessageFactoryImplFile(schemas []*npschema.Message, opts Options) error {
-	op := filepath.Join(opts.MessageFactoryPath, fileNameMessageFactory+extImplFile)
+	outPath := filepath.Join(opts.MessageFactoryPath, fileNameMessageFactory+extImplFile)
 
 	info := messageFactoryImplFileTemplateInfo{
 		Namespace:          strings.Join(opts.Namespaces, cxxSymbolMemberOf),
@@ -468,7 +474,7 @@ func generateMessageFactoryImplFile(schemas []*npschema.Message, opts Options) e
 	}
 
 	for _, s := range schemas {
-		ip, err := filepath.Rel(filepath.Dir(op), s.SchemaPath)
+		ip, err := filepath.Rel(filepath.Dir(outPath), s.SchemaPath)
 		if err != nil {
 			return err
 		}
@@ -483,7 +489,7 @@ func generateMessageFactoryImplFile(schemas []*npschema.Message, opts Options) e
 		return err
 	}
 
-	f, err := os.Create(op)
+	f, err := os.Create(outPath)
 	if err != nil {
 		return err
 	}
@@ -494,7 +500,7 @@ func generateMessageFactoryImplFile(schemas []*npschema.Message, opts Options) e
 		return err
 	}
 
-	err = formatCode(op, opts.FormatterPath, opts.FormatterArgs...)
+	err = formatCode(outPath, opts.FormatterPath, opts.FormatterArgs...)
 	if err != nil {
 		return err
 	}

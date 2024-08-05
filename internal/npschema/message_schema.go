@@ -19,6 +19,8 @@ type PartialMessage struct {
 type Message struct {
 	SchemaPath string
 
+	// ImportedTypes is an array of schema for user-defined types (such as enums)
+	// imported by this message's schema.
 	ImportedTypes []datatype.Schema
 	Name          string
 	TypeID        datatype.TypeID

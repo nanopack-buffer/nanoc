@@ -12,6 +12,8 @@ const (
 
 type Options struct {
 	Language                  SupportedLanguage
+	BaseDirectoryAbs          string
+	OutputDirectoryAbs        string
 	MessageFactoryAbsFilePath string
 	InputFileAbsolutePaths    []string
 	CodeFormatterPath         string

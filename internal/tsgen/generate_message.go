@@ -6,6 +6,7 @@ import (
 	"nanoc/internal/datatype"
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
+	"nanoc/internal/pathutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -17,6 +18,9 @@ import (
 
 // Options are parameters that can be tweaked to alter codegen.
 type Options struct {
+	BaseDirectoryPath   string
+	OutputDirectoryPath string
+
 	FormatterPath string
 	FormatterArgs []string
 
@@ -182,8 +186,9 @@ func generateMessageClass(msgSchema *npschema.Message, opts Options) error {
 	fname := filepath.Base(msgSchema.SchemaPath)
 	fname = strcase.ToKebab(strings.TrimSuffix(fname, filepath.Ext(fname))) + extTsFile
 
-	op := strings.Replace(msgSchema.SchemaPath, filepath.Base(msgSchema.SchemaPath), fname, 1)
-	f, err := os.Create(op)
+	outPath := pathutil.ResolveCodeOutputPathForSchema(msgSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath, fname)
+
+	f, err := os.Create(outPath)
 	if err != nil {
 		return err
 	}
@@ -194,7 +199,7 @@ func generateMessageClass(msgSchema *npschema.Message, opts Options) error {
 		return err
 	}
 
-	err = formatCode(op, opts.FormatterPath, opts.FormatterArgs...)
+	err = formatCode(outPath, opts.FormatterPath, opts.FormatterArgs...)
 	if err != nil {
 		return err
 	}
@@ -224,8 +229,8 @@ func generateMessageClassFactory(msgSchema *npschema.Message, opts Options) erro
 
 	kb := strcase.ToKebab(msgSchema.Name)
 
-	op := strings.Replace(msgSchema.SchemaPath, filepath.Base(msgSchema.SchemaPath), fmt.Sprintf("make-%v%v", kb, extTsFile), 1)
-	f, err := os.Create(op)
+	outPath := pathutil.ResolveCodeOutputPathForSchema(msgSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath, fmt.Sprintf("make-%v%v", kb, extTsFile))
+	f, err := os.Create(outPath)
 	if err != nil {
 		return err
 	}
@@ -236,7 +241,7 @@ func generateMessageClassFactory(msgSchema *npschema.Message, opts Options) erro
 		return err
 	}
 
-	err = formatCode(op, opts.FormatterPath, opts.FormatterArgs...)
+	err = formatCode(outPath, opts.FormatterPath, opts.FormatterArgs...)
 	if err != nil {
 		return err
 	}
