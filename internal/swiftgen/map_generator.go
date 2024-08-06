@@ -2,11 +2,12 @@ package swiftgen
 
 import (
 	"fmt"
-	"github.com/iancoleman/strcase"
 	"nanoc/internal/datatype"
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
 	"strings"
+
+	"github.com/iancoleman/strcase"
 )
 
 type mapGenerator struct {
@@ -62,7 +63,7 @@ func (g mapGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName st
 	var l0 string
 	if !ctx.IsVariableInScope(varName + "ItemCount") {
 		l0 = generator.Lines(
-			fmt.Sprintf("let %vItemCount = data.readSize(at: ptr)"),
+			fmt.Sprintf("let %vItemCount = data.readSize(at: ptr)", varName),
 			"ptr += 4")
 	}
 
@@ -74,22 +75,18 @@ func (g mapGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName st
 	lv := ctx.NewLoopVar()
 	kv := lv + "Key"
 	iv := lv + "Value"
-	ctx.AddVariableToScope(kv)
-	ctx.AddVariableToScope(iv)
 
 	ls := generator.Lines(
 		l0,
 		l1,
-		fmt.Sprintf("%v.reserveCapacity(%vItemCount)", varName),
-		fmt.Sprintf("for %v in 0..<%vItemCount {", lv),
+		fmt.Sprintf("%v.reserveCapacity(%vItemCount)", varName, varName),
+		fmt.Sprintf("for %v in 0..<%vItemCount {", lv, varName),
 		kg.ReadValueFromBuffer(*dataType.KeyType, kv, ctx),
 		ig.ReadValueFromBuffer(*dataType.ElemType, iv, ctx),
 		fmt.Sprintf("%v[%v] = %v", varName, kv, iv),
 		"}")
 
 	ctx.RemoveVariableFromScope(lv)
-	ctx.RemoveVariableFromScope(kv)
-	ctx.RemoveVariableFromScope(iv)
 
 	return ls
 }
@@ -130,14 +127,14 @@ func (g mapGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName 
 	var l6 string
 	if dataType.KeyType.ByteSize == datatype.DynamicSize || dataType.ElemType.ByteSize == datatype.DynamicSize {
 		b := strings.Builder{}
-		b.WriteString(fmt.Sprintf("let %vByteSize = 4", varName))
+		b.WriteString(fmt.Sprintf("var %vByteSize = 4", varName))
 		if dataType.KeyType.ByteSize != datatype.DynamicSize {
 			b.WriteString(fmt.Sprintf(" + %d", dataType.KeyType.ByteSize))
-			l5 = fmt.Sprintf("%vByteSize += %d", dataType.KeyType.ByteSize)
+			l5 = fmt.Sprintf("%vByteSize += %d", varName, dataType.KeyType.ByteSize)
 		}
 		if dataType.ElemType.ByteSize != datatype.DynamicSize {
 			b.WriteString(fmt.Sprintf(" + %d", dataType.ElemType.ByteSize))
-			l6 = fmt.Sprintf("%vByteSize += %d", dataType.ElemType.ByteSize)
+			l6 = fmt.Sprintf("%vByteSize += %d", varName, dataType.ElemType.ByteSize)
 		}
 		l1 = b.String()
 	}
