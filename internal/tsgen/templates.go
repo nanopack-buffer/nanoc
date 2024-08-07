@@ -76,18 +76,18 @@ class {{.Schema.Name}} {{if .Schema.HasParentMessage}}extends {{.Schema.ParentMe
     return {{.Schema.Name}}.fromReader(reader);
   }
 
-  public static fromReader(reader: NanoBufReader): { bytesRead: number, result: {{.Schema.Name}} } | null {
-    let ptr = {{.Schema.HeaderSize}};
+  public static fromReader(reader: NanoBufReader, offset = 0): { bytesRead: number, result: {{.Schema.Name}} } | null {
+    let ptr = offset + {{.Schema.HeaderSize}};
 
     {{range .FieldReadCodeFragments}}
     {{.}}
 
     {{end}}
 
-    return { bytesRead: ptr, result: new {{.Schema.Name}}({{join .ConstructorArgs ", "}}) };
+    return { bytesRead: ptr - offset, result: new {{.Schema.Name}}({{join .ConstructorArgs ", "}}) };
   }
 
-  {{if .Schema.HasParentMessage}}override {{end}}public writeTo(writer: NanoBufWriter, offset: number = 0): number {
+  {{if .Schema.HasParentMessage}}override {{end}}public writeTo(writer: NanoBufWriter, offset = 0): number {
     let bytesWritten = {{.Schema.HeaderSize}};
 
     writer.writeTypeId({{.Schema.TypeID}}, offset);

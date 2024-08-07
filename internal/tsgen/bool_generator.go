@@ -2,10 +2,11 @@ package tsgen
 
 import (
 	"fmt"
-	"github.com/iancoleman/strcase"
 	"nanoc/internal/datatype"
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
+
+	"github.com/iancoleman/strcase"
 )
 
 type boolGenerator struct{}

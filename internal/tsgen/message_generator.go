@@ -2,10 +2,11 @@ package tsgen
 
 import (
 	"fmt"
-	"github.com/iancoleman/strcase"
 	"nanoc/internal/datatype"
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
+
+	"github.com/iancoleman/strcase"
 )
 
 type messageGenerator struct{}
@@ -15,7 +16,7 @@ func (g messageGenerator) TypeDeclaration(dataType datatype.DataType) string {
 }
 
 func (g messageGenerator) ReadSizeExpression(dataType datatype.DataType, varName string) string {
-	return fmt.Sprintf("%vData.byteLength", varName)
+	return varName + "ByteSize"
 }
 
 func (g messageGenerator) ConstructorFieldParameter(field npschema.MessageField) string {
@@ -46,7 +47,7 @@ func (g messageGenerator) ReadValueFromBuffer(dataType datatype.DataType, varNam
 	}
 
 	return generator.Lines(
-		fmt.Sprintf("const %v = %v.fromReader(reader.newReaderAt(ptr));", tmpv, g.TypeDeclaration(dataType)),
+		fmt.Sprintf("const %v = %v.fromReader(reader, ptr);", tmpv, g.TypeDeclaration(dataType)),
 		fmt.Sprintf("if (!%v) {", tmpv),
 		"    return null;",
 		"}",
@@ -57,14 +58,16 @@ func (g messageGenerator) ReadValueFromBuffer(dataType datatype.DataType, varNam
 func (g messageGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
 	c := strcase.ToLowerCamel(field.Name)
 	return generator.Lines(
-		fmt.Sprintf("const %vData = this.%v.bytes();", c, c),
-		fmt.Sprintf("writer.appendBytes(%vData);", c),
-		fmt.Sprintf("writer.writeFieldSize(%d, %vData.byteLength, offset)", field.Number, c),
-		fmt.Sprintf("bytesWritten += %vData.byteLength;", c))
+		"const offset = writer.currentSize;",
+		fmt.Sprintf("writer.reserveHeader(%v.headerSize);", c),
+		fmt.Sprintf("const %vByteSize = this.%v.writeTo(writer, offset);", c, c),
+		fmt.Sprintf("writer.writeFieldSize(%d, %vByteSize, offset);", field.Number, c),
+		fmt.Sprintf("bytesWritten += %vByteSize;", c))
 }
 
 func (g messageGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
 	return generator.Lines(
-		fmt.Sprintf("const %vData = %v.bytes();", varName, varName),
-		fmt.Sprintf("writer.appendBytes(%vData);", varName))
+		"const offset = writer.currentSize;",
+		fmt.Sprintf("writer.reserveHeader(%v.headerSize);", varName),
+		fmt.Sprintf("const %vByteSize = %v.writeTo(writer, offset);", varName, varName))
 }

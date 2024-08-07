@@ -2,10 +2,11 @@ package tsgen
 
 import (
 	"fmt"
-	"github.com/iancoleman/strcase"
 	"nanoc/internal/datatype"
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
+
+	"github.com/iancoleman/strcase"
 )
 
 type mapGenerator struct {
@@ -44,7 +45,7 @@ func (g mapGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx gener
 		return g.ReadValueFromBuffer(field.Type, c, ctx)
 	}
 	return generator.Lines(
-		fmt.Sprintf("const %vByteLength = reader.readFieldSize(%d)", c, field.Number),
+		fmt.Sprintf("const %vByteLength = reader.readFieldSize(%d, offset)", c, field.Number),
 		fmt.Sprintf("const %vItemCount = %vByteLength / %d", c, c, field.Type.ElemType.ByteSize+field.Type.KeyType.ByteSize),
 		g.ReadValueFromBuffer(field.Type, c, ctx))
 }

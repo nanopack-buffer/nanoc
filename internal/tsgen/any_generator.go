@@ -2,10 +2,11 @@ package tsgen
 
 import (
 	"fmt"
-	"github.com/iancoleman/strcase"
 	"nanoc/internal/datatype"
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
+
+	"github.com/iancoleman/strcase"
 )
 
 type anyGenerator struct{}
@@ -42,7 +43,7 @@ func (g anyGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx gener
 	}
 
 	return generator.Lines(
-		fmt.Sprintf("const %vByteLength = reader.readFieldSize(%d);", c, field.Number),
+		fmt.Sprintf("const %vByteLength = reader.readFieldSize(%d, offset);", c, field.Number),
 		l1,
 		fmt.Sprintf("ptr += %vByteLength;", c))
 }
