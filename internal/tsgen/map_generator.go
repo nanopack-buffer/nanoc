@@ -86,29 +86,35 @@ func (g mapGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx genera
 	kg := g.gm[field.Type.KeyType.Kind]
 	ig := g.gm[field.Type.ElemType.Kind]
 
-	if field.Type.ElemType.ByteSize == datatype.DynamicSize || field.Type.KeyType.ByteSize == datatype.DynamicSize {
-		return fmt.Sprintf(
-			g.WriteVariableToBuffer(field.Type, "this."+c, ctx),
-			fmt.Sprintf("writer.writeFieldSize(%d, %vByteLength, offset);", field.Number, c),
-			fmt.Sprintf("bytesWritten += %vByteLength;", c))
-	}
-
 	kv := ctx.NewLoopVarWithSuffix("Key")
 	iv := ctx.NewLoopVarWithSuffix("Item")
 
-	ls := generator.Lines(
-		fmt.Sprintf("const %vByteLength = this.%v.size * %d", c, c, field.Type.ElemType.ByteSize+field.Type.KeyType.ByteSize),
-		fmt.Sprintf("writer.writeFieldSize(%d, %vByteLength, offset);", field.Number, c),
-		fmt.Sprintf("this.%v.forEach((%v, %v) => {", c, kv, iv),
-		kg.WriteVariableToBuffer(*field.Type.KeyType, kv, ctx),
-		ig.WriteVariableToBuffer(*field.Type.ElemType, iv, ctx),
-		"});",
-		fmt.Sprintf("bytesWritten += %vByteLength", c))
+	var lines string
+	if field.Type.ElemType.ByteSize == datatype.DynamicSize || field.Type.KeyType.ByteSize == datatype.DynamicSize {
+		lines = generator.Lines(
+			fmt.Sprintf("writer.appendInt32(this.%v.size);", c),
+			fmt.Sprintf("let %vByteLength = 4;", c),
+			fmt.Sprintf("this.%v.forEach((%v, %v) => {", c, iv, kv),
+			kg.WriteVariableToBuffer(*field.Type.KeyType, kv, ctx),
+			ig.WriteVariableToBuffer(*field.Type.ElemType, iv, ctx),
+			fmt.Sprintf("%vByteLength += (%v + %v);", c, kg.ReadSizeExpression(*field.Type.KeyType, kv), ig.ReadSizeExpression(*field.Type.ElemType, iv)),
+			"});",
+		)
+	} else {
+		lines = generator.Lines(
+			fmt.Sprintf("const %vByteLength = this.%v.size * %d", c, c, field.Type.ElemType.ByteSize+field.Type.KeyType.ByteSize),
+			fmt.Sprintf("writer.writeFieldSize(%d, %vByteLength, offset);", field.Number, c),
+			fmt.Sprintf("this.%v.forEach((%v, %v) => {", c, kv, iv),
+			kg.WriteVariableToBuffer(*field.Type.KeyType, kv, ctx),
+			ig.WriteVariableToBuffer(*field.Type.ElemType, iv, ctx),
+			"});",
+			fmt.Sprintf("bytesWritten += %vByteLength", c))
+	}
 
 	ctx.RemoveVariableFromScope(kv)
 	ctx.RemoveVariableFromScope(iv)
 
-	return ls
+	return lines
 }
 
 func (g mapGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
@@ -118,20 +124,21 @@ func (g mapGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName 
 	kv := ctx.NewLoopVarWithSuffix("Key")
 	iv := ctx.NewLoopVarWithSuffix("Item")
 
-	var l1 string
-	var l5 string
+	var byteLengthCounter string
+	var addByteLength string
 	if dataType.KeyType.ByteSize == datatype.DynamicSize || dataType.ElemType.ByteSize == datatype.DynamicSize {
-		l1 = fmt.Sprintf("let %vByteLength = 4;", varName)
-		l5 = fmt.Sprintf("%vByteLength += (%v + %v);", varName, kg.ReadSizeExpression(*dataType.KeyType, kv), ig.ReadSizeExpression(*dataType.ElemType, iv))
+		byteLengthCounter = fmt.Sprintf("let %vByteLength = 4;", varName)
+		addByteLength =
+			fmt.Sprintf("%vByteLength += (%v + %v);", varName, kg.ReadSizeExpression(*dataType.KeyType, kv), ig.ReadSizeExpression(*dataType.ElemType, iv))
 	}
 
 	ls := generator.Lines(
 		fmt.Sprintf("writer.appendInt32(%v.size);", varName),
-		l1,
+		byteLengthCounter,
 		fmt.Sprintf("%v.forEach((%v, %v) => {", varName, kv, iv),
 		kg.WriteVariableToBuffer(*dataType.KeyType, varName, ctx),
 		ig.WriteVariableToBuffer(*dataType.ElemType, iv, ctx),
-		l5,
+		addByteLength,
 		"});",
 	)
 

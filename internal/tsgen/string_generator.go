@@ -69,9 +69,9 @@ func (g stringGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName
 
 	return generator.Lines(
 		fmt.Sprintf("const %vByteLength = reader.readInt32(ptr);", varName),
-		fmt.Sprintf("ptr + 4;"),
+		fmt.Sprintf("ptr += 4;"),
 		l2,
-		fmt.Sprintf("ptr += %vByteLength;"), varName)
+		fmt.Sprintf("ptr += %vByteLength;", varName))
 }
 
 func (g stringGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
