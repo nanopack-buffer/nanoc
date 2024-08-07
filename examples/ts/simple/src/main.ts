@@ -1,24 +1,31 @@
-import {Person} from "./person.np.js"
+import { SimpleMessage } from "./simple-message.np.js";
 
-console.log("a simple program demonstrating conversion between NanoPack data & TypeScript class.")
+console.log(
+	"a simple program demonstrating conversion between NanoPack data & TypeScript class.",
+);
 
-const person = new Person(
-    "John",
-    null,
-    "Doe",
-    40,
-    null,
-)
+const message = new SimpleMessage(
+	"hello world",
+	123,
+	123.456,
+	null,
+	[1, 2, 3],
+	new Map([
+		["mai", true],
+		["sakurajima", true],
+	]),
+);
 
-const bytes = person.bytes()
-console.log("raw bytes: ", [...bytes])
-console.log("")
-console.log("total bytes:", bytes.byteLength)
+const bytes = message.bytes();
+console.log("raw bytes: ", [...bytes]);
+console.log("");
+console.log("total bytes:", bytes.byteLength);
 
-const {result: person1} = Person.fromBytes(bytes)!
-console.log("first name:", person1.firstName)
-console.log("last name:", person1.lastName)
-console.log("age:", person1.age)
-if (!person1.middleName) {
-    console.log("this person does not have a middle name.")
-}
+const { result: decoded } = SimpleMessage.fromBytes(bytes)!;
+console.log("string field:", decoded.stringField);
+console.log("int field:", decoded.intField);
+console.log("double field:", decoded.doubleField);
+console.log("array field:", decoded.arrayField);
+decoded.mapField.forEach((v, k) => {
+	console.log(`map entry: ${k} => ${v}`);
+});

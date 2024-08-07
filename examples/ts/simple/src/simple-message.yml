@@ -1,0 +1,7 @@
+SimpleMessage:
+  string_field: string
+  int_field: int32
+  double_field: double
+  optional_field: string?
+  array_field: uint8[]
+  map_field: <string:bool>
