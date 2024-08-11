@@ -99,7 +99,8 @@ func (g mapGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx genera
 			ig.WriteVariableToBuffer(*field.Type.ElemType, iv, ctx),
 			fmt.Sprintf("%vByteLength += (%v + %v);", c, kg.ReadSizeExpression(*field.Type.KeyType, kv), ig.ReadSizeExpression(*field.Type.ElemType, iv)),
 			"});",
-		)
+			fmt.Sprintf("bytesWritten += %vByteLength;", c),
+			fmt.Sprintf("writer.writeFieldSize(%d, %vByteLength, offset);", field.Number, c))
 	} else {
 		lines = generator.Lines(
 			fmt.Sprintf("const %vByteLength = this.%v.size * %d", c, c, field.Type.ElemType.ByteSize+field.Type.KeyType.ByteSize),
@@ -108,7 +109,7 @@ func (g mapGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx genera
 			kg.WriteVariableToBuffer(*field.Type.KeyType, kv, ctx),
 			ig.WriteVariableToBuffer(*field.Type.ElemType, iv, ctx),
 			"});",
-			fmt.Sprintf("bytesWritten += %vByteLength", c))
+			fmt.Sprintf("bytesWritten += %vByteLength;", c))
 	}
 
 	ctx.RemoveVariableFromScope(kv)

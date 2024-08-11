@@ -119,9 +119,8 @@ import { {{.Schema.Name}} } from "{{.MessageClassImport}}";
 {{.}}
 {{- end}}
 
-function make{{.Schema.Name}}(reader: NanoPackReader, offset = 0): { bytesRead: number, result: {{.Schema.Name}} } | null {
-  const reader = new NanoBufReader(bytes);
-  switch (reader.readTypeId()) {
+function make{{.Schema.Name}}(reader: NanoBufReader, offset = 0): { bytesRead: number, result: {{.Schema.Name}} } | null {
+  switch (reader.readTypeId(offset)) {
   case {{.Schema.TypeID}}: return {{.Schema.Name}}.fromReader(reader, offset);
   {{- range .Schema.ChildMessages}}
   case {{.TypeID}}: return {{.Name}}.fromReader(reader, offset);
@@ -140,8 +139,8 @@ import { NanoBufReader, type NanoPackMessage } from "nanopack";
 {{.}}
 {{- end}}
 
-function makeNanoPackMessage(reader: NanoPackReader, offset = 0): { bytesRead: number, result: NanoPackMessage } | null {
-  switch (reader.readTypeId()) {
+function makeNanoPackMessage(reader: NanoBufReader, offset = 0): { bytesRead: number, result: NanoPackMessage } | null {
+  switch (reader.readTypeId(offset)) {
   {{range .Schemas}}
   case {{.TypeID}}: return {{.Name}}.fromReader(reader, offset);
   {{- end}}

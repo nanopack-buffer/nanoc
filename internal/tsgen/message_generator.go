@@ -86,8 +86,9 @@ func (g messageGenerator) ReadValueFromBuffer(dataType datatype.DataType, varNam
 func (g messageGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
 	c := strcase.ToLowerCamel(field.Name)
 	return generator.Lines(
+		fmt.Sprintf("const %vWriteOffset = writer.currentSize;", c),
 		fmt.Sprintf("writer.reserveHeader(this.%v.headerSize);", c),
-		fmt.Sprintf("const %vByteSize = this.%v.writeTo(writer, writer.currentSize);", c, c),
+		fmt.Sprintf("const %vByteSize = this.%v.writeTo(writer, %vWriteOffset);", c, c, c),
 		fmt.Sprintf("writer.writeFieldSize(%d, %vByteSize, offset);", field.Number, c),
 		fmt.Sprintf("bytesWritten += %vByteSize;", c))
 }
