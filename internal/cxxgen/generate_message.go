@@ -168,7 +168,7 @@ func generateMessageHeaderFile(msgSchema *npschema.Message, gm generator.Message
 				libimp["nanopack/any.hxx"] = struct{}{}
 
 			case datatype.Message:
-				if field.Type.Schema.(*npschema.Message).IsInherited {
+				if field.Type.Schema == nil || field.Type.Schema.(*npschema.Message).IsInherited {
 					libimp["memory"] = struct{}{}
 				}
 
@@ -216,10 +216,15 @@ func generateMessageHeaderFile(msgSchema *npschema.Message, gm generator.Message
 		info.FieldDeclarationLines = append(info.FieldDeclarationLines, g.FieldDeclaration(f))
 		info.ConstructorParameters = append(info.ConstructorParameters, g.ConstructorFieldParameter(f))
 
-		if f.Type.Kind == datatype.Message && f.Type.Schema.(*npschema.Message).IsInherited {
-			// this field stores a polymorphic type which requires a unique_ptr to hold the value
-			// a getter is needed to expose the value as a reference
-			l := fmt.Sprintf("[[nodiscard]] %v &get_%v() const;", f.Type.Identifier, strcase.ToSnake(f.Name))
+		if f.Type.Kind == datatype.Message && (f.Type.Schema == nil || f.Type.Schema.(*npschema.Message).IsInherited) {
+			var l string
+			if f.Type.Schema == nil {
+				l = fmt.Sprintf("[[nodiscard]] NanoPack::Message &get_%v() const;", strcase.ToSnake(f.Name))
+			} else {
+				// this field stores a polymorphic type which requires a unique_ptr to hold the value
+				// a getter is needed to expose the value as a reference
+				l = fmt.Sprintf("[[nodiscard]] %v &get_%v() const;", f.Type.Identifier, strcase.ToSnake(f.Name))
+			}
 			info.FieldGetters = append(info.FieldGetters, l)
 		}
 	}
@@ -281,6 +286,8 @@ func generateMessageImplFile(msgSchema *npschema.Message, gm generator.MessageCo
 		info.ParentMessageName = msgSchema.ParentMessage.Name
 	}
 
+	relimp := map[string]struct{}{}
+
 	for _, f := range msgSchema.InheritedFields {
 		g := findGeneratorForField(f, gm)
 		info.ConstructorParameters = append(info.ConstructorParameters, g.ConstructorFieldParameter(f))
@@ -292,20 +299,35 @@ func generateMessageImplFile(msgSchema *npschema.Message, gm generator.MessageCo
 		info.ConstructorParameters = append(info.ConstructorParameters, g.ConstructorFieldParameter(f))
 		info.FieldInitializers = append(info.FieldInitializers, g.FieldInitializer(f))
 
-		if f.Type.Kind == datatype.Message && f.Type.Schema.(*npschema.Message).IsInherited {
-			// this field stores a polymorphic type which requires a unique_ptr to hold the value
-			// a getter is needed to expose the value as a reference
+		if f.Type.Kind == datatype.Message && (f.Type.Schema == nil || f.Type.Schema.(*npschema.Message).IsInherited) {
+			if f.Type.Schema == nil {
+				p, err := resolveMessageFactoryImportPath(opts.MessageFactoryPath, msgSchema)
+				if err != nil {
+					return err
+				}
+				relimp[p] = struct{}{}
+			}
+
 			s := strcase.ToSnake(f.Name)
 
-			var l0 string
-			if info.Namespace == "" {
-				l0 = fmt.Sprintf("%v &%v::get_%v() const {", f.Type.Identifier, info.MessageName, s)
+			var typeName string
+			if f.Type.Schema == nil {
+				typeName = "NanoPack::Message"
+			} else if info.Namespace == "" {
+				typeName = f.Type.Identifier
 			} else {
-				l0 = fmt.Sprintf("%v::%v &%v::%v::get_%v() const {", info.Namespace, f.Type.Identifier, info.Namespace, info.MessageName, s)
+				typeName = fmt.Sprintf("%v::%v", info.Namespace, f.Type.Identifier)
+			}
+
+			var funcName string
+			if info.Namespace == "" {
+				funcName = fmt.Sprintf("%v::get_%v", info.MessageName, s)
+			} else {
+				funcName = fmt.Sprintf("%v::%v::get_%v()", info.Namespace, info.MessageName, s)
 			}
 
 			l := generator.Lines(
-				l0,
+				fmt.Sprintf("%v &%v() const {", typeName, funcName),
 				fmt.Sprintf("    return *%v;", s),
 				"}")
 
@@ -324,6 +346,10 @@ func generateMessageImplFile(msgSchema *npschema.Message, gm generator.MessageCo
 	for _, f := range msgSchema.AllFields {
 		g := findGeneratorForField(f, gm)
 		info.FieldWriteCodeFragments = append(info.FieldWriteCodeFragments, g.WriteFieldToBuffer(f, ctx))
+	}
+
+	for imp := range relimp {
+		info.RelativeImports = append(info.RelativeImports, imp)
 	}
 
 	tmpl, err := template.New(templateNameMessageImplFile).
@@ -517,6 +543,14 @@ func resolveSchemaImportPath(toSchema datatype.Schema, fromSchema datatype.Schem
 		return "", err
 	}
 	return strings.Replace(p, path.Ext(p), extHeaderFile, 1), nil
+}
+
+func resolveMessageFactoryImportPath(factoryPath string, fromSchema datatype.Schema) (string, error) {
+	p, err := filepath.Rel(filepath.Dir(fromSchema.SchemaPathAbsolute()), factoryPath)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(p, fileNameMessageFactory+extHeaderFile), nil
 }
 
 func formatCode(path string, formatter string, args ...string) error {

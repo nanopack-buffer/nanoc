@@ -15,6 +15,8 @@ type DataType struct {
 
 	// Schema is the schema for this message type.
 	// Only applies to Enum or Message kind.
+	// When Kind is Message and this is nil, this DataType represents the "message" type -
+	// this type can hold any kind of NanoPack message.
 	Schema Schema
 
 	// KeyType is the type of the keys stored in this data type.
@@ -112,6 +114,15 @@ var (
 		KeyType:    nil,
 		ElemType:   nil,
 	}
+
+	npmessage = DataType{
+		Identifier: "message",
+		Kind:       Message,
+		ByteSize:   DynamicSize,
+		Schema:     nil,
+		KeyType:    nil,
+		ElemType:   nil,
+	}
 )
 
 // SchemaMap is a map that maps names of schemas to the corresponding Schema definition.
@@ -147,7 +158,7 @@ func FromKind(kind Kind) *DataType {
 }
 
 // FromIdentifier returns the correct instance of DataType from the given identifier.
-// Returns nil for non-string or non-primitive types.
+// Returns nil for non built-in types.
 func FromIdentifier(identifier string) *DataType {
 	switch identifier {
 	case npint8.Identifier:
@@ -170,6 +181,8 @@ func FromIdentifier(identifier string) *DataType {
 		return &npstring
 	case npany.Identifier:
 		return &npany
+	case npmessage.Identifier:
+		return &npmessage
 
 	default:
 		return nil

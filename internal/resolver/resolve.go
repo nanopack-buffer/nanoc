@@ -11,8 +11,17 @@ import (
 	"strconv"
 )
 
-func Resolve(schemas []datatype.PartialSchema) ([]datatype.Schema, error) {
+type ResolveResult struct {
+	Schemas []datatype.Schema
+
+	// TypesUsed stores a list of all data types used in Schemas,
+	// including built-in types and user-defined types,
+	TypesUsed []string
+}
+
+func Resolve(schemas []datatype.PartialSchema) (*ResolveResult, error) {
 	sm := make(datatype.SchemaMap, len(schemas))
+	usedTypesMap := map[string]struct{}{}
 
 	// create a type map from all the input schemas
 	// mapping their type names to their incomplete schema
@@ -29,7 +38,7 @@ func Resolve(schemas []datatype.PartialSchema) ([]datatype.Schema, error) {
 		case *npschema.PartialEnum:
 			sm[s.Name] = &npschema.Enum{SchemaPath: s.SchemaPath}
 			// enum schema can be resolved directly, since an enum cannot import other types
-			err := resolveEnumSchema(s, sm)
+			err := resolveEnumSchema(s, sm, usedTypesMap)
 			if err != nil {
 				return nil, err
 			}
@@ -38,7 +47,7 @@ func Resolve(schemas []datatype.PartialSchema) ([]datatype.Schema, error) {
 
 	for _, schema := range schemas {
 		if pm, ok := schema.(*npschema.PartialMessage); ok {
-			err := resolveMessageSchemaTypeInfo(pm, sm)
+			err := resolveMessageSchemaTypeInfo(pm, sm, usedTypesMap)
 			if err != nil {
 				return nil, err
 			}
@@ -61,10 +70,18 @@ func Resolve(schemas []datatype.PartialSchema) ([]datatype.Schema, error) {
 		}
 	}
 
-	return ss, nil
+	usedTypes := make([]string, 0, len(usedTypesMap))
+	for name, _ := range usedTypesMap {
+		usedTypes = append(usedTypes, name)
+	}
+
+	return &ResolveResult{
+		Schemas:   ss,
+		TypesUsed: usedTypes,
+	}, nil
 }
 
-func resolveEnumSchema(partialEnum *npschema.PartialEnum, sm datatype.SchemaMap) error {
+func resolveEnumSchema(partialEnum *npschema.PartialEnum, sm datatype.SchemaMap, usedTypes map[string]struct{}) error {
 	s, ok := sm[partialEnum.Name]
 	if !ok {
 		return errors.New("unexpected error when resolving " + partialEnum.Name + ": not found in type map.")
@@ -134,10 +151,12 @@ func resolveEnumSchema(partialEnum *npschema.PartialEnum, sm datatype.SchemaMap)
 	fullSchema.Members = make([]npschema.EnumMember, len(partialEnum.Members))
 	copy(fullSchema.Members, partialEnum.Members)
 
+	usedTypes[fullSchema.ValueType.Identifier] = struct{}{}
+
 	return nil
 }
 
-func resolveMessageSchemaTypeInfo(partialMsg *npschema.PartialMessage, sm datatype.SchemaMap) error {
+func resolveMessageSchemaTypeInfo(partialMsg *npschema.PartialMessage, sm datatype.SchemaMap, usedTypes map[string]struct{}) error {
 	s, ok := sm[partialMsg.Name]
 	if !ok {
 		return errors.New("unexpected error when resolving " + partialMsg.Name + ": not found in type map.")
@@ -169,6 +188,7 @@ func resolveMessageSchemaTypeInfo(partialMsg *npschema.PartialMessage, sm dataty
 		fullSchema.ImportedTypes = append(fullSchema.ImportedTypes, pmsg)
 
 		imported[pmsg.Name] = struct{}{}
+		usedTypes[pmsg.Name] = struct{}{}
 	}
 
 	for _, f := range partialMsg.DeclaredFields {
@@ -188,6 +208,8 @@ func resolveMessageSchemaTypeInfo(partialMsg *npschema.PartialMessage, sm dataty
 		if err != nil {
 			return err
 		}
+
+		usedTypes[t.Identifier] = struct{}{}
 
 		if s != nil {
 			var name string

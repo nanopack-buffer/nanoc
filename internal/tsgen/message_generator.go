@@ -12,6 +12,9 @@ import (
 type messageGenerator struct{}
 
 func (g messageGenerator) TypeDeclaration(dataType datatype.DataType) string {
+	if dataType.Schema == nil {
+		return "NanoPackMessage"
+	}
 	return dataType.Identifier
 }
 
@@ -33,34 +36,58 @@ func (g messageGenerator) FieldDeclaration(field npschema.MessageField) string {
 }
 
 func (g messageGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
-	return g.ReadValueFromBuffer(field.Type, strcase.ToLowerCamel(field.Name), ctx)
+	c := strcase.ToLowerCamel(field.Name)
+	tmpv := "maybe" + strcase.ToCamel(field.Name)
+
+	var ctor string
+	if field.Type.Schema == nil {
+		ctor = "makeNanoPackMessage(reader, ptr)"
+	} else if field.Schema.IsInherited {
+		ctor = fmt.Sprintf("make%v(reader, ptr)", field.Type.Identifier)
+	} else {
+		ctor = fmt.Sprintf("%v.fromReader(reader, ptr)", g.TypeDeclaration(field.Type))
+	}
+
+	return generator.Lines(
+		fmt.Sprintf("const %v = %v;", tmpv, ctor),
+		fmt.Sprintf("if (!%v) { return null; }", tmpv),
+		fmt.Sprintf("const %v = %v.result;", c, tmpv),
+		fmt.Sprintf("ptr += %v.bytesRead;", tmpv))
 }
 
 func (g messageGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
 	tmpv := "maybe" + strcase.ToCamel(varName)
 
-	var l4 string
-	if ctx.IsVariableInScope(varName) {
-		l4 = fmt.Sprintf("%v = %v.result;", varName, tmpv)
+	var ctor string
+	if dataType.Schema == nil {
+		ctor = "makeNanoPackMessage(reader, ptr)"
+	} else if ms, ok := dataType.Schema.(*npschema.Message); ok && ms.IsInherited {
+		ctor = fmt.Sprintf("make%v(reader, ptr)", dataType.Identifier)
 	} else {
-		l4 = fmt.Sprintf("const %v = %v.result;", varName, tmpv)
+		ctor = fmt.Sprintf("%v.fromReader(reader, ptr)", g.TypeDeclaration(dataType))
+	}
+
+	var assignment string
+	if ctx.IsVariableInScope(varName) {
+		assignment = fmt.Sprintf("%v = %v.result;", varName, tmpv)
+	} else {
+		assignment = fmt.Sprintf("const %v = %v.result;", varName, tmpv)
 	}
 
 	return generator.Lines(
-		fmt.Sprintf("const %v = %v.fromReader(reader, ptr);", tmpv, g.TypeDeclaration(dataType)),
+		fmt.Sprintf("const %v = %v;", tmpv, ctor),
 		fmt.Sprintf("if (!%v) {", tmpv),
 		"    return null;",
 		"}",
-		l4,
+		assignment,
 		fmt.Sprintf("ptr += %v.bytesRead;", tmpv))
 }
 
 func (g messageGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
 	c := strcase.ToLowerCamel(field.Name)
 	return generator.Lines(
-		"const offset = writer.currentSize;",
-		fmt.Sprintf("writer.reserveHeader(%v.headerSize);", c),
-		fmt.Sprintf("const %vByteSize = this.%v.writeTo(writer, offset);", c, c),
+		fmt.Sprintf("writer.reserveHeader(this.%v.headerSize);", c),
+		fmt.Sprintf("const %vByteSize = this.%v.writeTo(writer, writer.currentSize);", c, c),
 		fmt.Sprintf("writer.writeFieldSize(%d, %vByteSize, offset);", field.Number, c),
 		fmt.Sprintf("bytesWritten += %vByteSize;", c))
 }

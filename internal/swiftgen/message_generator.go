@@ -2,15 +2,19 @@ package swiftgen
 
 import (
 	"fmt"
-	"github.com/iancoleman/strcase"
 	"nanoc/internal/datatype"
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
+
+	"github.com/iancoleman/strcase"
 )
 
 type messageGenerator struct{}
 
 func (g messageGenerator) TypeDeclaration(dataType datatype.DataType) string {
+	if dataType.Schema == nil {
+		return "NanoPackMessage"
+	}
 	return dataType.Identifier
 }
 
@@ -43,15 +47,17 @@ func (g messageGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx g
 	}
 
 	var ctor string
-	if field.Type.Schema.(*npschema.Message).IsInherited {
-		ctor = fmt.Sprintf("%v.from", g.TypeDeclaration(field.Type))
+	if field.Type.Schema == nil {
+		ctor = fmt.Sprintf("makeNanoPackMessage(from: data[ptr...])")
+	} else if field.Type.Schema.(*npschema.Message).IsInherited {
+		ctor = fmt.Sprintf("%v.from(data: data[ptr...])", g.TypeDeclaration(field.Type))
 	} else {
-		ctor = g.TypeDeclaration(field.Type)
+		ctor = fmt.Sprintf("%v(data: data[ptr...])", g.TypeDeclaration(field.Type))
 	}
 
 	return generator.Lines(
 		fmt.Sprintf("let %vByteSize = data.readSize(ofField: %d)", c, field.Number),
-		fmt.Sprintf("guard let %v = %v(data: data[ptr...]) else {", v, ctor),
+		fmt.Sprintf("guard let %v = %v else {", v, ctor),
 		"    return nil",
 		"}",
 		l4,
@@ -69,10 +75,12 @@ func (g messageGenerator) ReadValueFromBuffer(dataType datatype.DataType, varNam
 	}
 
 	var ctor string
-	if dataType.Schema.(*npschema.Message).IsInherited {
-		ctor = fmt.Sprintf("%v.from", g.TypeDeclaration(dataType))
+	if dataType.Schema == nil {
+		ctor = fmt.Sprintf("makeNanoPackMessage(from: data[ptr...])")
+	} else if dataType.Schema.(*npschema.Message).IsInherited {
+		ctor = fmt.Sprintf("%v.from(data: data[ptr...], bytesRead: &%vByteSize)", g.TypeDeclaration(dataType), varName)
 	} else {
-		ctor = g.TypeDeclaration(dataType)
+		ctor = fmt.Sprintf("%v(data: data[ptr...], bytesRead: &%vByteSize)", g.TypeDeclaration(dataType), varName)
 	}
 
 	return generator.Lines(

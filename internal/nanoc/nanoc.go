@@ -41,10 +41,23 @@ func Run(opts Options) error {
 		return errors.Join(errs...)
 	}
 
-	schemas, err := resolver.Resolve(partialSchemas)
+	result, err := resolver.Resolve(partialSchemas)
 	if err != nil {
 		return err
 	}
+
+	// when generic message type is used, a message factory *has* to be generated
+	// in order for values that store generic messages to be deserialized correctly
+	// since we need to call the correct message constructor using the type id when deserializing.
+	for _, typeName := range result.TypesUsed {
+		if t := datatype.FromIdentifier(typeName); t != nil && t.Kind == datatype.Message && t.Schema == nil {
+			if opts.MessageFactoryAbsFilePath == "" {
+				opts.MessageFactoryAbsFilePath = opts.OutputDirectoryAbs
+			}
+		}
+	}
+
+	schemas := result.Schemas
 
 	schemaGenerator := schemaGeneratorMap[opts.Language]
 	for _, s := range schemas {

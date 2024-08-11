@@ -17,7 +17,7 @@ func parseMessageSchema(header string, body yaml.MapSlice) (*npschema.PartialMes
 	ps := strings.Split(header, symbol.TypeSeparator)
 	l := len(ps)
 	if l > 2 || l <= 0 {
-		return nil, errors.New("invalid message header syntax. received: " + header)
+		return nil, NewSyntaxError("Invalid message header syntax", header)
 	}
 
 	schema := npschema.PartialMessage{
@@ -36,10 +36,7 @@ func parseMessageSchema(header string, body yaml.MapSlice) (*npschema.PartialMes
 		if k == symbol.TypeID {
 			typeID, ok := v.(int)
 			if !ok {
-				return nil, SyntaxError{
-					Msg:           "non-numeric type ID received",
-					OffendingCode: fmt.Sprintf("%v: %v", k, v),
-				}
+				return nil, NewSyntaxError("non-numeric type ID received", fmt.Sprintf("%v message", schema.Name))
 			}
 			typeIDDeclared = true
 			schema.TypeID = datatype.TypeID(typeID)
@@ -50,10 +47,7 @@ func parseMessageSchema(header string, body yaml.MapSlice) (*npschema.PartialMes
 				Number:   i,
 			})
 		} else {
-			return nil, SyntaxError{
-				Msg:           "Invalid message schema body.",
-				OffendingCode: fmt.Sprintf("%v: %v", k, v),
-			}
+			return nil, NewSyntaxError("Invalid message schema body", fmt.Sprintf("%v message", schema.Name))
 		}
 	}
 

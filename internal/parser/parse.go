@@ -36,6 +36,19 @@ func ParseSchema(path string) (datatype.PartialSchema, error) {
 
 			s.SchemaPath = path
 			schema = s
+		} else if strings.HasPrefix(k, symbol.Service+" ") {
+			body, ok := v.(yaml.MapSlice)
+			if !ok {
+				return nil, errors.New("invalid rpc schema body")
+			}
+
+			s, err := parseServiceSchema(k, body)
+			if err != nil {
+				return nil, err
+			}
+
+			s.SchemaPath = path
+			schema = s
 		} else {
 			body, ok := v.(yaml.MapSlice)
 			if !ok {
@@ -64,15 +77,15 @@ func ParseType(expr string, sm datatype.SchemaMap) (*datatype.DataType, datatype
 		return &t, s, nil
 	}
 
-	prim := datatype.FromIdentifier(expr)
-	if prim != nil {
-		return prim, nil, nil
+	builtin := datatype.FromIdentifier(expr)
+	if builtin != nil {
+		return builtin, nil, nil
 	}
 
 	if strings.HasSuffix(expr, symbol.Optional) {
 		t, s, err := ParseType(expr[:len(expr)-len(symbol.Optional)], sm)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, wrapSyntaxErr(err, expr)
 		}
 		opt := datatype.NewOptionalType(t)
 		return &opt, s, nil
@@ -81,7 +94,7 @@ func ParseType(expr string, sm datatype.SchemaMap) (*datatype.DataType, datatype
 	if strings.HasSuffix(expr, symbol.Array) {
 		t, s, err := ParseType(expr[:len(expr)-len(symbol.Array)], sm)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, wrapSyntaxErr(err, expr)
 		}
 		arr := datatype.NewArrayType(t)
 		return &arr, s, nil
@@ -91,28 +104,22 @@ func ParseType(expr string, sm datatype.SchemaMap) (*datatype.DataType, datatype
 		inner := expr[1 : len(expr)-len(symbol.MapBracketEnd)]
 		ps := strings.Split(inner, symbol.MapKeyValTypeSeperator)
 		if len(ps) != 2 {
-			return nil, nil, SyntaxError{
-				Msg:           fmt.Sprintf("Expected a key type and a value type to be separated by '%v'", symbol.MapKeyValTypeSeperator),
-				OffendingCode: expr,
-			}
+			return nil, nil, NewSyntaxError(fmt.Sprintf("Expected a key type and a value type to be separated by '%v'", symbol.MapKeyValTypeSeperator), expr)
 		}
 
 		kt, _, err := ParseType(strings.TrimSpace(ps[0]), sm)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, wrapSyntaxErr(err, expr)
 		}
 
 		vt, s, err := ParseType(strings.TrimSpace(ps[1]), sm)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, wrapSyntaxErr(err, expr)
 		}
 
 		mt := datatype.NewMapType(kt, vt)
 		return &mt, s, nil
 	}
 
-	return nil, nil, &SyntaxError{
-		Msg:           "Invalid type expression",
-		OffendingCode: expr,
-	}
+	return nil, nil, NewSyntaxError("Invalid type expression", expr)
 }

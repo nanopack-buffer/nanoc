@@ -1,11 +1,12 @@
 package tsgen
 
 import (
-	"github.com/iancoleman/strcase"
 	"nanoc/internal/datatype"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/iancoleman/strcase"
 )
 
 func resolveImportPath(toPath string, fromPath string) (string, error) {
@@ -27,6 +28,11 @@ func resolveImportPath(toPath string, fromPath string) (string, error) {
 
 func resolveSchemaImportPath(toSchema datatype.Schema, fromSchema datatype.Schema) (string, error) {
 	return resolveImportPath(toSchema.SchemaPathAbsolute(), fromSchema.SchemaPathAbsolute())
+}
+
+func resolveMessageFactoryImportPath(factoryPath string, fromSchema datatype.Schema) (string, error) {
+	p := filepath.Join(factoryPath, fileNameMessageFactoryFile)
+	return resolveImportPath(p, fromSchema.SchemaPathAbsolute())
 }
 
 func formatCode(path string, formatter string, args ...string) error {
