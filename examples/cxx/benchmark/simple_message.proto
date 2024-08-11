@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+message PbSimpleMessage {
+  string string_field = 1;
+  int32 int_field = 2;
+  double double_field = 3;
+  string optional_field = 4;
+  repeated int32 array_field = 5;
+  map<string, bool> map_field = 6;
+}

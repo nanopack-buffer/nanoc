@@ -2,12 +2,14 @@
 
 import { NanoBufReader, NanoBufWriter, type NanoPackMessage } from "nanopack";
 
+import { makeNanoPackMessage } from "./message-factory.np.js";
+
 class SimpleMessage implements NanoPackMessage {
   public static TYPE_ID = 3338766369;
 
   public readonly typeId: number = 3338766369;
 
-  public readonly headerSize: number = 28;
+  public readonly headerSize: number = 32;
 
   constructor(
     public stringField: string,
@@ -16,6 +18,7 @@ class SimpleMessage implements NanoPackMessage {
     public optionalField: string | null,
     public arrayField: number[],
     public mapField: Map<string, boolean>,
+    public anyMessage: NanoPackMessage,
   ) {}
 
   public static fromBytes(
@@ -29,7 +32,7 @@ class SimpleMessage implements NanoPackMessage {
     reader: NanoBufReader,
     offset = 0,
   ): { bytesRead: number; result: SimpleMessage } | null {
-    let ptr = offset + 28;
+    let ptr = offset + 32;
 
     const stringFieldByteLength = reader.readFieldSize(0, offset);
     const stringField = reader.readString(ptr, stringFieldByteLength);
@@ -71,6 +74,13 @@ class SimpleMessage implements NanoPackMessage {
       mapField.set(iKey, iItem);
     }
 
+    const maybeAnyMessage = makeNanoPackMessage(reader, ptr);
+    if (!maybeAnyMessage) {
+      return null;
+    }
+    const anyMessage = maybeAnyMessage.result;
+    ptr += maybeAnyMessage.bytesRead;
+
     return {
       bytesRead: ptr - offset,
       result: new SimpleMessage(
@@ -80,12 +90,13 @@ class SimpleMessage implements NanoPackMessage {
         optionalField,
         arrayField,
         mapField,
+        anyMessage,
       ),
     };
   }
 
   public writeTo(writer: NanoBufWriter, offset = 0): number {
-    let bytesWritten = 28;
+    let bytesWritten = 32;
 
     writer.writeTypeId(3338766369, offset);
 
@@ -123,12 +134,23 @@ class SimpleMessage implements NanoPackMessage {
       writer.appendBoolean(iItem);
       mapFieldByteLength += iKeyByteLength + 4 + 1;
     });
+    bytesWritten += mapFieldByteLength;
+    writer.writeFieldSize(5, mapFieldByteLength, offset);
+
+    const anyMessageWriteOffset = writer.currentSize;
+    writer.reserveHeader(this.anyMessage.headerSize);
+    const anyMessageByteSize = this.anyMessage.writeTo(
+      writer,
+      anyMessageWriteOffset,
+    );
+    writer.writeFieldSize(6, anyMessageByteSize, offset);
+    bytesWritten += anyMessageByteSize;
 
     return bytesWritten;
   }
 
   public bytes(): Uint8Array {
-    const writer = new NanoBufWriter(28);
+    const writer = new NanoBufWriter(32);
     this.writeTo(writer);
     return writer.bytes;
   }

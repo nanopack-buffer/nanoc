@@ -1,3 +1,4 @@
+import { NestedMessage } from "./nested-message.np.js";
 import { SimpleMessage } from "./simple-message.np.js";
 
 console.log(
@@ -14,6 +15,7 @@ const message = new SimpleMessage(
 		["mai", true],
 		["sakurajima", true],
 	]),
+	new NestedMessage("nested"),
 );
 
 const bytes = message.bytes();

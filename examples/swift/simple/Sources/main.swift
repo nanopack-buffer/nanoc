@@ -2,26 +2,24 @@ import NanoPack
 
 print("a simple program demonstrating conversion between NanoPack data & Swift struct.")
 
-let person = Person(
-    firstName: "John",
-    middleName: nil,
-    lastName: "Doe",
-    age: 40,
-    otherFriend: nil
+let message = SimpleMessage(
+    stringField: "hello world",
+    intField: 123456,
+    doubleField: 123.456,
+    optionalField: nil,
+    arrayField: [1, 2, 3],
+    mapField: ["hello": true],
+    anyMessage: NestedMessage(stringField: "nested")
 )
 
-let data = person.data()!
+let data = message.data()!
 print("raw bytes: ", terminator: "")
 for b in data {
     print("\(b)", terminator: " ")
 }
+
 print("")
 print("total bytes:", data.count)
 
-let person1 = Person(data: data)!
-print("first name:", person1.firstName)
-print("last name:", person1.lastName)
-print("age:", person1.age)
-if person1.middleName == nil {
-    print("This person does not have a middle name.")
-}
+let decoded = SimpleMessage(data: data)
+print(decoded?.mapField)

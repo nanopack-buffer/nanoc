@@ -1,32 +1,28 @@
-#include "person.np.hxx"
+#include "nested_message.np.hxx"
+#include "simple_message.np.hxx"
 #include <cstdint>
 #include <iostream>
-#include <memory>
+#include <nanopack/reader.hxx>
 #include <optional>
+#include <unordered_map>
+#include <vector>
 
 int main() {
   std::cout << "A simple program demonstrating conversion between NanoPack "
                "data and C++ struct."
             << std::endl;
 
-  Person person;
-  person.first_name = "John";
-  person.middle_name = std::nullopt;
-  person.last_name = "Doe";
-  person.age = 40;
-  person.other_friend = std::make_unique<Person>();
-  person.other_friend->first_name = "Tim";
-  person.other_friend->last_name = "Cook";
-  person.other_friend->age = 50;
-
-  std::cout << "test" << std::endl;
+  SimpleMessage message("hello world", 123456, 123.456, std::nullopt,
+                        std::vector<uint8_t>{1, 2, 3},
+                        std::unordered_map<std::string, bool>{{"hello", true}},
+                        std::make_unique<NestedMessage>("nested"));
 
   NanoPack::Writer writer;
-  const size_t bytes_written = person.write_to(writer, 0);
+  const size_t bytes_written = message.write_to(writer, 0);
 
   uint8_t *buf = writer.data();
 
-  std::cout << "raw bytes:";
+  std::cout << "raw bytes: ";
   for (size_t i = 0; i < bytes_written; ++i) {
     std::cout << +buf[i] << " ";
   }
@@ -35,25 +31,15 @@ int main() {
             << std::endl
             << "=====================" << std::endl;
 
-  Person person1;
+  std::cout << "decoded: ";
+
   NanoPack::Reader reader(buf);
-  const size_t bytes_read = person1.read_from(reader);
-  std::cout << "First name: " << person1.first_name << std::endl;
-  std::cout << "Last name: " << person1.last_name << std::endl;
-  if (!person1.middle_name.has_value()) {
-    std::cout << "This person does not have a middle name." << std::endl;
-  }
-  std::cout << "Age: " << +person1.age << std::endl;
+  SimpleMessage decoded;
+  decoded.read_from(reader);
 
-  std::cout << "His friend:" << std::endl;
-  std::cout << "    First name: " << person1.other_friend->first_name
-            << std::endl;
-  std::cout << "    Last name: " << person1.other_friend->last_name
-            << std::endl;
-  if (!person1.other_friend->middle_name.has_value()) {
-    std::cout << "    This person does not have a middle name." << std::endl;
-  }
-  std::cout << "    Age: " << person1.other_friend->age << std::endl;
+  std::cout << "string_field: " << decoded.string_field << std::endl;
 
-  return 0;
+  for (auto &item : decoded.array_field) {
+    std::cout << +item << std::endl;
+  }
 }

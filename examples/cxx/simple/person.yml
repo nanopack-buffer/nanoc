@@ -1,6 +1,0 @@
-Person:
-  first_name: string
-  middle_name: string?
-  last_name: string
-  age: int8
-  other_friend: Person

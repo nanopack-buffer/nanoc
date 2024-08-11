@@ -11,7 +11,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS true)
 get_filename_component(SHARED_LIB_DIR ../lib ABSOLUTE)
 
 add_executable(simple
-        person.np.cxx
+		nanopack_message_factory.np.cxx
+		simple_message.np.cxx
+		nested_message.np.cxx
         main.cxx)
 
 add_subdirectory(${SHARED_LIB_DIR}/cxx-nanopack ./cxx-nanopack)

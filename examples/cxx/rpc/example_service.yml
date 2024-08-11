@@ -1,0 +1,3 @@
+service ExampleService:
+  fn add(a int, b int): int
+  fn subtract(a int, b int): int

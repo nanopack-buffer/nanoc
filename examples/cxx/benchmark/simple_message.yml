@@ -5,4 +5,4 @@ SimpleMessage:
   optional_field: string?
   array_field: uint8[]
   map_field: <string:bool>
-  any_message: message
+

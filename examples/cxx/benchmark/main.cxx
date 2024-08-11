@@ -1,5 +1,7 @@
 #include "person.np.hxx"
 #include "person.pb.h"
+#include "simple_message.np.hxx"
+#include "simple_message.pb.h"
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>
