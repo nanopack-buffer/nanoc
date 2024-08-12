@@ -59,8 +59,8 @@ func (m *Message) SchemaPathAbsolute() string {
 	return m.SchemaPath
 }
 
-func (m *Message) DataType() datatype.DataType {
-	return datatype.DataType{
+func (m *Message) DataType() *datatype.DataType {
+	return &datatype.DataType{
 		Identifier: m.Name,
 		Kind:       datatype.Message,
 		ByteSize:   datatype.DynamicSize,
@@ -68,6 +68,10 @@ func (m *Message) DataType() datatype.DataType {
 		KeyType:    nil,
 		ElemType:   nil,
 	}
+}
+
+func (m *Message) SchemaName() string {
+	return m.Name
 }
 
 func (p PartialMessage) IsPartialSchema() {}

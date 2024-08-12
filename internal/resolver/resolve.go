@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"nanoc/internal/datatype"
+	"nanoc/internal/errs"
 	"nanoc/internal/npschema"
 	"nanoc/internal/parser"
 	"sort"
@@ -21,6 +22,7 @@ type ResolveResult struct {
 
 func Resolve(schemas []datatype.PartialSchema) (*ResolveResult, error) {
 	sm := make(datatype.SchemaMap, len(schemas))
+	resolvedSchemas := []datatype.Schema{}
 	usedTypesMap := map[string]struct{}{}
 
 	// create a type map from all the input schemas
@@ -36,12 +38,20 @@ func Resolve(schemas []datatype.PartialSchema) (*ResolveResult, error) {
 			}
 
 		case *npschema.PartialEnum:
-			sm[s.Name] = &npschema.Enum{SchemaPath: s.SchemaPath}
 			// enum schema can be resolved directly, since an enum cannot import other types
-			err := resolveEnumSchema(s, sm, usedTypesMap)
+			resolved, err := resolveEnumSchema(s, sm, usedTypesMap)
 			if err != nil {
 				return nil, err
 			}
+			resolvedSchemas = append(resolvedSchemas, resolved)
+			sm[s.Name] = resolved
+
+		case *npschema.PartialServiceSchema:
+			resolved, err := resolveServiceSchema(s, sm)
+			if err != nil {
+				return nil, errs.WrapNanocErr(err, s.Name)
+			}
+			resolvedSchemas = append(resolvedSchemas, resolved)
 		}
 	}
 
@@ -57,40 +67,30 @@ func Resolve(schemas []datatype.PartialSchema) (*ResolveResult, error) {
 	for _, schema := range sm {
 		if ms, ok := schema.(*npschema.Message); ok {
 			resolveMessageInheritance(ms)
-		}
-	}
-
-	ss := make([]datatype.Schema, 0, len(sm))
-	for _, sp := range sm {
-		switch s := sp.(type) {
-		case *npschema.Message:
-			ss = append(ss, s)
-		case *npschema.Enum:
-			ss = append(ss, s)
+			resolvedSchemas = append(resolvedSchemas, ms)
 		}
 	}
 
 	usedTypes := make([]string, 0, len(usedTypesMap))
-	for name, _ := range usedTypesMap {
+	for name := range usedTypesMap {
 		usedTypes = append(usedTypes, name)
 	}
 
 	return &ResolveResult{
-		Schemas:   ss,
+		Schemas:   resolvedSchemas,
 		TypesUsed: usedTypes,
 	}, nil
 }
 
-func resolveEnumSchema(partialEnum *npschema.PartialEnum, sm datatype.SchemaMap, usedTypes map[string]struct{}) error {
-	s, ok := sm[partialEnum.Name]
-	if !ok {
-		return errors.New("unexpected error when resolving " + partialEnum.Name + ": not found in type map.")
+func resolveEnumSchema(partialEnum *npschema.PartialEnum, sm datatype.SchemaMap, usedTypes map[string]struct{}) (*npschema.Enum, error) {
+	fullSchema := npschema.Enum{
+		SchemaPath:         partialEnum.SchemaPath,
+		Name:               partialEnum.Name,
+		IsDefaultValueUsed: partialEnum.IsDefaultValueUsed,
 	}
 
-	fullSchema, ok := s.(*npschema.Enum)
-	if !ok {
-		return errors.New("unexpected error when resolving " + partialEnum.Name + ": schema type is not npschema.Enum.")
-	}
+	fullSchema.Members = make([]npschema.EnumMember, len(partialEnum.Members))
+	copy(fullSchema.Members, partialEnum.Members)
 
 	if t := datatype.FromIdentifier(partialEnum.ValueTypeName); t != nil {
 		fullSchema.ValueType = *t
@@ -99,14 +99,14 @@ func resolveEnumSchema(partialEnum *npschema.PartialEnum, sm datatype.SchemaMap,
 			for _, m := range fullSchema.Members {
 				_, err := strconv.Atoi(m.ValueLiteral)
 				if err != nil {
-					return errors.New(fmt.Sprintf("non-int value %v used for enum member %v in enum %v", m.ValueLiteral, m.Name, partialEnum.Name))
+					return nil, errors.New(fmt.Sprintf("non-int value %v used for enum member %v in enum %v", m.ValueLiteral, m.Name, partialEnum.Name))
 				}
 			}
 		} else if datatype.IsDouble(fullSchema.ValueType) {
 			for _, m := range fullSchema.Members {
 				_, err := strconv.ParseFloat(m.ValueLiteral, 64)
 				if err != nil {
-					return errors.New(fmt.Sprintf("non-double value %v used for enum member %v in enum %v", m.ValueLiteral, m.Name, partialEnum.Name))
+					return nil, errors.New(fmt.Sprintf("non-double value %v used for enum member %v in enum %v", m.ValueLiteral, m.Name, partialEnum.Name))
 				}
 			}
 		}
@@ -141,19 +141,14 @@ func resolveEnumSchema(partialEnum *npschema.PartialEnum, sm datatype.SchemaMap,
 			} else if maxVal <= math.MaxInt64 {
 				fullSchema.ValueType = *datatype.FromKind(datatype.Int64)
 			} else {
-				return errors.New(fmt.Sprintf("unable to determine the value type to use for enum %v", partialEnum.Name))
+				return nil, errors.New(fmt.Sprintf("unable to determine the value type to use for enum %v", partialEnum.Name))
 			}
 		}
 	}
 
-	fullSchema.Name = partialEnum.Name
-	fullSchema.IsDefaultValueUsed = partialEnum.IsDefaultValueUsed
-	fullSchema.Members = make([]npschema.EnumMember, len(partialEnum.Members))
-	copy(fullSchema.Members, partialEnum.Members)
-
 	usedTypes[fullSchema.ValueType.Identifier] = struct{}{}
 
-	return nil
+	return &fullSchema, nil
 }
 
 func resolveMessageSchemaTypeInfo(partialMsg *npschema.PartialMessage, sm datatype.SchemaMap, usedTypes map[string]struct{}) error {
@@ -197,7 +192,7 @@ func resolveMessageSchemaTypeInfo(partialMsg *npschema.PartialMessage, sm dataty
 			// self-referencing field, mark type as optional to add indirection
 			fullSchema.DeclaredFields = append(fullSchema.DeclaredFields, npschema.MessageField{
 				Name:   f.Name,
-				Type:   datatype.NewOptionalType(&t),
+				Type:   datatype.NewOptionalType(t),
 				Number: f.Number,
 				Schema: fullSchema,
 			})
@@ -289,4 +284,73 @@ func resolveMessageInheritance(msgSchema *npschema.Message) {
 	})
 
 	msgSchema.HeaderSize = len(msgSchema.AllFields)*4 + 4
+}
+
+func resolveServiceSchema(partialSchema *npschema.PartialServiceSchema, sm datatype.SchemaMap) (*npschema.ServiceSchema, error) {
+	fullSchema := npschema.ServiceSchema{
+		Name:       partialSchema.Name,
+		SchemaPath: partialSchema.SchemaPath,
+	}
+
+	imported := map[string]datatype.Schema{}
+
+	for _, f := range partialSchema.DeclaredFunctions {
+		fullFunc := npschema.DeclaredFunction{
+			Name: f.Name,
+		}
+
+		if f.ReturnTypeName != "" {
+			t, s, err := parser.ParseType(f.ReturnTypeName, sm)
+			if err != nil {
+				return nil, errs.NewNanocError(fmt.Sprintf("Unresolved function return type %v", f.ReturnTypeName), f.Name)
+			}
+
+			if s != nil {
+				imported[s.SchemaName()] = s
+			}
+
+			fullFunc.ReturnType = t
+		} else {
+			fullFunc.ReturnType = nil
+		}
+
+		if f.ErrorTypeName != "" {
+			t, s, err := parser.ParseType(f.ErrorTypeName, sm)
+			if err != nil {
+				return nil, errs.NewNanocError(fmt.Sprintf("Unresolved function error type %v", f.ReturnTypeName), f.Name)
+			}
+
+			if s != nil {
+				imported[s.SchemaName()] = s
+			}
+
+			fullFunc.ErrorType = t
+		} else {
+			fullFunc.ErrorType = nil
+		}
+
+		for _, param := range f.Parameters {
+			t, s, err := parser.ParseType(param.TypeName, sm)
+			if err != nil {
+				return nil, errs.NewNanocError(fmt.Sprintf("Unresolved type %v", param.TypeName), param.Name, f.Name)
+			}
+
+			if s != nil {
+				imported[s.SchemaName()] = s
+			}
+
+			fullFunc.Parameters = append(fullFunc.Parameters, npschema.FunctionParameter{
+				Name: param.Name,
+				Type: *t,
+			})
+		}
+
+		fullSchema.DeclaredFunctions = append(fullSchema.DeclaredFunctions, fullFunc)
+	}
+
+	for _, s := range imported {
+		fullSchema.ImportedTypes = append(fullSchema.ImportedTypes, s)
+	}
+
+	return &fullSchema, nil
 }

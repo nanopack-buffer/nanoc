@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"nanoc/internal/datatype"
+	"nanoc/internal/errs"
 	"nanoc/internal/npschema"
 	"nanoc/internal/symbol"
 	"strconv"
@@ -17,7 +18,7 @@ func parseMessageSchema(header string, body yaml.MapSlice) (*npschema.PartialMes
 	ps := strings.Split(header, symbol.TypeSeparator)
 	l := len(ps)
 	if l > 2 || l <= 0 {
-		return nil, NewSyntaxError("Invalid message header syntax", header)
+		return nil, errs.NewNanocError("Invalid message header syntax", header)
 	}
 
 	schema := npschema.PartialMessage{
@@ -36,7 +37,7 @@ func parseMessageSchema(header string, body yaml.MapSlice) (*npschema.PartialMes
 		if k == symbol.TypeID {
 			typeID, ok := v.(int)
 			if !ok {
-				return nil, NewSyntaxError("non-numeric type ID received", fmt.Sprintf("%v message", schema.Name))
+				return nil, errs.NewNanocError("non-numeric type ID received", fmt.Sprintf("%v message", schema.Name))
 			}
 			typeIDDeclared = true
 			schema.TypeID = datatype.TypeID(typeID)
@@ -47,7 +48,7 @@ func parseMessageSchema(header string, body yaml.MapSlice) (*npschema.PartialMes
 				Number:   i,
 			})
 		} else {
-			return nil, NewSyntaxError("Invalid message schema body", fmt.Sprintf("%v message", schema.Name))
+			return nil, errs.NewNanocError("Invalid message schema body", fmt.Sprintf("%v message", schema.Name))
 		}
 	}
 

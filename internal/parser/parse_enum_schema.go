@@ -3,6 +3,7 @@ package parser
 import (
 	"errors"
 	"fmt"
+	"nanoc/internal/errs"
 	"nanoc/internal/npschema"
 	"nanoc/internal/symbol"
 	"strconv"
@@ -45,7 +46,7 @@ func parseEnumSchema(header string, body any) (*npschema.PartialEnum, error) {
 			case int:
 				l = strconv.Itoa(v)
 			default:
-				return nil, NewSyntaxError("Invalid enum value", fmt.Sprintf("%v", v), k, fmt.Sprintf("%v enum", schema.Name))
+				return nil, errs.NewNanocError("Invalid enum value", fmt.Sprintf("%v", v), k, fmt.Sprintf("%v enum", schema.Name))
 			}
 
 			schema.Members = append(schema.Members, npschema.EnumMember{
@@ -65,7 +66,7 @@ func parseEnumSchema(header string, body any) (*npschema.PartialEnum, error) {
 			case int:
 				l = strconv.Itoa(v)
 			default:
-				return nil, NewSyntaxError("Invalid enum value", fmt.Sprintf("%v", v), fmt.Sprintf("%v enum", schema.Name))
+				return nil, errs.NewNanocError("Invalid enum value", fmt.Sprintf("%v", v), fmt.Sprintf("%v enum", schema.Name))
 			}
 
 			schema.Members = append(schema.Members, npschema.EnumMember{
