@@ -2,14 +2,14 @@ package npschema
 
 import "nanoc/internal/datatype"
 
-type PartialServiceSchema struct {
+type PartialService struct {
 	SchemaPath        string
 	Name              string
 	ImportedTypeNames []string
 	DeclaredFunctions []PartialDeclaredFunction
 }
 
-type ServiceSchema struct {
+type Service struct {
 	SchemaPath        string
 	Name              string
 	ImportedTypes     []datatype.Schema
@@ -26,8 +26,12 @@ type PartialDeclaredFunction struct {
 type DeclaredFunction struct {
 	Name       string
 	Parameters []FunctionParameter
-	ReturnType *datatype.DataType
-	ErrorType  *datatype.DataType
+
+	// ParametersByteSize stores the total number of bytes required to store all of parameters.
+	// This is datatype.DynamicSize if any of the parameter does not have a static size.
+	ParametersByteSize int
+	ReturnType         *datatype.DataType
+	ErrorType          *datatype.DataType
 }
 
 type PartialFunctionParameter struct {
@@ -40,16 +44,16 @@ type FunctionParameter struct {
 	Type datatype.DataType
 }
 
-func (s PartialServiceSchema) IsPartialSchema() {}
+func (s PartialService) IsPartialSchema() {}
 
-func (s *ServiceSchema) SchemaPathAbsolute() string {
+func (s *Service) SchemaPathAbsolute() string {
 	return s.SchemaPath
 }
 
-func (s *ServiceSchema) DataType() *datatype.DataType {
+func (s *Service) DataType() *datatype.DataType {
 	return nil
 }
 
-func (s *ServiceSchema) SchemaName() string {
+func (s *Service) SchemaName() string {
 	return s.Name
 }

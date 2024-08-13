@@ -14,13 +14,13 @@ import (
 
 var funcHeaderRegex = regexp.MustCompile("(?P<name>^\\w+)(?P<params>\\((?:\\w+ \\w+, |\\w+ \\w+)*\\))$")
 
-func parseServiceSchema(header string, body yaml.MapSlice) (*npschema.PartialServiceSchema, error) {
+func parseServiceSchema(header string, body yaml.MapSlice) (*npschema.PartialService, error) {
 	ps := strings.Split(header, " ")
 	if len(ps) != 2 {
 		return nil, errors.New(fmt.Sprintf("invalid service header declaration received: %v. A valid example: service MyService.", header))
 	}
 
-	schema := npschema.PartialServiceSchema{
+	schema := npschema.PartialService{
 		Name: ps[1],
 	}
 

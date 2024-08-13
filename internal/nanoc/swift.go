@@ -24,6 +24,9 @@ func runSwiftSchemaGenerator(schema datatype.Schema, opts Options) error {
 	case *npschema.Enum:
 		return swiftgen.GenerateEnum(s, o)
 
+	case *npschema.Service:
+		return swiftgen.GenerateService(s, o)
+
 	default:
 		return errors.New("unexpected error. Unsupported schema type " + reflect.TypeOf(schema).Name())
 	}

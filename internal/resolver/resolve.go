@@ -46,7 +46,7 @@ func Resolve(schemas []datatype.PartialSchema) (*ResolveResult, error) {
 			resolvedSchemas = append(resolvedSchemas, resolved)
 			sm[s.Name] = resolved
 
-		case *npschema.PartialServiceSchema:
+		case *npschema.PartialService:
 			resolved, err := resolveServiceSchema(s, sm)
 			if err != nil {
 				return nil, errs.WrapNanocErr(err, s.Name)
@@ -286,8 +286,8 @@ func resolveMessageInheritance(msgSchema *npschema.Message) {
 	msgSchema.HeaderSize = len(msgSchema.AllFields)*4 + 4
 }
 
-func resolveServiceSchema(partialSchema *npschema.PartialServiceSchema, sm datatype.SchemaMap) (*npschema.ServiceSchema, error) {
-	fullSchema := npschema.ServiceSchema{
+func resolveServiceSchema(partialSchema *npschema.PartialService, sm datatype.SchemaMap) (*npschema.Service, error) {
+	fullSchema := npschema.Service{
 		Name:       partialSchema.Name,
 		SchemaPath: partialSchema.SchemaPath,
 	}
@@ -296,7 +296,8 @@ func resolveServiceSchema(partialSchema *npschema.PartialServiceSchema, sm datat
 
 	for _, f := range partialSchema.DeclaredFunctions {
 		fullFunc := npschema.DeclaredFunction{
-			Name: f.Name,
+			Name:               f.Name,
+			ParametersByteSize: 0,
 		}
 
 		if f.ReturnTypeName != "" {
@@ -337,6 +338,12 @@ func resolveServiceSchema(partialSchema *npschema.PartialServiceSchema, sm datat
 
 			if s != nil {
 				imported[s.SchemaName()] = s
+			}
+
+			if t.ByteSize != datatype.DynamicSize && fullFunc.ParametersByteSize != datatype.DynamicSize {
+				fullFunc.ParametersByteSize += t.ByteSize
+			} else {
+				fullFunc.ParametersByteSize = datatype.DynamicSize
 			}
 
 			fullFunc.Parameters = append(fullFunc.Parameters, npschema.FunctionParameter{
