@@ -81,7 +81,7 @@ func GenerateService(serviceSchema *npschema.Service, opts Options) error {
 		return err
 	}
 
-	fname := fmt.Sprintf("%vServiceServer.swift", serviceSchema.Name)
+	fname := fmt.Sprintf("%vService.swift", serviceSchema.Name)
 	outPath := pathutil.ResolveCodeOutputPathForSchema(serviceSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath, fname)
 	f, err := os.Create(outPath)
 	if err != nil {

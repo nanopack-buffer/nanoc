@@ -201,7 +201,7 @@ protocol {{.Schema.Name}}ServiceDelegate {
 class {{.Schema.Name}}ServiceServer: NPRPCServer {
 	private let delegate: {{.Schema.Name}}ServiceDelegate
 
-	override init(channel: any NPRPCServerChannel, delegate: {{.Schema.Name}}ServiceDelegate) {
+	init(channel: NPRPCServerChannel, delegate: {{.Schema.Name}}ServiceDelegate) {
 		self.delegate = delegate
 		super.init(channel: channel)
 		registerCalls()
@@ -225,7 +225,7 @@ class {{.Schema.Name}}ServiceServer: NPRPCServer {
 }
 
 class {{.Schema.Name}}ServiceClient: NPRPCClient {
-	override init(channel: any NPRPCServerChannel) {
+	override init(channel: NPRPCClientChannel) {
 		super.init(channel: channel)
 	}
 
@@ -233,7 +233,7 @@ class {{.Schema.Name}}ServiceClient: NPRPCClient {
 	func {{.Name}}({{range $i, $param := .Parameters}}{{if $i}}, {{end}}_ {{$param.Name}}: {{typeDeclaration $param.Type}}{{end}}, completionHandler: @escaping ({{if .ReturnType}}{{typeDeclaration .ReturnType}}{{end}}) -> Void) {
 		let msgID = newMessageID()
 		var data = Data(capacity: 9 + {{stringByteSize .Name}}{{if gt .ParametersByteSize 0}} + {{.ParametersByteSize}}{{end}})
-		data.append(int: NPRPCMessageType.Request.rawValue)
+		data.append(int: NPRPCMessageType.request.rawValue)
 		data.append(int: msgID)
 		data.append(int: UInt32({{stringByteSize .Name}}))
 		data.append(string: "{{.Name}}")
@@ -254,10 +254,11 @@ class {{.Schema.Name}}ServiceClient: NPRPCClient {
 		}
 	}
 
+	@available(macOS 10.15, iOS 13, *)
 	func {{.Name}}({{range $i, $param := .Parameters}}{{if $i}}, {{end}}_ {{$param.Name}}: {{typeDeclaration $param.Type}}{{end}}) async{{if .ReturnType}} -> {{typeDeclaration .ReturnType}}{{end}} {
 		let msgID = newMessageID()
 		var data = Data(capacity: 9 + {{stringByteSize .Name}}{{if gt .ParametersByteSize 0}} + {{.ParametersByteSize}}{{end}})
-		data.append(int: NPRPCMessageType.Request.rawValue)
+		data.append(int: NPRPCMessageType.request.rawValue)
 		data.append(int: msgID)
 		data.append(int: UInt32({{stringByteSize .Name}}))
 		data.append(string: "{{.Name}}")
