@@ -1,0 +1,15 @@
+{
+  "originHash" : "ac4dc6f5b9e2b5b225ce381d3e1ce74c12cf87e036d41dbd4c2933797ff36e4a",
+  "pins" : [
+    {
+      "identity" : "swift-nanopack",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/poly-gui/swift-nanopack",
+      "state" : {
+        "branch" : "main",
+        "revision" : "076dc3e2c0e5bc02e09b782c09330bffd030cd50"
+      }
+    }
+  ],
+  "version" : 3
+}

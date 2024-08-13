@@ -1,3 +1,3 @@
-service ExampleService:
+service Example:
   fn add(a int32, b int32): int32
   fn subtract(a int32, b int32): int32
