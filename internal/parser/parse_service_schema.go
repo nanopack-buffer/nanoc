@@ -30,12 +30,19 @@ func parseServiceSchema(header string, body yaml.MapSlice) (*npschema.PartialSer
 			return nil, errs.NewNanocError("Invalid function declaration", fmt.Sprintf("service %v", schema.Name))
 		}
 
-		v, ok := e.Value.(string)
-		if !ok {
-			return nil, errs.NewNanocError("Invalid function declaration", fmt.Sprintf("service %v", schema.Name))
+		var returnTypeName string
+		if e.Value == nil {
+			returnTypeName = ""
+		} else {
+			v, ok := e.Value.(string)
+			if !ok {
+				fmt.Println("asdkjkasjdk;sdj")
+				return nil, errs.NewNanocError("Invalid function declaration", fmt.Sprintf("service %v", schema.Name))
+			}
+			returnTypeName = v
 		}
 
-		f, err := parseFunction(k, v)
+		f, err := parseFunction(k, returnTypeName)
 		if err != nil {
 			var syntaxErr *errs.NanocError
 			if errors.As(err, &syntaxErr) {
