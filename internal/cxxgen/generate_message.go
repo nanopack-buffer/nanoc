@@ -363,9 +363,6 @@ func generateMessageImplFile(msgSchema *npschema.Message, gm generator.MessageCo
 	}
 
 	outPath := pathutil.ResolveCodeOutputPathForSchema(msgSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath, fname)
-	fmt.Println(opts.OutputDirectoryPath)
-	fmt.Println(outPath)
-
 	f, err := os.Create(outPath)
 	if err != nil {
 		return err

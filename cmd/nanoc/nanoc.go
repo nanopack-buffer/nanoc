@@ -6,6 +6,7 @@ import (
 	"nanoc/internal/nanoc"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func main() {
@@ -32,19 +33,9 @@ func main() {
 		log.Fatalln(language + " is not yet supported by nanoc!")
 	}
 
-	inputs := make([]string, flag.NArg())
-	for i, p := range flag.Args() {
-		abs, err := filepath.Abs(p)
-		if err != nil {
-			log.Fatalln("Invalid input path encountered: " + p)
-		}
-		inputs[i] = abs
-	}
-
 	opts := nanoc.Options{
 		Language:                  nanoc.SupportedLanguage(language),
 		MessageFactoryAbsFilePath: "",
-		InputFileAbsolutePaths:    inputs,
 		Namespace:                 namespace,
 	}
 
@@ -74,6 +65,27 @@ func main() {
 			log.Fatalln("Message factory path is invalid. Received: " + factoryOut)
 		}
 		opts.MessageFactoryAbsFilePath = p
+	}
+
+	if len(flag.Args()) > 0 {
+		for _, p := range flag.Args() {
+			abs, err := filepath.Abs(filepath.Join(opts.BaseDirectoryAbs, p))
+			if err != nil {
+				log.Fatalln("Invalid input path encountered: " + p)
+			}
+			opts.InputFileAbsolutePaths = append(opts.InputFileAbsolutePaths, abs)
+		}
+	} else {
+		// search for schema files in base dir.
+		err = filepath.WalkDir(opts.BaseDirectoryAbs, func(path string, d os.DirEntry, err error) error {
+			if !d.IsDir() && strings.HasSuffix(path, nanoc.SchemaFileExt) {
+				opts.InputFileAbsolutePaths = append(opts.InputFileAbsolutePaths, path)
+			}
+			return nil
+		})
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	if opts.CodeFormatterPath == "" {
