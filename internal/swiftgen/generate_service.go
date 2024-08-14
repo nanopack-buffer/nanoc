@@ -6,7 +6,6 @@ import (
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
 	"nanoc/internal/pathutil"
-	"os"
 	"strings"
 	"text/template"
 	"unicode/utf8"
@@ -83,7 +82,7 @@ func GenerateService(serviceSchema *npschema.Service, opts Options) error {
 
 	fname := fmt.Sprintf("%vService.swift", serviceSchema.Name)
 	outPath := pathutil.ResolveCodeOutputPathForSchema(serviceSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath, fname)
-	f, err := os.Create(outPath)
+	f, err := pathutil.CreateOutputFile(outPath)
 	if err != nil {
 		return err
 	}

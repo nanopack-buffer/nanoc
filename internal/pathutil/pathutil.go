@@ -2,6 +2,7 @@ package pathutil
 
 import (
 	"nanoc/internal/datatype"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -16,4 +17,13 @@ func ResolveCodeOutputPathForSchema(schema datatype.Schema, baseDir, outDir, out
 	path = strings.Replace(path, baseDir, outDir, 1)
 	path = strings.Replace(path, fileName, outName, 1)
 	return path
+}
+
+// CreateOutputFile creates a file at the given absolute path, creating directories if necessary.
+func CreateOutputFile(absPath string) (*os.File, error) {
+	err := os.MkdirAll(filepath.Dir(absPath), os.ModePerm)
+	if err != nil {
+		return nil, err
+	}
+	return os.Create(absPath)
 }

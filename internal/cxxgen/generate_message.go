@@ -7,7 +7,7 @@ import (
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
 	"nanoc/internal/pathutil"
-	"os"
+	"nanoc/internal/symbol"
 	"os/exec"
 	"path"
 	"path/filepath"
@@ -240,10 +240,10 @@ func generateMessageHeaderFile(msgSchema *npschema.Message, gm generator.Message
 	}
 
 	fname := filepath.Base(msgSchema.SchemaPath)
-	fname = strcase.ToSnake(strings.TrimSuffix(fname, filepath.Ext(fname))) + extHeaderFile
+	fname = strcase.ToSnake(strings.TrimSuffix(fname, symbol.SchemaFileExt)) + extHeaderFile
 	outPath := pathutil.ResolveCodeOutputPathForSchema(msgSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath, fname)
 
-	f, err := os.Create(outPath)
+	f, err := pathutil.CreateOutputFile(outPath)
 	if err != nil {
 		return err
 	}
@@ -264,7 +264,7 @@ func generateMessageHeaderFile(msgSchema *npschema.Message, gm generator.Message
 
 func generateMessageImplFile(msgSchema *npschema.Message, gm generator.MessageCodeGeneratorMap, opts Options) error {
 	fname := filepath.Base(msgSchema.SchemaPath)
-	fname = strcase.ToSnake(strings.TrimSuffix(fname, filepath.Ext(fname))) + extImplFile
+	fname = strcase.ToSnake(strings.TrimSuffix(fname, symbol.SchemaFileExt)) + extImplFile
 
 	// the message header byte size includes 4 bytes for the type ID and 4 bytes to store the byte size of each field
 	npHeaderByteSize := (len(msgSchema.AllFields) + 1) * 4
@@ -363,7 +363,7 @@ func generateMessageImplFile(msgSchema *npschema.Message, gm generator.MessageCo
 	}
 
 	outPath := pathutil.ResolveCodeOutputPathForSchema(msgSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath, fname)
-	f, err := os.Create(outPath)
+	f, err := pathutil.CreateOutputFile(outPath)
 	if err != nil {
 		return err
 	}
@@ -401,7 +401,7 @@ func generateChildMessageFactoryHeaderFile(msgSchema *npschema.Message, opts Opt
 
 	fname := fmt.Sprintf("make_%v%v", strcase.ToSnake(msgSchema.Name), extHeaderFile)
 	outPath := pathutil.ResolveCodeOutputPathForSchema(msgSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath, fname)
-	f, err := os.Create(outPath)
+	f, err := pathutil.CreateOutputFile(outPath)
 	if err != nil {
 		return err
 	}
@@ -445,7 +445,7 @@ func generateChildMessageFactoryImplFile(msgSchema *npschema.Message, opts Optio
 	}
 
 	outPath := pathutil.ResolveCodeOutputPathForSchema(msgSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath, fname)
-	f, err := os.Create(outPath)
+	f, err := pathutil.CreateOutputFile(outPath)
 	if err != nil {
 		return err
 	}
@@ -476,7 +476,7 @@ func generateMessageFactoryHeaderFile(opts Options) error {
 		return err
 	}
 
-	f, err := os.Create(outPath)
+	f, err := pathutil.CreateOutputFile(outPath)
 	if err != nil {
 		return err
 	}
@@ -515,7 +515,7 @@ func generateMessageFactoryImplFile(schemas []*npschema.Message, opts Options) e
 		return err
 	}
 
-	f, err := os.Create(outPath)
+	f, err := pathutil.CreateOutputFile(outPath)
 	if err != nil {
 		return err
 	}

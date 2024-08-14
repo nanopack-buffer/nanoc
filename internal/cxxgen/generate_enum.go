@@ -2,13 +2,14 @@ package cxxgen
 
 import (
 	"fmt"
-	"github.com/iancoleman/strcase"
 	"nanoc/internal/datatype"
 	"nanoc/internal/npschema"
-	"os"
+	"nanoc/internal/pathutil"
 	"path/filepath"
 	"strings"
 	"text/template"
+
+	"github.com/iancoleman/strcase"
 )
 
 func GenerateEnum(enumSchema *npschema.Enum, opts Options) error {
@@ -47,7 +48,7 @@ func GenerateEnum(enumSchema *npschema.Enum, opts Options) error {
 	fname := filepath.Base(enumSchema.SchemaPath)
 	fname = strcase.ToSnake(strings.TrimSuffix(fname, filepath.Ext(fname))) + extHeaderFile
 	op := strings.Replace(enumSchema.SchemaPath, filepath.Base(enumSchema.SchemaPath), fname, 1)
-	f, err := os.Create(op)
+	f, err := pathutil.CreateOutputFile(op)
 	if err != nil {
 		return err
 	}

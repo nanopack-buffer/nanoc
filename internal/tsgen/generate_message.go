@@ -7,7 +7,6 @@ import (
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
 	"nanoc/internal/pathutil"
-	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -78,7 +77,7 @@ func GenerateMessageFactory(schemas []*npschema.Message, opts Options) error {
 		return err
 	}
 
-	f, err := os.Create(op)
+	f, err := pathutil.CreateOutputFile(op)
 	if err != nil {
 		return err
 	}
@@ -208,7 +207,7 @@ func generateMessageClass(msgSchema *npschema.Message, opts Options) error {
 
 	outPath := pathutil.ResolveCodeOutputPathForSchema(msgSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath, fname)
 
-	f, err := os.Create(outPath)
+	f, err := pathutil.CreateOutputFile(outPath)
 	if err != nil {
 		return err
 	}
@@ -250,7 +249,7 @@ func generateMessageClassFactory(msgSchema *npschema.Message, opts Options) erro
 	kb := strcase.ToKebab(msgSchema.Name)
 
 	outPath := pathutil.ResolveCodeOutputPathForSchema(msgSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath, fmt.Sprintf("make-%v%v", kb, extTsFile))
-	f, err := os.Create(outPath)
+	f, err := pathutil.CreateOutputFile(outPath)
 	if err != nil {
 		return err
 	}

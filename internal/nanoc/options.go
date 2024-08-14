@@ -8,8 +8,6 @@ const (
 	LanguageSwift SupportedLanguage = "swift"
 
 	LanguageTypeScript SupportedLanguage = "ts"
-
-	SchemaFileExt = ".np.yml"
 )
 
 type Options struct {

@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 	"nanoc/internal/nanoc"
+	"nanoc/internal/symbol"
 	"os"
 	"path/filepath"
 	"strings"
@@ -78,7 +79,7 @@ func main() {
 	} else {
 		// search for schema files in base dir.
 		err = filepath.WalkDir(opts.BaseDirectoryAbs, func(path string, d os.DirEntry, err error) error {
-			if !d.IsDir() && strings.HasSuffix(path, nanoc.SchemaFileExt) {
+			if !d.IsDir() && strings.HasSuffix(path, symbol.SchemaFileExt) {
 				opts.InputFileAbsolutePaths = append(opts.InputFileAbsolutePaths, path)
 			}
 			return nil

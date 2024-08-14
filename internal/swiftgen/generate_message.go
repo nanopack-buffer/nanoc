@@ -6,7 +6,7 @@ import (
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
 	"nanoc/internal/pathutil"
-	"os"
+	"nanoc/internal/symbol"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -93,10 +93,9 @@ func GenerateMessageClass(msgSchema *npschema.Message, opts Options) error {
 	}
 
 	fname := filepath.Base(msgSchema.SchemaPath)
-	fname = strcase.ToCamel(strings.TrimSuffix(fname, filepath.Ext(fname))) + extSwift
-
+	fname = strcase.ToCamel(strings.TrimSuffix(fname, symbol.SchemaFileExt)) + extSwift
 	outPath := pathutil.ResolveCodeOutputPathForSchema(msgSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath, fname)
-	f, err := os.Create(outPath)
+	f, err := pathutil.CreateOutputFile(outPath)
 	if err != nil {
 		return err
 	}
@@ -131,7 +130,7 @@ func GenerateMessageFactory(schemas []*npschema.Message, opts Options) error {
 	}
 
 	outPath := filepath.Join(opts.MessageFactoryPath, fileNameMessageFactoryFile+extSwift)
-	f, err := os.Create(outPath)
+	f, err := pathutil.CreateOutputFile(outPath)
 	if err != nil {
 		return err
 	}

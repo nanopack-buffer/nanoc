@@ -26,4 +26,6 @@ const (
 	MapBracketEnd = ">"
 
 	MapKeyValTypeSeperator = ":"
+
+	SchemaFileExt = ".np.yml"
 )
