@@ -6,6 +6,7 @@ import (
 	"nanoc/internal/npschema"
 	"nanoc/internal/parser"
 	"nanoc/internal/resolver"
+	"os"
 	"sort"
 	"sync"
 )
@@ -55,6 +56,11 @@ func Run(opts Options) error {
 				opts.MessageFactoryAbsFilePath = opts.OutputDirectoryAbs
 			}
 		}
+	}
+
+	err = os.MkdirAll(opts.OutputDirectoryAbs, os.ModePerm)
+	if err != nil {
+		return err
 	}
 
 	schemas := result.Schemas
