@@ -49,7 +49,7 @@ func Resolve(schemas []datatype.PartialSchema) (*ResolveResult, error) {
 		case *npschema.PartialService:
 			resolved, err := resolveServiceSchema(s, sm)
 			if err != nil {
-				return nil, errs.WrapNanocErr(err, s.Name)
+				return nil, errs.WrapNanocErr(err, fmt.Sprintf("service %v", s.Name))
 			}
 			resolvedSchemas = append(resolvedSchemas, resolved)
 		}
@@ -333,7 +333,7 @@ func resolveServiceSchema(partialSchema *npschema.PartialService, sm datatype.Sc
 		for _, param := range f.Parameters {
 			t, s, err := parser.ParseType(param.TypeName, sm)
 			if err != nil {
-				return nil, errs.NewNanocError(fmt.Sprintf("Unresolved type %v", param.TypeName), param.Name, f.Name)
+				return nil, errs.NewNanocError(fmt.Sprintf("Unresolved type %v", param.TypeName), f.Name, param.Name)
 			}
 
 			if s != nil {
