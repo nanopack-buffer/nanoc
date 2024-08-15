@@ -1,7 +1,6 @@
 package swiftgen
 
 import (
-	"fmt"
 	"nanoc/internal/datatype"
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
@@ -93,7 +92,7 @@ func GenerateService(serviceSchema *npschema.Service, opts Options) error {
 		return err
 	}
 
-	fname := fmt.Sprintf("%vService.swift", serviceSchema.Name)
+	fname := serviceSchema.Name + "Service" + extSwift
 	outPath := pathutil.ResolveCodeOutputPathForSchema(serviceSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath, fname)
 	f, err := pathutil.CreateOutputFile(outPath)
 	if err != nil {
