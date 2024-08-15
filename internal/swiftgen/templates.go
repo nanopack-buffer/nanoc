@@ -230,7 +230,7 @@ class {{.Schema.Name}}ServiceClient: NPRPCClient {
 	}
 
 	{{range .Schema.DeclaredFunctions}}
-	func {{lowerCamel .Name}}({{range $i, $param := .Parameters}}{{if $i}}, {{end}}_ {{$param.Name}}: {{typeDeclaration $param.Type}}{{end}}, completionHandler: @escaping ({{if .ReturnType}}{{typeDeclaration .ReturnType}}{{end}}) -> Void) {
+	func {{lowerCamel .Name}}({{range $i, $param := .Parameters}}{{if $i}}, {{end}}_ {{$param.Name}}: {{typeDeclaration $param.Type}}{{end}}, completionHandler: @escaping (Result<{{if .ReturnType}}{{typeDeclaration .ReturnType}}{{else}}Void{{end}}, NPRPCError>) -> Void) {
 		let msgID = newMessageID()
 		var data = Data(capacity: 9 + {{stringByteSize .Name}}{{if gt .ParametersByteSize 0}} + {{.ParametersByteSize}}{{end}})
 		data.append(int: NPRPCMessageType.request.rawValue)
@@ -247,15 +247,15 @@ class {{.Schema.Name}}ServiceClient: NPRPCClient {
 			}
 			{{- if .ReturnType}}
 			{{generateReadResultCode .}}
-			completionHandler(result)
+			completionHandler(.success(result))
 			{{- else}}
-			completionHandler()
+			completionHandler(.success(()))
 			{{- end}}
 		}
 	}
 
 	@available(macOS 10.15, iOS 13, *)
-	func {{lowerCamel .Name}}({{range $i, $param := .Parameters}}{{if $i}}, {{end}}_ {{$param.Name}}: {{typeDeclaration $param.Type}}{{end}}) async{{if .ReturnType}} -> {{typeDeclaration .ReturnType}}{{end}} {
+	func {{lowerCamel .Name}}({{range $i, $param := .Parameters}}{{if $i}}, {{end}}_ {{$param.Name}}: {{typeDeclaration $param.Type}}{{end}}) async -> Result<{{if .ReturnType}}{{typeDeclaration .ReturnType}}{{else}}Void{{end}}, NPRPCError> {
 		let msgID = newMessageID()
 		var data = Data(capacity: 9 + {{stringByteSize .Name}}{{if gt .ParametersByteSize 0}} + {{.ParametersByteSize}}{{end}})
 		data.append(int: NPRPCMessageType.request.rawValue)
@@ -269,13 +269,14 @@ class {{.Schema.Name}}ServiceClient: NPRPCClient {
 				let errFlag: UInt8 = data.read(at: ptr)
 				ptr += 1
 				guard errFlag == 0 else {
+					continuation.resume(returning: .failure(.malformedResponse))
 					return
 				}
 				{{- if .ReturnType}}
-				{{generateReadResultCode .}}
-				continuation.resume(returning: result)
+				{{generateAsyncReadResultCode .}}
+				continuation.resume(returning: .success(result))
 				{{- else}}
-				continuation.resume()
+				continuation.resume(returning: .success(()))
 				{{- end}}
 			}
 		}

@@ -76,7 +76,7 @@ func (g messageGenerator) ReadValueFromBuffer(dataType datatype.DataType, varNam
 
 	var ctor string
 	if dataType.Schema == nil {
-		ctor = fmt.Sprintf("makeNanoPackMessage(from: data[ptr...])")
+		ctor = fmt.Sprintf("makeNanoPackMessage(from: data[ptr...], bytesRead: &%vByteSize)", varName)
 	} else if dataType.Schema.(*npschema.Message).IsInherited {
 		ctor = fmt.Sprintf("%v.from(data: data[ptr...], bytesRead: &%vByteSize)", g.TypeDeclaration(dataType), varName)
 	} else {

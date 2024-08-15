@@ -68,7 +68,15 @@ func GenerateService(serviceSchema *npschema.Service, opts Options) error {
 		},
 		"generateReadResultCode": func(fn *npschema.DeclaredFunction) string {
 			g := gm[fn.ReturnType.Kind]
-			return g.ReadValueFromBuffer(*fn.ReturnType, "result", dummyCtx)
+			code := g.ReadValueFromBuffer(*fn.ReturnType, "result", dummyCtx)
+			code = strings.Replace(code, "return nil", "return completionHandler(.failure(.malformedResponse))", 1)
+			return code
+		},
+		"generateAsyncReadResultCode": func(fn *npschema.DeclaredFunction) string {
+			g := gm[fn.ReturnType.Kind]
+			code := g.ReadValueFromBuffer(*fn.ReturnType, "result", dummyCtx)
+			code = strings.Replace(code, "return nil", "return continuation.resume(returning: .failure(.malformedResponse))", 1)
+			return code
 		},
 		"generateWriteResultCode": func(fn *npschema.DeclaredFunction) string {
 			g := gm[fn.ReturnType.Kind]
