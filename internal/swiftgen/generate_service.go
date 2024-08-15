@@ -9,6 +9,8 @@ import (
 	"strings"
 	"text/template"
 	"unicode/utf8"
+
+	"github.com/iancoleman/strcase"
 )
 
 func GenerateService(serviceSchema *npschema.Service, opts Options) error {
@@ -40,6 +42,9 @@ func GenerateService(serviceSchema *npschema.Service, opts Options) error {
 	dummyCtx := generator.CodeContext{}
 
 	funcs := template.FuncMap{
+		"lowerCamel": func(s string) string {
+			return strcase.ToLowerCamel(s)
+		},
 		"stringByteSize": func(s string) int {
 			return utf8.RuneCountInString(s)
 		},

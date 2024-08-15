@@ -40,7 +40,7 @@ const (
 
 	templateNameEnum = "SwiftEnum"
 
-	templateNameServiceServer = "SwiftServiceServer"
+	templateNameServiceServer = "SwiftRpcService"
 )
 
 const fileNameMessageFactoryFile = "NanoPackMessageFactory"
@@ -194,7 +194,7 @@ import NanoPack
 
 protocol {{.Schema.Name}}ServiceDelegate {
 	{{- range .Schema.DeclaredFunctions}}
-	func {{.Name}}({{range $i, $param := .Parameters}}{{if $i}}, {{end}}_ {{$param.Name}}: {{typeDeclaration $param.Type}}{{end}}){{if .ReturnType}} -> {{typeDeclaration .ReturnType}}{{end}}
+	func {{lowerCamel .Name}}({{range $i, $param := .Parameters}}{{if $i}}, {{end}}_ {{$param.Name}}: {{typeDeclaration $param.Type}}{{end}}){{if .ReturnType}} -> {{typeDeclaration .ReturnType}}{{end}}
 	{{- end}}
 }
 
@@ -212,12 +212,12 @@ class {{.Schema.Name}}ServiceServer: NPRPCServer {
 		on("{{.Name}}") { data, offset, msgID in
 			var ptr = offset
 			{{generateReadParamCode .}}
-			let result = self.delegate.{{.Name}}({{range $i, $param := .Parameters}}{{if $i}}, {{end}}{{$param.Name}}{{end}})
-			var data = Data(capacity: {{if gt .ReturnType.ByteSize 0 }}6 + {{.ReturnType.ByteSize}}{{else}}6{{end}})
+			{{if .ReturnType}}let result = {{end}}self.delegate.{{lowerCamel .Name}}({{range $i, $param := .Parameters}}{{if $i}}, {{end}}{{$param.Name}}{{end}})
+			var data = Data(capacity: {{if and .ReturnType (gt .ReturnType.ByteSize 0) }}6 + {{.ReturnType.ByteSize}}{{else}}6{{end}})
 			data.append(int: NPRPCMessageType.response.rawValue)
 			data.append(int: msgID)
 			data.append(int: UInt8(0))
-			{{generateWriteResultCode .}}
+			{{if .ReturnType}}{{generateWriteResultCode .}}{{end}}
 			return data
 		}
 		{{- end}}
@@ -230,7 +230,7 @@ class {{.Schema.Name}}ServiceClient: NPRPCClient {
 	}
 
 	{{range .Schema.DeclaredFunctions}}
-	func {{.Name}}({{range $i, $param := .Parameters}}{{if $i}}, {{end}}_ {{$param.Name}}: {{typeDeclaration $param.Type}}{{end}}, completionHandler: @escaping ({{if .ReturnType}}{{typeDeclaration .ReturnType}}{{end}}) -> Void) {
+	func {{lowerCamel .Name}}({{range $i, $param := .Parameters}}{{if $i}}, {{end}}_ {{$param.Name}}: {{typeDeclaration $param.Type}}{{end}}, completionHandler: @escaping ({{if .ReturnType}}{{typeDeclaration .ReturnType}}{{end}}) -> Void) {
 		let msgID = newMessageID()
 		var data = Data(capacity: 9 + {{stringByteSize .Name}}{{if gt .ParametersByteSize 0}} + {{.ParametersByteSize}}{{end}})
 		data.append(int: NPRPCMessageType.request.rawValue)
@@ -255,7 +255,7 @@ class {{.Schema.Name}}ServiceClient: NPRPCClient {
 	}
 
 	@available(macOS 10.15, iOS 13, *)
-	func {{.Name}}({{range $i, $param := .Parameters}}{{if $i}}, {{end}}_ {{$param.Name}}: {{typeDeclaration $param.Type}}{{end}}) async{{if .ReturnType}} -> {{typeDeclaration .ReturnType}}{{end}} {
+	func {{lowerCamel .Name}}({{range $i, $param := .Parameters}}{{if $i}}, {{end}}_ {{$param.Name}}: {{typeDeclaration $param.Type}}{{end}}) async{{if .ReturnType}} -> {{typeDeclaration .ReturnType}}{{end}} {
 		let msgID = newMessageID()
 		var data = Data(capacity: 9 + {{stringByteSize .Name}}{{if gt .ParametersByteSize 0}} + {{.ParametersByteSize}}{{end}})
 		data.append(int: NPRPCMessageType.request.rawValue)

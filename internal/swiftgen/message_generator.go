@@ -85,7 +85,7 @@ func (g messageGenerator) ReadValueFromBuffer(dataType datatype.DataType, varNam
 
 	return generator.Lines(
 		fmt.Sprintf("var %vByteSize = 0", varName),
-		fmt.Sprintf("guard let %v = %v(data: data[ptr...], bytesRead: &%vByteSize) else {", v, ctor, varName),
+		fmt.Sprintf("guard let %v = %v else {", v, ctor),
 		"    return nil",
 		"}",
 		l4,
