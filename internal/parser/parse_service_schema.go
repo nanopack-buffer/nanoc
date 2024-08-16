@@ -36,7 +36,6 @@ func parseServiceSchema(header string, body yaml.MapSlice) (*npschema.PartialSer
 		} else {
 			v, ok := e.Value.(string)
 			if !ok {
-				fmt.Println("asdkjkasjdk;sdj")
 				return nil, errs.NewNanocError("Invalid function declaration", fmt.Sprintf("service %v", schema.Name))
 			}
 			returnTypeName = v

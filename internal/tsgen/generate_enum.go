@@ -7,8 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
-
-	"github.com/iancoleman/strcase"
 )
 
 func GenerateEnum(enumSchema *npschema.Enum, opts Options) error {
@@ -25,8 +23,7 @@ func GenerateEnum(enumSchema *npschema.Enum, opts Options) error {
 		return err
 	}
 
-	fname := filepath.Base(enumSchema.SchemaPath)
-	fname = strcase.ToKebab(strings.TrimSuffix(fname, filepath.Ext(fname))) + extTsFile
+	fname := outputFileNameForSchema(enumSchema)
 
 	op := strings.Replace(enumSchema.SchemaPath, filepath.Base(enumSchema.SchemaPath), fname, 1)
 	f, err := pathutil.CreateOutputFile(op)

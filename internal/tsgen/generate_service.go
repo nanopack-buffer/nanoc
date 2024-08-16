@@ -83,12 +83,18 @@ func GenerateService(serviceSchema *npschema.Service, opts Options) error {
 		},
 	}
 
+	importPaths, err := resolveImportPaths(serviceSchema.ImportedTypes, serviceSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath, opts.MessageFactoryPath)
+	if err != nil {
+		return err
+	}
+	info.ExternalImports = importPaths
+
 	tmpl, err := template.New(templateNameService).Funcs(funcs).Parse(serviceTemplate)
 	if err != nil {
 		return err
 	}
 
-	fname := strcase.ToKebab(serviceSchema.Name+"Service") + extTsFile
+	fname := outputFileNameForSchema(serviceSchema)
 	outPath := pathutil.ResolveCodeOutputPathForSchema(serviceSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath, fname)
 	f, err := pathutil.CreateOutputFile(outPath)
 	if err != nil {

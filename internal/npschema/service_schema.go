@@ -12,7 +12,7 @@ type PartialService struct {
 type Service struct {
 	SchemaPath        string
 	Name              string
-	ImportedTypes     []datatype.Schema
+	ImportedTypes     []datatype.DataType
 	DeclaredFunctions []DeclaredFunction
 }
 

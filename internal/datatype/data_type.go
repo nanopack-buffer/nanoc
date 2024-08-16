@@ -52,6 +52,10 @@ const (
 	Any
 )
 
+const (
+	IdentifierGenericMessage = "message"
+)
+
 var (
 	npint8 = DataType{
 		Identifier: "int8",
@@ -116,7 +120,7 @@ var (
 	}
 
 	npmessage = DataType{
-		Identifier: "message",
+		Identifier: IdentifierGenericMessage,
 		Kind:       Message,
 		ByteSize:   DynamicSize,
 		Schema:     nil,

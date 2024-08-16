@@ -62,10 +62,10 @@ func GenerateMessageFactory(schemas []*npschema.Message, opts Options) error {
 		Schemas: schemas,
 	}
 
-	op := filepath.Join(opts.MessageFactoryPath, fileNameMessageFactoryFile+extTsFile)
+	op := filepath.Join(opts.MessageFactoryPath, fileNameMessageFactoryFile)
 
 	for _, s := range schemas {
-		p, err := resolveImportPath(s.SchemaPath, op)
+		p, err := resolveImportPath(pathutil.ResolveCodeOutputPathForSchema(s, opts.BaseDirectoryPath, opts.OutputDirectoryPath, outputFileNameForSchema(s)), op)
 		if err != nil {
 			return err
 		}
@@ -132,7 +132,7 @@ func generateMessageClass(msgSchema *npschema.Message, opts Options) error {
 	}
 
 	for _, s := range importedTypes {
-		p, err := resolveSchemaImportPath(s, msgSchema)
+		p, err := resolveSchemaImportPath(s, msgSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath)
 		if err != nil {
 			return err
 		}
@@ -155,7 +155,7 @@ func generateMessageClass(msgSchema *npschema.Message, opts Options) error {
 		info.SuperConstructorArgs = append(info.SuperConstructorArgs, c)
 
 		if f.Type.Kind == datatype.Message && f.Type.Schema == nil && !msgFactoryImported {
-			p, err := resolveMessageFactoryImportPath(opts.MessageFactoryPath, msgSchema)
+			p, err := resolveMessageFactoryImportPath(opts.MessageFactoryPath, msgSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath)
 			if err != nil {
 				return err
 			}
@@ -170,7 +170,7 @@ func generateMessageClass(msgSchema *npschema.Message, opts Options) error {
 		info.ConstructorParameters = append(info.ConstructorParameters, g.ConstructorFieldParameter(f))
 
 		if f.Type.Kind == datatype.Message && f.Type.Schema == nil && !msgFactoryImported {
-			p, err := resolveMessageFactoryImportPath(opts.MessageFactoryPath, msgSchema)
+			p, err := resolveMessageFactoryImportPath(opts.MessageFactoryPath, msgSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath)
 			if err != nil {
 				return err
 			}
@@ -202,8 +202,7 @@ func generateMessageClass(msgSchema *npschema.Message, opts Options) error {
 		return err
 	}
 
-	fname := filepath.Base(msgSchema.SchemaPath)
-	fname = strcase.ToKebab(strings.TrimSuffix(fname, filepath.Ext(fname))) + extTsFile
+	fname := outputFileNameForSchema(msgSchema)
 
 	outPath := pathutil.ResolveCodeOutputPathForSchema(msgSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath, fname)
 
@@ -234,7 +233,7 @@ func generateMessageClassFactory(msgSchema *npschema.Message, opts Options) erro
 	}
 
 	for _, f := range msgSchema.ChildMessages {
-		p, err := resolveSchemaImportPath(f, msgSchema)
+		p, err := resolveSchemaImportPath(f, msgSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath)
 		if err != nil {
 			return err
 		}

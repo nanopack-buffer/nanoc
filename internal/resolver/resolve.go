@@ -292,7 +292,7 @@ func resolveServiceSchema(partialSchema *npschema.PartialService, sm datatype.Sc
 		SchemaPath: partialSchema.SchemaPath,
 	}
 
-	imported := map[string]datatype.Schema{}
+	imported := map[string]datatype.DataType{}
 
 	for _, f := range partialSchema.DeclaredFunctions {
 		fullFunc := npschema.DeclaredFunction{
@@ -307,7 +307,9 @@ func resolveServiceSchema(partialSchema *npschema.PartialService, sm datatype.Sc
 			}
 
 			if s != nil {
-				imported[s.SchemaName()] = s
+				imported[s.SchemaName()] = *t
+			} else if t.Kind == datatype.Message {
+				imported[datatype.IdentifierGenericMessage] = *t
 			}
 
 			fullFunc.ReturnType = t
@@ -322,7 +324,9 @@ func resolveServiceSchema(partialSchema *npschema.PartialService, sm datatype.Sc
 			}
 
 			if s != nil {
-				imported[s.SchemaName()] = s
+				imported[s.SchemaName()] = *t
+			} else if t.Kind == datatype.Message {
+				imported[datatype.IdentifierGenericMessage] = *t
 			}
 
 			fullFunc.ErrorType = t
@@ -337,7 +341,9 @@ func resolveServiceSchema(partialSchema *npschema.PartialService, sm datatype.Sc
 			}
 
 			if s != nil {
-				imported[s.SchemaName()] = s
+				imported[s.SchemaName()] = *t
+			} else if t.Kind == datatype.Message {
+				imported[datatype.IdentifierGenericMessage] = *t
 			}
 
 			if t.ByteSize != datatype.DynamicSize && fullFunc.ParametersByteSize != datatype.DynamicSize {
@@ -355,8 +361,8 @@ func resolveServiceSchema(partialSchema *npschema.PartialService, sm datatype.Sc
 		fullSchema.DeclaredFunctions = append(fullSchema.DeclaredFunctions, fullFunc)
 	}
 
-	for _, s := range imported {
-		fullSchema.ImportedTypes = append(fullSchema.ImportedTypes, s)
+	for _, t := range imported {
+		fullSchema.ImportedTypes = append(fullSchema.ImportedTypes, t)
 	}
 
 	return &fullSchema, nil
