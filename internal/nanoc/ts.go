@@ -24,6 +24,9 @@ func runTSSchemaGenerator(schema datatype.Schema, opts Options) error {
 	case *npschema.Enum:
 		return tsgen.GenerateEnum(s, o)
 
+	case *npschema.Service:
+		return tsgen.GenerateService(s, o)
+
 	default:
 		return errors.New("unexpected error. Unsupported schema type " + reflect.TypeOf(schema).Name())
 	}

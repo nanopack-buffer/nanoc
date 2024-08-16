@@ -1,0 +1,14 @@
+{
+	"name": "nanoc-rpc-example",
+	"version": "1.0.0",
+	"description": "",
+	"main": "src/main.ts",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"author": "Kenneth",
+	"license": "MIT",
+	"dependencies": {
+		"nanopack": "git+https://github.com/nanopack-buffer/ts-nanopack.git#main"
+	}
+}
