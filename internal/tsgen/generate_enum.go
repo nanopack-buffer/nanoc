@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"nanoc/internal/npschema"
 	"nanoc/internal/pathutil"
-	"path/filepath"
-	"strings"
 	"text/template"
 )
 
@@ -24,8 +22,7 @@ func GenerateEnum(enumSchema *npschema.Enum, opts Options) error {
 	}
 
 	fname := outputFileNameForSchema(enumSchema)
-
-	op := strings.Replace(enumSchema.SchemaPath, filepath.Base(enumSchema.SchemaPath), fname, 1)
+	op := pathutil.ResolveCodeOutputPathForSchema(enumSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath, fname)
 	f, err := pathutil.CreateOutputFile(op)
 	if err != nil {
 		return err
