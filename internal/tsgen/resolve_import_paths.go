@@ -30,7 +30,7 @@ func resolveImportPaths(importedTypes []datatype.DataType, fromSchema datatype.S
 					factoryPath := strings.Replace(p, filepath.Base(p), fmt.Sprintf("make-%v%v", strcase.ToKebab(s.Name), extImport), 1)
 					importPaths = append(
 						importPaths,
-						fmt.Sprintf("import { %v } from \"%v\";", s.Name, p),
+						fmt.Sprintf("import type { %v } from \"%v\";", s.Name, p),
 						fmt.Sprintf("import { make%v } from \"%v\";", s.Name, factoryPath),
 					)
 				} else {
