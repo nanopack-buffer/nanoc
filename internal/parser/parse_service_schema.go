@@ -6,13 +6,14 @@ import (
 	"nanoc/internal/errs"
 	"nanoc/internal/npschema"
 	"nanoc/internal/symbol"
+	"reflect"
 	"regexp"
 	"strings"
 
 	"gopkg.in/yaml.v2"
 )
 
-var funcHeaderRegex = regexp.MustCompile("(?P<name>^\\w+)(?P<params>\\((?:\\w+ \\w+, |\\w+ \\w+)*\\))$")
+var funcHeaderRegex = regexp.MustCompile("(?P<name>^\\w+)(?P<params>\\((?:\\w+ [^\\s]+, |\\w+ [^\\s]+)*\\))$")
 
 func parseServiceSchema(header string, body yaml.MapSlice) (*npschema.PartialService, error) {
 	ps := strings.Split(header, " ")
@@ -27,6 +28,7 @@ func parseServiceSchema(header string, body yaml.MapSlice) (*npschema.PartialSer
 	for _, e := range body {
 		k, ok := e.Key.(string)
 		if !ok {
+
 			return nil, errs.NewNanocError("Invalid function declaration", fmt.Sprintf("service %v", schema.Name))
 		}
 
@@ -36,6 +38,8 @@ func parseServiceSchema(header string, body yaml.MapSlice) (*npschema.PartialSer
 		} else {
 			v, ok := e.Value.(string)
 			if !ok {
+				fmt.Println(v)
+				fmt.Println(reflect.TypeOf(v))
 				return nil, errs.NewNanocError("Invalid function declaration", fmt.Sprintf("service %v", schema.Name))
 			}
 			returnTypeName = v
@@ -64,6 +68,8 @@ func parseFunction(funcHeader, returnType string) (*npschema.PartialDeclaredFunc
 
 	matches := funcHeaderRegex.FindStringSubmatch(stripped)
 	if len(matches) != 3 {
+		fmt.Println(funcHeader)
+		fmt.Println(matches)
 		return nil, errs.NewNanocError("Invalid function declaration", funcHeader)
 	}
 

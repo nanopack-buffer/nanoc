@@ -204,32 +204,22 @@ func resolveMessageSchemaTypeInfo(partialMsg *npschema.PartialMessage, sm dataty
 			return err
 		}
 
-		var findImportedType func(t *datatype.DataType)
-		findImportedType = func(t *datatype.DataType) {
-			usedTypes[t.Identifier] = struct{}{}
-			if t.Schema != nil {
-				name := t.Schema.SchemaName()
+		datatype.TraverseTypeTree(t, func(current *datatype.DataType) {
+			if current.Schema != nil {
+				name := current.Schema.SchemaName()
 				if name != partialMsg.Name {
 					if _, ok := imported[name]; !ok {
-						fullSchema.ImportedTypes = append(fullSchema.ImportedTypes, *t)
+						fullSchema.ImportedTypes = append(fullSchema.ImportedTypes, *current)
 						imported[name] = struct{}{}
 					}
 				}
-			} else if t.Kind == datatype.Message {
+			} else if current.Kind == datatype.Message {
 				if _, ok := imported[datatype.IdentifierGenericMessage]; !ok {
-					fullSchema.ImportedTypes = append(fullSchema.ImportedTypes, *t)
+					fullSchema.ImportedTypes = append(fullSchema.ImportedTypes, *current)
 					imported[datatype.IdentifierGenericMessage] = struct{}{}
 				}
-			} else {
-				if t.KeyType != nil {
-					findImportedType(t.KeyType)
-				}
-				if t.ElemType != nil {
-					findImportedType(t.ElemType)
-				}
 			}
-		}
-		findImportedType(t)
+		})
 
 		fullSchema.DeclaredFields = append(fullSchema.DeclaredFields, npschema.MessageField{
 			Name:   f.Name,
@@ -302,14 +292,12 @@ func resolveServiceSchema(partialSchema *npschema.PartialService, sm datatype.Sc
 
 	imported := map[string]datatype.DataType{}
 
-	var collectUsedTypes func(t *datatype.DataType)
-	collectUsedTypes = func(t *datatype.DataType) {
-		usedTypes[t.Identifier] = struct{}{}
-		if t.KeyType != nil {
-			collectUsedTypes(t.KeyType)
-		}
-		if t.ElemType != nil {
-			collectUsedTypes(t.ElemType)
+	typeVisitor := func(current *datatype.DataType) {
+		usedTypes[current.Identifier] = struct{}{}
+		if current.Schema != nil {
+			imported[current.Schema.SchemaName()] = *current
+		} else if current.Kind == datatype.Message {
+			imported[datatype.IdentifierGenericMessage] = *current
 		}
 	}
 
@@ -331,8 +319,9 @@ func resolveServiceSchema(partialSchema *npschema.PartialService, sm datatype.Sc
 				imported[datatype.IdentifierGenericMessage] = *t
 			}
 
+			datatype.TraverseTypeTree(t, typeVisitor)
+
 			fullFunc.ReturnType = t
-			collectUsedTypes(t)
 		} else {
 			fullFunc.ReturnType = nil
 		}
@@ -343,14 +332,9 @@ func resolveServiceSchema(partialSchema *npschema.PartialService, sm datatype.Sc
 				return nil, errs.NewNanocError(fmt.Sprintf("Unresolved function error type %v", f.ReturnTypeName), f.Name)
 			}
 
-			if t.Schema != nil {
-				imported[t.Schema.SchemaName()] = *t
-			} else if t.Kind == datatype.Message {
-				imported[datatype.IdentifierGenericMessage] = *t
-			}
+			datatype.TraverseTypeTree(t, typeVisitor)
 
 			fullFunc.ErrorType = t
-			collectUsedTypes(t)
 		} else {
 			fullFunc.ErrorType = nil
 		}
@@ -373,7 +357,7 @@ func resolveServiceSchema(partialSchema *npschema.PartialService, sm datatype.Sc
 				fullFunc.ParametersByteSize = datatype.DynamicSize
 			}
 
-			collectUsedTypes(t)
+			datatype.TraverseTypeTree(t, typeVisitor)
 
 			fullFunc.Parameters = append(fullFunc.Parameters, npschema.FunctionParameter{
 				Name: param.Name,
