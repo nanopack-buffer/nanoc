@@ -61,7 +61,7 @@ func (g optionalGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx 
 }
 
 func (g optionalGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
-	ig := g.gm[dataType.Kind]
+	ig := g.gm[dataType.ElemType.Kind]
 
 	ctx.AddVariableToScope(varName)
 
@@ -70,7 +70,8 @@ func (g optionalGenerator) ReadValueFromBuffer(dataType datatype.DataType, varNa
 		"if (reader.readBoolean(ptr++)) {",
 		ig.ReadValueFromBuffer(*dataType.ElemType, varName, ctx),
 		"} else {",
-		fmt.Sprintf("%v = null;", varName))
+		fmt.Sprintf("%v = null;", varName),
+		"}")
 
 	ctx.RemoveVariableFromScope(varName)
 
@@ -95,7 +96,7 @@ func (g optionalGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx g
 }
 
 func (g optionalGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
-	ig := g.gm[dataType.Kind]
+	ig := g.gm[dataType.ElemType.Kind]
 	return generator.Lines(
 		fmt.Sprintf("if (%v) {", varName),
 		"    writer.appendBoolean(true);",
