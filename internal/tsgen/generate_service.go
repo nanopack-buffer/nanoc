@@ -36,9 +36,7 @@ func GenerateService(serviceSchema *npschema.Service, opts Options) error {
 	gm[datatype.Map] = mapGenerator{gm}
 	gm[datatype.Enum] = enumGenerator{gm}
 
-	// a dummy code context that will be passed to generator
-	// this will not be used
-	dummyCtx := generator.CodeContext{}
+	ctx := generator.NewCodeContext()
 
 	funcs := template.FuncMap{
 		"lowerCamel": func(s string) string {
@@ -51,7 +49,7 @@ func GenerateService(serviceSchema *npschema.Service, opts Options) error {
 			var sb strings.Builder
 			for _, param := range fn.Parameters {
 				g := gm[param.Type.Kind]
-				sb.WriteString(g.ReadValueFromBuffer(param.Type, param.Name, dummyCtx))
+				sb.WriteString(g.ReadValueFromBuffer(param.Type, param.Name, ctx))
 				sb.WriteRune('\n')
 			}
 			return sb.String(), nil
@@ -60,20 +58,20 @@ func GenerateService(serviceSchema *npschema.Service, opts Options) error {
 			var sb strings.Builder
 			for _, param := range fn.Parameters {
 				g := gm[param.Type.Kind]
-				sb.WriteString(g.WriteVariableToBuffer(param.Type, param.Name, dummyCtx))
+				sb.WriteString(g.WriteVariableToBuffer(param.Type, param.Name, ctx))
 				sb.WriteRune('\n')
 			}
 			return sb.String(), nil
 		},
 		"generateReadResultCode": func(fn *npschema.DeclaredFunction) string {
 			g := gm[fn.ReturnType.Kind]
-			code := g.ReadValueFromBuffer(*fn.ReturnType, "result", dummyCtx)
+			code := g.ReadValueFromBuffer(*fn.ReturnType, "result", ctx)
 			code = strings.Replace(code, "return null", "throw new Error(\"deserialization error\")", 1)
 			return code
 		},
 		"generateWriteResultCode": func(fn *npschema.DeclaredFunction) string {
 			g := gm[fn.ReturnType.Kind]
-			return g.WriteVariableToBuffer(*fn.ReturnType, "result", dummyCtx)
+			return g.WriteVariableToBuffer(*fn.ReturnType, "result", ctx)
 		},
 		"typeDeclaration": func(t datatype.DataType) string {
 			g := gm[t.Kind]
