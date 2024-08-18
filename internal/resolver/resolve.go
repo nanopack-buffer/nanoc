@@ -47,7 +47,7 @@ func Resolve(schemas []datatype.PartialSchema) (*ResolveResult, error) {
 			sm[s.Name] = resolved
 
 		case *npschema.PartialService:
-			resolved, err := resolveServiceSchema(s, sm)
+			resolved, err := resolveServiceSchema(s, sm, usedTypesMap)
 			if err != nil {
 				return nil, errs.WrapNanocErr(err, fmt.Sprintf("service %v", s.Name))
 			}
@@ -204,10 +204,9 @@ func resolveMessageSchemaTypeInfo(partialMsg *npschema.PartialMessage, sm dataty
 			return err
 		}
 
-		usedTypes[t.Identifier] = struct{}{}
-
 		var findImportedType func(t *datatype.DataType)
 		findImportedType = func(t *datatype.DataType) {
+			usedTypes[t.Identifier] = struct{}{}
 			if t.Schema != nil {
 				name := t.Schema.SchemaName()
 				if name != partialMsg.Name {
@@ -295,13 +294,24 @@ func resolveMessageInheritance(msgSchema *npschema.Message) {
 	msgSchema.HeaderSize = len(msgSchema.AllFields)*4 + 4
 }
 
-func resolveServiceSchema(partialSchema *npschema.PartialService, sm datatype.SchemaMap) (*npschema.Service, error) {
+func resolveServiceSchema(partialSchema *npschema.PartialService, sm datatype.SchemaMap, usedTypes map[string]struct{}) (*npschema.Service, error) {
 	fullSchema := npschema.Service{
 		Name:       partialSchema.Name,
 		SchemaPath: partialSchema.SchemaPath,
 	}
 
 	imported := map[string]datatype.DataType{}
+
+	var collectUsedTypes func(t *datatype.DataType)
+	collectUsedTypes = func(t *datatype.DataType) {
+		usedTypes[t.Identifier] = struct{}{}
+		if t.KeyType != nil {
+			collectUsedTypes(t.KeyType)
+		}
+		if t.ElemType != nil {
+			collectUsedTypes(t.ElemType)
+		}
+	}
 
 	for _, f := range partialSchema.DeclaredFunctions {
 		fullFunc := npschema.DeclaredFunction{
@@ -322,6 +332,7 @@ func resolveServiceSchema(partialSchema *npschema.PartialService, sm datatype.Sc
 			}
 
 			fullFunc.ReturnType = t
+			collectUsedTypes(t)
 		} else {
 			fullFunc.ReturnType = nil
 		}
@@ -339,6 +350,7 @@ func resolveServiceSchema(partialSchema *npschema.PartialService, sm datatype.Sc
 			}
 
 			fullFunc.ErrorType = t
+			collectUsedTypes(t)
 		} else {
 			fullFunc.ErrorType = nil
 		}
@@ -360,6 +372,8 @@ func resolveServiceSchema(partialSchema *npschema.PartialService, sm datatype.Sc
 			} else {
 				fullFunc.ParametersByteSize = datatype.DynamicSize
 			}
+
+			collectUsedTypes(t)
 
 			fullFunc.Parameters = append(fullFunc.Parameters, npschema.FunctionParameter{
 				Name: param.Name,
