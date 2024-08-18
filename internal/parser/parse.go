@@ -71,56 +71,56 @@ func ParseSchema(path string) (datatype.PartialSchema, error) {
 
 // ParseType parses the given type expression and returns the DataType describing the type and the schema that is used or nil if none is used.
 // Accepts a schema map that stores user-defined types.
-func ParseType(expr string, sm datatype.SchemaMap) (*datatype.DataType, datatype.Schema, error) {
+func ParseType(expr string, sm datatype.SchemaMap) (*datatype.DataType, error) {
 	s, ok := sm[expr]
 	if ok {
 		t := s.DataType()
-		return t, s, nil
+		return t, nil
 	}
 
 	builtin := datatype.FromIdentifier(expr)
 	if builtin != nil {
-		return builtin, nil, nil
+		return builtin, nil
 	}
 
 	if strings.HasSuffix(expr, symbol.Optional) {
-		t, s, err := ParseType(expr[:len(expr)-len(symbol.Optional)], sm)
+		t, err := ParseType(expr[:len(expr)-len(symbol.Optional)], sm)
 		if err != nil {
-			return nil, nil, errs.WrapNanocErr(err, expr)
+			return nil, errs.WrapNanocErr(err, expr)
 		}
 		opt := datatype.NewOptionalType(t)
-		return &opt, s, nil
+		return &opt, nil
 	}
 
 	if strings.HasSuffix(expr, symbol.Array) {
-		t, s, err := ParseType(expr[:len(expr)-len(symbol.Array)], sm)
+		t, err := ParseType(expr[:len(expr)-len(symbol.Array)], sm)
 		if err != nil {
-			return nil, nil, errs.WrapNanocErr(err, expr)
+			return nil, errs.WrapNanocErr(err, expr)
 		}
 		arr := datatype.NewArrayType(t)
-		return &arr, s, nil
+		return &arr, nil
 	}
 
 	if strings.HasPrefix(expr, symbol.MapBracketStart) && strings.HasSuffix(expr, symbol.MapBracketEnd) {
 		inner := expr[1 : len(expr)-len(symbol.MapBracketEnd)]
 		ps := strings.Split(inner, symbol.MapKeyValTypeSeperator)
 		if len(ps) != 2 {
-			return nil, nil, errs.NewNanocError(fmt.Sprintf("Expected a key type and a value type to be separated by '%v'", symbol.MapKeyValTypeSeperator), expr)
+			return nil, errs.NewNanocError(fmt.Sprintf("Expected a key type and a value type to be separated by '%v'", symbol.MapKeyValTypeSeperator), expr)
 		}
 
-		kt, _, err := ParseType(strings.TrimSpace(ps[0]), sm)
+		kt, err := ParseType(strings.TrimSpace(ps[0]), sm)
 		if err != nil {
-			return nil, nil, errs.WrapNanocErr(err, expr)
+			return nil, errs.WrapNanocErr(err, expr)
 		}
 
-		vt, s, err := ParseType(strings.TrimSpace(ps[1]), sm)
+		vt, err := ParseType(strings.TrimSpace(ps[1]), sm)
 		if err != nil {
-			return nil, nil, errs.WrapNanocErr(err, expr)
+			return nil, errs.WrapNanocErr(err, expr)
 		}
 
 		mt := datatype.NewMapType(kt, vt)
-		return &mt, s, nil
+		return &mt, nil
 	}
 
-	return nil, nil, errs.NewNanocError("Invalid type expression", expr)
+	return nil, errs.NewNanocError("Invalid type expression", expr)
 }

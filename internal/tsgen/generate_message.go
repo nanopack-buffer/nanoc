@@ -120,32 +120,28 @@ func generateMessageClass(msgSchema *npschema.Message, opts Options) error {
 		Schema: msgSchema,
 	}
 
-	importedTypes := map[string]datatype.Schema{}
+	allImportedTypesMap := map[string]datatype.DataType{}
 	{
 		schema := msgSchema
 		for schema != nil {
 			for _, t := range schema.ImportedTypes {
-				importedTypes[t.DataType().Identifier] = t
+				allImportedTypesMap[t.Identifier] = t
 			}
 			schema = schema.ParentMessage
 		}
 	}
 
-	for _, s := range importedTypes {
-		p, err := resolveSchemaImportPath(s, msgSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath)
-		if err != nil {
-			return err
-		}
-
-		switch s := s.(type) {
-		case *npschema.Message:
-			info.ExternalImports = append(info.ExternalImports, fmt.Sprintf("import { %v } from \"%v\";", s.Name, p))
-		case *npschema.Enum:
-			info.ExternalImports = append(info.ExternalImports, fmt.Sprintf("import type { T%v } from \"%v\";", s.Name, p))
-		}
+	allImportedTypes := make([]datatype.DataType, 0, len(allImportedTypesMap))
+	for _, t := range allImportedTypesMap {
+		allImportedTypes = append(allImportedTypes, t)
 	}
 
-	msgFactoryImported := false
+	importPaths, err := resolveImportPaths(allImportedTypes, msgSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath, opts.MessageFactoryPath)
+	if err != nil {
+		return err
+	}
+
+	info.ExternalImports = importPaths
 
 	for _, f := range msgSchema.InheritedFields {
 		g := gm[f.Type.Kind]
@@ -153,30 +149,12 @@ func generateMessageClass(msgSchema *npschema.Message, opts Options) error {
 		info.ConstructorParameters = append(info.ConstructorParameters, g.ConstructorFieldParameter(f))
 		info.ConstructorArgs = append(info.ConstructorArgs, c)
 		info.SuperConstructorArgs = append(info.SuperConstructorArgs, c)
-
-		if f.Type.Kind == datatype.Message && f.Type.Schema == nil && !msgFactoryImported {
-			p, err := resolveMessageFactoryImportPath(opts.MessageFactoryPath, msgSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath)
-			if err != nil {
-				return err
-			}
-			info.ExternalImports = append(info.ExternalImports, fmt.Sprintf("import { makeNanoPackMessage } from \"%v\";", p))
-			msgFactoryImported = true
-		}
 	}
 	for _, f := range msgSchema.DeclaredFields {
 		g := gm[f.Type.Kind]
 		c := strcase.ToLowerCamel(f.Name)
 		info.ConstructorArgs = append(info.ConstructorArgs, c)
 		info.ConstructorParameters = append(info.ConstructorParameters, g.ConstructorFieldParameter(f))
-
-		if f.Type.Kind == datatype.Message && f.Type.Schema == nil && !msgFactoryImported {
-			p, err := resolveMessageFactoryImportPath(opts.MessageFactoryPath, msgSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath)
-			if err != nil {
-				return err
-			}
-			info.ExternalImports = append(info.ExternalImports, fmt.Sprintf("import { makeNanoPackMessage } from \"%v\";", p))
-			msgFactoryImported = true
-		}
 	}
 
 	ctx := generator.NewCodeContext()

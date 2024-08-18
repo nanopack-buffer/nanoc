@@ -39,7 +39,7 @@ func Resolve(schemas []datatype.PartialSchema) (*ResolveResult, error) {
 
 		case *npschema.PartialEnum:
 			// enum schema can be resolved directly, since an enum cannot import other types
-			resolved, err := resolveEnumSchema(s, sm, usedTypesMap)
+			resolved, err := resolveEnumSchema(s, usedTypesMap)
 			if err != nil {
 				return nil, err
 			}
@@ -82,7 +82,7 @@ func Resolve(schemas []datatype.PartialSchema) (*ResolveResult, error) {
 	}, nil
 }
 
-func resolveEnumSchema(partialEnum *npschema.PartialEnum, sm datatype.SchemaMap, usedTypes map[string]struct{}) (*npschema.Enum, error) {
+func resolveEnumSchema(partialEnum *npschema.PartialEnum, usedTypes map[string]struct{}) (*npschema.Enum, error) {
 	fullSchema := npschema.Enum{
 		SchemaPath:         partialEnum.SchemaPath,
 		Name:               partialEnum.Name,
@@ -180,7 +180,7 @@ func resolveMessageSchemaTypeInfo(partialMsg *npschema.PartialMessage, sm dataty
 
 		fullSchema.HasParentMessage = true
 		fullSchema.ParentMessage = pmsg
-		fullSchema.ImportedTypes = append(fullSchema.ImportedTypes, pmsg)
+		fullSchema.ImportedTypes = append(fullSchema.ImportedTypes, *pmsg.DataType())
 
 		imported[pmsg.Name] = struct{}{}
 		usedTypes[pmsg.Name] = struct{}{}
@@ -199,29 +199,38 @@ func resolveMessageSchemaTypeInfo(partialMsg *npschema.PartialMessage, sm dataty
 			continue
 		}
 
-		t, s, err := parser.ParseType(f.TypeName, sm)
+		t, err := parser.ParseType(f.TypeName, sm)
 		if err != nil {
 			return err
 		}
 
 		usedTypes[t.Identifier] = struct{}{}
 
-		if s != nil {
-			var name string
-			switch sp := s.(type) {
-			case *npschema.Message:
-				name = sp.Name
-			case *npschema.Enum:
-				name = sp.Name
-			}
-
-			if name != partialMsg.Name {
-				if _, ok := imported[name]; !ok {
-					fullSchema.ImportedTypes = append(fullSchema.ImportedTypes, s)
-					imported[name] = struct{}{}
+		var findImportedType func(t *datatype.DataType)
+		findImportedType = func(t *datatype.DataType) {
+			if t.Schema != nil {
+				name := t.Schema.SchemaName()
+				if name != partialMsg.Name {
+					if _, ok := imported[name]; !ok {
+						fullSchema.ImportedTypes = append(fullSchema.ImportedTypes, *t)
+						imported[name] = struct{}{}
+					}
+				}
+			} else if t.Kind == datatype.Message {
+				if _, ok := imported[datatype.IdentifierGenericMessage]; !ok {
+					fullSchema.ImportedTypes = append(fullSchema.ImportedTypes, *t)
+					imported[datatype.IdentifierGenericMessage] = struct{}{}
+				}
+			} else {
+				if t.KeyType != nil {
+					findImportedType(t.KeyType)
+				}
+				if t.ElemType != nil {
+					findImportedType(t.ElemType)
 				}
 			}
 		}
+		findImportedType(t)
 
 		fullSchema.DeclaredFields = append(fullSchema.DeclaredFields, npschema.MessageField{
 			Name:   f.Name,
@@ -301,13 +310,13 @@ func resolveServiceSchema(partialSchema *npschema.PartialService, sm datatype.Sc
 		}
 
 		if f.ReturnTypeName != "" {
-			t, s, err := parser.ParseType(f.ReturnTypeName, sm)
+			t, err := parser.ParseType(f.ReturnTypeName, sm)
 			if err != nil {
 				return nil, errs.NewNanocError(fmt.Sprintf("Unresolved function return type %v", f.ReturnTypeName), f.Name)
 			}
 
-			if s != nil {
-				imported[s.SchemaName()] = *t
+			if t.Schema != nil {
+				imported[t.Schema.SchemaName()] = *t
 			} else if t.Kind == datatype.Message {
 				imported[datatype.IdentifierGenericMessage] = *t
 			}
@@ -318,13 +327,13 @@ func resolveServiceSchema(partialSchema *npschema.PartialService, sm datatype.Sc
 		}
 
 		if f.ErrorTypeName != "" {
-			t, s, err := parser.ParseType(f.ErrorTypeName, sm)
+			t, err := parser.ParseType(f.ErrorTypeName, sm)
 			if err != nil {
 				return nil, errs.NewNanocError(fmt.Sprintf("Unresolved function error type %v", f.ReturnTypeName), f.Name)
 			}
 
-			if s != nil {
-				imported[s.SchemaName()] = *t
+			if t.Schema != nil {
+				imported[t.Schema.SchemaName()] = *t
 			} else if t.Kind == datatype.Message {
 				imported[datatype.IdentifierGenericMessage] = *t
 			}
@@ -335,13 +344,13 @@ func resolveServiceSchema(partialSchema *npschema.PartialService, sm datatype.Sc
 		}
 
 		for _, param := range f.Parameters {
-			t, s, err := parser.ParseType(param.TypeName, sm)
+			t, err := parser.ParseType(param.TypeName, sm)
 			if err != nil {
 				return nil, errs.NewNanocError(fmt.Sprintf("Unresolved type %v", param.TypeName), f.Name, param.Name)
 			}
 
-			if s != nil {
-				imported[s.SchemaName()] = *t
+			if t.Schema != nil {
+				imported[t.Schema.SchemaName()] = *t
 			} else if t.Kind == datatype.Message {
 				imported[datatype.IdentifierGenericMessage] = *t
 			}

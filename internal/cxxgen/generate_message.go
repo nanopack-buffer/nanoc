@@ -191,7 +191,7 @@ func generateMessageHeaderFile(msgSchema *npschema.Message, gm generator.Message
 		info.LibraryImports = append(info.LibraryImports, k)
 	}
 	for _, t := range msgSchema.ImportedTypes {
-		p, err := resolveSchemaImportPath(t, msgSchema)
+		p, err := resolveSchemaImportPath(t.Schema, msgSchema)
 		if err != nil {
 			return err
 		}
@@ -200,7 +200,7 @@ func generateMessageHeaderFile(msgSchema *npschema.Message, gm generator.Message
 		// if this type is inherited (polymorphic) and is imported because it is used by one of the fields
 		// then its factory needs to be imported as well,
 		// because it will be used when reading fields that use this polymorphic type to instantiate the correct type.
-		if ms, ok := t.(*npschema.Message); ok && ms.IsInherited {
+		if ms, ok := t.Schema.(*npschema.Message); ok && ms.IsInherited {
 			header := fmt.Sprintf("make_%v%v", strcase.ToSnake(ms.Name), extHeaderFile)
 			info.RelativeImports = append(info.RelativeImports, strings.Replace(p, filepath.Base(p), header, 1))
 		}

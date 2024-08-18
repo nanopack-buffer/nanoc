@@ -21,7 +21,7 @@ type Message struct {
 
 	// ImportedTypes is an array of schema for user-defined types (such as enums)
 	// imported by this message's schema.
-	ImportedTypes []datatype.Schema
+	ImportedTypes []datatype.DataType
 	Name          string
 	TypeID        datatype.TypeID
 	HeaderSize    int
