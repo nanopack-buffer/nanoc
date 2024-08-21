@@ -6,6 +6,7 @@ import (
 	"nanoc/internal/datatype"
 	"nanoc/internal/npschema"
 	"nanoc/internal/pathutil"
+	"nanoc/internal/symbol"
 	"path/filepath"
 	"strings"
 	"text/template"
@@ -41,9 +42,9 @@ func GenerateEnum(enumSchema *npschema.Enum, opts Options) error {
 	}
 
 	fname := filepath.Base(enumSchema.SchemaPath)
-	fname = strcase.ToCamel(strings.TrimSuffix(fname, filepath.Ext(fname))) + extSwift
+	fname = strcase.ToCamel(strings.TrimSuffix(fname, symbol.SchemaFileExt)) + extSwift
 
-	op := strings.Replace(enumSchema.SchemaPath, filepath.Base(enumSchema.SchemaPath), fname, 1)
+	op := pathutil.ResolveCodeOutputPathForSchema(enumSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath, fname)
 	f, err := pathutil.CreateOutputFile(op)
 	if err != nil {
 		return err
