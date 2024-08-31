@@ -1,7 +1,6 @@
 package cxxgen
 
 import (
-	"fmt"
 	"nanoc/internal/datatype"
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
@@ -195,7 +194,6 @@ func generateServiceImpl(serviceSchema *npschema.Service, opts Options) error {
 	}
 
 	fname := strcase.ToSnake(serviceSchema.Name) + "_service" + extImplFile
-	fmt.Println(fname)
 	outPath := pathutil.ResolveCodeOutputPathForSchema(serviceSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath, fname)
 	f, err := pathutil.CreateOutputFile(outPath)
 	if err != nil {
