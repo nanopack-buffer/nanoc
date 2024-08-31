@@ -76,6 +76,18 @@ type enumHeaderFileInfo struct {
 	IncludeGuardName string
 }
 
+type serviceHeaderFileInfo struct {
+	Namespace        string
+	IncludeGuardName string
+	Schema           *npschema.Service
+}
+
+type serviceImplFileInfo struct {
+	Namespace  string
+	HeaderName string
+	Schema     *npschema.Service
+}
+
 const (
 	templateNameMessageHeaderFile             = "CxxMessageHeaderFile"
 	templateNameMessageImplFile               = "CxxMessageImplFile"
@@ -84,6 +96,8 @@ const (
 	templateNameChildMessageFactoryHeaderFile = "CxxChildMessageFactoryHeaderFile"
 	templateNameChildMessageFactoryImplFile   = "CxxChildMessageFactoryImplFile"
 	templateNameEnumHeaderFile                = "CxxEnumHeaderFile"
+	templateNameServiceHeaderFile             = "CxxServiceHeaderFile"
+	templateNameServiceImplFile               = "CxxServiceImplFile"
 )
 
 const (
@@ -350,4 +364,122 @@ public:
 {{if .Namespace}}} // namespace {{.Namespace}}{{end}}
 
 #endif
+`
+
+const serviceHeaderFile = `#include <unordered_map>
+#include <string_view>
+#include <future>
+#include <nanopack/rpc.hxx>
+
+#ifndef {{.IncludeGuardName}}
+#define {{.IncludeGuardName}}
+
+{{if .Namespace}}namespace {{.Namespace}} { {{- end}}
+
+class {{.Schema.Name}}ServiceServer : public NanoPack::RpcServer {
+	std::unordered_map<std::string_view, MethodCallResult ({{.Schema.Name}}ServiceServer::*)(uint8_t *, size_t, NanoPack::MessageId)> handlers;
+
+	MethodCallResult on_method_call(const std::string_view &method, uint8_t *request_data, size_t offset, NanoPack::MessageId msg_id) override;
+
+	{{- range .Schema.DeclaredFunctions}}
+	MethodCallResult _{{snake .Name}}(uint8_t *request_data, size_t offset, NanoPack::MessageId msg_id);
+	virtual {{if .ReturnType}}{{typeDeclaration .ReturnType}}{{else}}void{{end}} {{snake .Name}}({{range $i, $param := .Parameters}}{{if $i}}, {{end}}{{typeDeclaration $param.Type}} {{snake $param.Name}}{{end}}) = 0;
+
+	{{end}}
+
+  public:
+    {{.Schema.Name}}ServiceServer(NanoPack::RpcServerChannel &channel)
+      ;
+};
+
+class {{.Schema.Name}}ServiceClient : public NanoPack::RpcClient {
+  public:
+    using NanoPack::RpcClient::RpcClient;
+
+	{{- range .Schema.DeclaredFunctions}}
+	std::future{{if .ReturnType}}<{{typeDeclaration .ReturnType}}>{{end}} {{snake .Name}}({{range $i, $param := .Parameters}}{{if $i}}, {{end}}{{typeDeclaration $param.Type}} {{snake $param.Name}}{{end}});
+
+	{{end}}
+};
+
+{{if .Namespace -}} } // namespace {{.Namespace}}{{end}}
+
+#endif
+`
+
+const serviceImplFile = `#include <exception>
+#include <string>
+#include <nanopack/reader.hxx>
+#include <nanopack/writer.hxx>
+
+#include "{{.HeaderName}}"
+
+{{if .Namespace}}{{.Namespace}}::{{end}}{{.Schema.Name}}ServiceServer::{{.Schema.Name}}ServiceServer(NanoPack::RpcServerChannel &channel) : NanoPack::RpcServer(channel), handlers({{len .Schema.DeclaredFunctions}}) {
+	{{- range .Schema.DeclaredFunctions}}
+	handlers.emplace("{{.Name}}", &{{$.Schema.Name}}ServiceServer::{{snake .Name}});
+	{{- end}}
+}
+
+NanoPack::RpcServer::MethodCallResult {{if .Namespace}}{{.Namespace}}::{{end}}{{.Schema.Name}}ServiceServer::on_method_call(const std::string_view &method, uint8_t *request_data, size_t offset, NanoPack::MessageId msg_id) {
+	const auto handler = handlers.find(method);
+	if (handler == handlers.end()) {
+		throw std::invalid_argument("Unknown method " + std::string(method) + " called on {{.Schema.Name}}Service.");
+	}
+	return (this->*(handler->second))(request_data, offset, msg_id);
+}
+
+{{- range .Schema.DeclaredFunctions}}
+NanoPack::RpcServer::MethodCallResult {{if $.Namespace}}{{$.Namespace}}::{{end}}{{$.Schema.Name}}ServiceServer::_{{snake .Name}}(uint8_t *request_data, size_t offset, NanoPack::MessageId msg_id) {
+	NanoPack::Reader reader(request_data);
+	size_t ptr = offset;
+	{{generateReadParamCode .}}
+	{{if .ReturnType -}}
+	{{typeDeclaration .ReturnType}} result =
+		{{- if isTriviallyCopyable .ReturnType -}}
+		{{snake .Name}}({{range $i, $param := .Parameters}}{{if $i}}, {{end}}{{snake $param.Name}}{{end}});
+		{{- else -}}
+		std::move({{snake .Name}}({{range $i, $param := .Parameters}}{{if $i}}, {{end}}{{snake $param.Name}}{{end}}));
+		{{- end -}}
+	{{- else -}}
+	{{snake .Name}}({{range $i, $param := .Parameters}}{{if $i}}, {{end}}{{snake $param.Name}}{{end}});
+	{{end}}
+	NanoPack::Writer writer({{if and .ReturnType (gt .ReturnType.ByteSize 0) }}6 + {{.ReturnType.ByteSize}}{{else}}6{{end}});
+	writer.append_uint8(NanoPack::RpcMessageType::Response);
+	writer.append_uint32(msg_id);
+	writer.append_uint8(0);
+	{{if .ReturnType}}{{generateWriteResultCode .}}{{end}}
+	return {writer.into_data(), writer.size()};
+}
+
+{{end}}
+
+{{- range .Schema.DeclaredFunctions}}
+std::future{{if .ReturnType}}<{{typeDeclaration .ReturnType}}>{{end}} {{if $.Namespace}}{{$.Namespace}}::{{end}}{{$.Schema.Name}}ServiceClient::{{snake .Name}}({{range $i, $param := .Parameters}}{{if $i}}, {{end}}{{typeDeclaration $param.Type}} {{snake $param.Name}}{{end}}) {
+	NanoPack::Writer writer(9 + {{stringByteSize .Name}}{{if gt .ParametersByteSize 0}} + {{.ParametersByteSize}}{{end}});
+	const auto msg_id = new_message_id();
+	writer.append_uint8(NanoPack::RpcMessageType::Request);
+	writer.append_uint32(msg_id);
+	writer.append_uint32({{stringByteSize .Name}});
+	writer.append_string_view("{{.Name}}");
+	{{generateWriteParamCode .}}
+	return std::async(
+		[this](uint32_t msg_id, uint8_t *req_data, size_t req_size) {
+			auto res_data = send_request_data_async(msg_id, req_data, req_size).get();
+			NanoPack::Reader reader(res_data);
+			size_t ptr = 0;
+			uint8_t err_flag;
+			reader.read_uint8(ptr++, err_flag);
+			if (err_flag == 1) {
+				throw std::runtime_error("RPC on {{$.Schema.Name}}::{{.Name}} failed.");
+			}
+			free(req_data);
+			{{if .ReturnType}}
+			{{generateReadResultCode .}}
+			return result;
+			{{- end}}
+		},
+		msg_id, writer.into_data(), writer.size());
+}
+
+{{end}}
 `

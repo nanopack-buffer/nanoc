@@ -36,8 +36,6 @@ func GenerateService(serviceSchema *npschema.Service, opts Options) error {
 	gm[datatype.Map] = mapGenerator{gm}
 	gm[datatype.Enum] = enumGenerator{gm}
 
-	// a dummy code context that will be passed to generator
-	// this will not be used
 	ctx := generator.NewCodeContext()
 
 	funcs := template.FuncMap{

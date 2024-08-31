@@ -51,6 +51,10 @@
               pkgs.biome
               # nanoc uses swift-format to format swift code
               pkgs.swift-format
+              # used to build c++ examples
+              pkgs.cmake
+              # make nanoc available
+              self.packages.${system}.nanoc
             ];
           };
         });
