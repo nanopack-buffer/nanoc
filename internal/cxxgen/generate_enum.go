@@ -48,7 +48,7 @@ func GenerateEnum(enumSchema *npschema.Enum, opts Options) error {
 
 	fname := filepath.Base(enumSchema.SchemaPath)
 	fname = strcase.ToSnake(strings.TrimSuffix(fname, symbol.SchemaFileExt)) + extHeaderFile
-	op := strings.Replace(enumSchema.SchemaPath, filepath.Base(enumSchema.SchemaPath), fname, 1)
+	op := pathutil.ResolveCodeOutputPathForSchema(enumSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath, fname)
 	f, err := pathutil.CreateOutputFile(op)
 	if err != nil {
 		return err
