@@ -9,7 +9,6 @@ import (
 	"nanoc/internal/pathutil"
 	"nanoc/internal/symbol"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -541,7 +540,7 @@ func resolveSchemaImportPath(toSchema datatype.Schema, fromSchema datatype.Schem
 	if err != nil {
 		return "", err
 	}
-	return strings.Replace(p, path.Ext(p), extHeaderFile, 1), nil
+	return p, nil
 }
 
 func resolveMessageFactoryImportPath(factoryPath string, fromSchema datatype.Schema, baseDir, outDir string) (string, error) {
