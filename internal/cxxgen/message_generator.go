@@ -104,7 +104,6 @@ func (g messageGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx g
 
 func (g messageGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
 	td := g.TypeDeclaration(dataType)
-	isPolymorphic := dataType.Schema.(*npschema.Message).IsInherited
 
 	var declr string
 	if !ctx.IsVariableInScope(varName) {
@@ -118,7 +117,7 @@ func (g messageGenerator) ReadValueFromBuffer(dataType datatype.DataType, varNam
 			"reader.buffer += ptr;",
 			fmt.Sprintf("%v = std::move(make_nanopack_message(reader, %v_bytes_read));", varName, varName),
 			"reader.buffer = buf;")
-	} else if isPolymorphic {
+	} else if dataType.Schema.(*npschema.Message).IsInherited {
 		read = generator.Lines(
 			fmt.Sprintf("size_t %v_bytes_read;", varName),
 			"reader.buffer += ptr;",
