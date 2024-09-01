@@ -191,7 +191,7 @@ func generateMessageHeaderFile(msgSchema *npschema.Message, gm generator.Message
 		info.LibraryImports = append(info.LibraryImports, k)
 	}
 	for _, t := range msgSchema.ImportedTypes {
-		p, err := resolveSchemaImportPath(t.Schema, msgSchema)
+		p, err := resolveSchemaImportPath(t.Schema, msgSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath)
 		if err != nil {
 			return err
 		}
@@ -301,7 +301,7 @@ func generateMessageImplFile(msgSchema *npschema.Message, gm generator.MessageCo
 
 		if f.Type.Kind == datatype.Message && (f.Type.Schema == nil || f.Type.Schema.(*npschema.Message).IsInherited) {
 			if f.Type.Schema == nil {
-				p, err := resolveMessageFactoryImportPath(opts.MessageFactoryPath, msgSchema)
+				p, err := resolveMessageFactoryImportPath(opts.MessageFactoryPath, msgSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath)
 				if err != nil {
 					return err
 				}
@@ -432,7 +432,7 @@ func generateChildMessageFactoryImplFile(msgSchema *npschema.Message, opts Optio
 	}
 
 	for _, m := range msgSchema.ChildMessages {
-		p, err := resolveSchemaImportPath(m, msgSchema)
+		p, err := resolveSchemaImportPath(m, msgSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath)
 		if err != nil {
 			return err
 		}
@@ -500,7 +500,7 @@ func generateMessageFactoryImplFile(schemas []*npschema.Message, opts Options) e
 	}
 
 	for _, s := range schemas {
-		ip, err := filepath.Rel(filepath.Dir(outPath), s.SchemaPath)
+		ip, err := filepath.Rel(filepath.Dir(outPath), pathutil.ResolveCodeOutputPathForSchema(s, opts.BaseDirectoryPath, opts.OutputDirectoryPath, outputHeaderFileNameForSchema(s)))
 		if err != nil {
 			return err
 		}
@@ -534,16 +534,19 @@ func generateMessageFactoryImplFile(schemas []*npschema.Message, opts Options) e
 	return nil
 }
 
-func resolveSchemaImportPath(toSchema datatype.Schema, fromSchema datatype.Schema) (string, error) {
-	p, err := filepath.Rel(filepath.Dir(fromSchema.SchemaPathAbsolute()), toSchema.SchemaPathAbsolute())
+func resolveSchemaImportPath(toSchema datatype.Schema, fromSchema datatype.Schema, baseDir, outDir string) (string, error) {
+	src := pathutil.ResolveCodeOutputPathForSchema(fromSchema, baseDir, outDir, outputHeaderFileNameForSchema(fromSchema))
+	dest := pathutil.ResolveCodeOutputPathForSchema(toSchema, baseDir, outDir, outputHeaderFileNameForSchema(toSchema))
+	p, err := filepath.Rel(filepath.Dir(src), dest)
 	if err != nil {
 		return "", err
 	}
 	return strings.Replace(p, path.Ext(p), extHeaderFile, 1), nil
 }
 
-func resolveMessageFactoryImportPath(factoryPath string, fromSchema datatype.Schema) (string, error) {
-	p, err := filepath.Rel(filepath.Dir(fromSchema.SchemaPathAbsolute()), factoryPath)
+func resolveMessageFactoryImportPath(factoryPath string, fromSchema datatype.Schema, baseDir, outDir string) (string, error) {
+	src := pathutil.ResolveCodeOutputPathForSchema(fromSchema, baseDir, outDir, outputHeaderFileNameForSchema(fromSchema))
+	p, err := filepath.Rel(filepath.Dir(src), factoryPath)
 	if err != nil {
 		return "", err
 	}
