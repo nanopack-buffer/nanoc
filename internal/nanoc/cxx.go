@@ -36,9 +36,11 @@ func runCxxSchemaGenerator(schema datatype.Schema, opts Options) error {
 
 func runCxxMessageFactoryGenerator(schema []*npschema.Message, opts Options) error {
 	return cxxgen.GenerateMessageFactory(schema, cxxgen.Options{
-		Namespaces:         strings.Split(opts.Namespace, "."),
-		FormatterPath:      opts.CodeFormatterPath,
-		FormatterArgs:      opts.CodeFormatterArgs,
-		MessageFactoryPath: opts.MessageFactoryAbsFilePath,
+		Namespaces:          strings.Split(opts.Namespace, "."),
+		FormatterPath:       opts.CodeFormatterPath,
+		FormatterArgs:       opts.CodeFormatterArgs,
+		MessageFactoryPath:  opts.MessageFactoryAbsFilePath,
+		BaseDirectoryPath:   opts.BaseDirectoryAbs,
+		OutputDirectoryPath: opts.OutputDirectoryAbs,
 	})
 }

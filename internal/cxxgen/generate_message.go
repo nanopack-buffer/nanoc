@@ -384,7 +384,7 @@ func generateMessageImplFile(msgSchema *npschema.Message, gm generator.MessageCo
 
 func generateChildMessageFactoryHeaderFile(msgSchema *npschema.Message, opts Options) error {
 	h := filepath.Base(msgSchema.SchemaPath)
-	h = strcase.ToSnake(strings.TrimSuffix(h, filepath.Ext(h))) + extHeaderFile
+	h = strcase.ToSnake(strings.TrimSuffix(h, symbol.SchemaFileExt)) + extHeaderFile
 
 	info := childMessageFactoryHeaderFileTemplateInfo{
 		Namespace:           strings.Join(opts.Namespaces, cxxSymbolMemberOf),
@@ -500,11 +500,11 @@ func generateMessageFactoryImplFile(schemas []*npschema.Message, opts Options) e
 	}
 
 	for _, s := range schemas {
-		ip, err := filepath.Rel(filepath.Dir(outPath), pathutil.ResolveCodeOutputPathForSchema(s, opts.BaseDirectoryPath, opts.OutputDirectoryPath, outputHeaderFileNameForSchema(s)))
+		dest := pathutil.ResolveCodeOutputPathForSchema(s, opts.BaseDirectoryPath, opts.OutputDirectoryPath, outputHeaderFileNameForSchema(s))
+		ip, err := filepath.Rel(filepath.Dir(outPath), dest)
 		if err != nil {
 			return err
 		}
-		ip = strings.Replace(ip, path.Ext(ip), extHeaderFile, 1)
 		info.MessageImportPaths = append(info.MessageImportPaths, ip)
 	}
 
