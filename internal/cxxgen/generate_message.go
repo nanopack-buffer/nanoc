@@ -149,25 +149,25 @@ func generateMessageHeaderFile(msgSchema *npschema.Message, gm generator.Message
 			continue
 		}
 
-		var collectImport func(t datatype.DataType)
-		collectImport = func(t datatype.DataType) {
+		datatype.TraverseTypeTree(&field.Type, func(t *datatype.DataType) error {
 			switch t.Kind {
 			case datatype.String:
 				libimp["string"] = struct{}{}
 
 			case datatype.Map:
 				libimp["unordered_map"] = struct{}{}
-				collectImport(*t.ElemType)
 
 			case datatype.Optional:
 				libimp["optional"] = struct{}{}
-				collectImport(*t.ElemType)
 
 			case datatype.Any:
 				libimp["nanopack/any.hxx"] = struct{}{}
 
 			case datatype.Message:
-				if field.Type.Schema == nil || field.Type.Schema.(*npschema.Message).IsInherited {
+				if field.Type.Schema == nil {
+					libimp["memory"] = struct{}{}
+					libimp["nanopack/message.hxx"] = struct{}{}
+				} else if field.Type.Schema.(*npschema.Message).IsInherited {
 					libimp["memory"] = struct{}{}
 				}
 
@@ -177,9 +177,8 @@ func generateMessageHeaderFile(msgSchema *npschema.Message, gm generator.Message
 			default:
 				break
 			}
-		}
-
-		collectImport(field.Type)
+			return nil
+		})
 	}
 
 	if msgSchema.HasParentMessage {

@@ -204,7 +204,7 @@ func resolveMessageSchemaTypeInfo(partialMsg *npschema.PartialMessage, sm dataty
 			return err
 		}
 
-		datatype.TraverseTypeTree(t, func(current *datatype.DataType) {
+		datatype.TraverseTypeTree(t, func(current *datatype.DataType) error {
 			if current.Schema != nil {
 				name := current.Schema.SchemaName()
 				if name != partialMsg.Name {
@@ -219,6 +219,7 @@ func resolveMessageSchemaTypeInfo(partialMsg *npschema.PartialMessage, sm dataty
 					imported[datatype.IdentifierGenericMessage] = struct{}{}
 				}
 			}
+			return nil
 		})
 
 		fullSchema.DeclaredFields = append(fullSchema.DeclaredFields, npschema.MessageField{
@@ -292,13 +293,14 @@ func resolveServiceSchema(partialSchema *npschema.PartialService, sm datatype.Sc
 
 	imported := map[string]datatype.DataType{}
 
-	typeVisitor := func(current *datatype.DataType) {
+	typeVisitor := func(current *datatype.DataType) error {
 		usedTypes[current.Identifier] = struct{}{}
 		if current.Schema != nil {
 			imported[current.Schema.SchemaName()] = *current
 		} else if current.Kind == datatype.Message {
 			imported[datatype.IdentifierGenericMessage] = *current
 		}
+		return nil
 	}
 
 	for _, f := range partialSchema.DeclaredFunctions {

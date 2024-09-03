@@ -2,12 +2,16 @@ package datatype
 
 // TraverseTypeTree traverses the type tree starting from the given DataType,
 // calling visitor whenever a DataType is encountered.
-func TraverseTypeTree(t *DataType, visitor func(t *DataType)) {
-	visitor(t)
+func TraverseTypeTree(t *DataType, visitor func(t *DataType) error) error {
+	err := visitor(t)
+	if err != nil {
+		return err
+	}
 	if t.KeyType != nil {
-		TraverseTypeTree(t.KeyType, visitor)
+		return TraverseTypeTree(t.KeyType, visitor)
 	}
 	if t.ElemType != nil {
-		TraverseTypeTree(t.ElemType, visitor)
+		return TraverseTypeTree(t.ElemType, visitor)
 	}
+	return nil
 }

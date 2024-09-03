@@ -1,10 +1,12 @@
 package cxxgen
 
 import (
+	"fmt"
 	"nanoc/internal/datatype"
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
 	"nanoc/internal/pathutil"
+	"path/filepath"
 	"strings"
 	"text/template"
 	"unicode/utf8"
@@ -91,6 +93,65 @@ func generateServiceHeader(serviceSchema *npschema.Service, opts Options) error 
 			g := gm[fn.ReturnType.Kind]
 			return g.WriteVariableToBuffer(*fn.ReturnType, "result", ctx)
 		},
+	}
+
+	libimp := map[string]struct{}{}
+	relimp := map[string]struct{}{}
+	for _, t := range serviceSchema.ImportedTypes {
+		datatype.TraverseTypeTree(&t, func(t *datatype.DataType) error {
+			switch t.Kind {
+			case datatype.String:
+				libimp["string"] = struct{}{}
+
+			case datatype.Map:
+				libimp["unordered_map"] = struct{}{}
+
+			case datatype.Optional:
+				libimp["optional"] = struct{}{}
+
+			case datatype.Any:
+				libimp["nanopack/any.hxx"] = struct{}{}
+
+			case datatype.Message:
+				if t.Schema == nil {
+					libimp["memory"] = struct{}{}
+					libimp["nanopack/message.hxx"] = struct{}{}
+				} else {
+					if t.Schema.(*npschema.Message).IsInherited {
+						libimp["memory"] = struct{}{}
+					}
+
+					p, err := resolveSchemaImportPath(t.Schema, serviceSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath)
+					if err != nil {
+						return err
+					}
+					relimp[p] = struct{}{}
+
+					// if this type is inherited (polymorphic) and is imported because it is used by one of the fields
+					// then its factory needs to be imported as well,
+					// because it will be used when reading fields that use this polymorphic type to instantiate the correct type.
+					if ms, ok := t.Schema.(*npschema.Message); ok && ms.IsInherited {
+						header := fmt.Sprintf("make_%v%v", strcase.ToSnake(ms.Name), extHeaderFile)
+						relimp[strings.Replace(p, filepath.Base(p), header, 1)] = struct{}{}
+					}
+				}
+
+			case datatype.Array:
+				libimp["vector"] = struct{}{}
+
+			default:
+				break
+			}
+
+			return nil
+		})
+	}
+
+	for p, _ := range libimp {
+		info.LibraryImports = append(info.LibraryImports, p)
+	}
+	for p, _ := range relimp {
+		info.RelativeImports = append(info.RelativeImports, p)
 	}
 
 	tmpl, err := template.New(templateNameServiceHeaderFile).Funcs(funcs).Parse(serviceHeaderFile)

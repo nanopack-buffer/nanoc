@@ -13,7 +13,7 @@ type messageGenerator struct{}
 
 func (g messageGenerator) TypeDeclaration(dataType datatype.DataType) string {
 	if dataType.Schema == nil {
-		return fmt.Sprintf("std::unique_ptr<%v>", dataType.Identifier)
+		return "std::unique_ptr<NanoPack::Message>"
 	}
 	if ms, ok := dataType.Schema.(*npschema.Message); ok && ms.IsInherited {
 		return fmt.Sprintf("std::unique_ptr<%v>", dataType.Identifier)

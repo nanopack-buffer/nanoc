@@ -77,6 +77,8 @@ type enumHeaderFileInfo struct {
 }
 
 type serviceHeaderFileInfo struct {
+	RelativeImports  []string
+	LibraryImports   []string
 	Namespace        string
 	IncludeGuardName string
 	Schema           *npschema.Service
@@ -366,13 +368,20 @@ public:
 #endif
 `
 
-const serviceHeaderFile = `#include <unordered_map>
+const serviceHeaderFile = `#ifndef {{.IncludeGuardName}}
+#define {{.IncludeGuardName}}
+
+#include <unordered_map>
 #include <string_view>
 #include <future>
 #include <nanopack/rpc.hxx>
+{{- range .LibraryImports}}
+#include <{{.}}>
+{{- end}}
 
-#ifndef {{.IncludeGuardName}}
-#define {{.IncludeGuardName}}
+{{- range .RelativeImports}}
+#include "{{.}}"
+{{- end}}
 
 {{if .Namespace}}namespace {{.Namespace}} { {{- end}}
 
