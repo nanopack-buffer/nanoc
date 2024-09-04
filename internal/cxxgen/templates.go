@@ -397,8 +397,7 @@ class {{.Schema.Name}}ServiceServer : public NanoPack::RpcServer {
 	{{end}}
 
   public:
-    {{.Schema.Name}}ServiceServer(NanoPack::RpcServerChannel &channel)
-      ;
+    using NanoPack::RpcServer::RpcServer;
 };
 
 class {{.Schema.Name}}ServiceClient : public NanoPack::RpcClient {
