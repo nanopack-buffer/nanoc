@@ -441,6 +441,7 @@ NanoPack::RpcServer::MethodCallResult {{if .Namespace}}{{.Namespace}}::{{end}}{{
 NanoPack::RpcServer::MethodCallResult {{if $.Namespace}}{{$.Namespace}}::{{end}}{{$.Schema.Name}}ServiceServer::_{{snake .Name}}(uint8_t *request_data, size_t offset, NanoPack::MessageId msg_id) {
 	NanoPack::Reader reader(request_data);
 	size_t ptr = offset;
+	uint8_t *buf = reader.buffer;
 	{{generateReadParamCode .}}
 	{{if .ReturnType -}}
 	{{typeDeclaration .ReturnType}} result =
@@ -483,6 +484,7 @@ std::future{{if .ReturnType}}<{{typeDeclaration .ReturnType}}>{{end}} {{if $.Nam
 			}
 			free(req_data);
 			{{if .ReturnType}}
+			uint8_t *buf = reader.buffer;
 			{{generateReadResultCode .}}
 			return result;
 			{{- end}}
