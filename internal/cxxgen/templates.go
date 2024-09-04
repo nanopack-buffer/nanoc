@@ -406,7 +406,7 @@ class {{.Schema.Name}}ServiceClient : public NanoPack::RpcClient {
     using NanoPack::RpcClient::RpcClient;
 
 	{{- range .Schema.DeclaredFunctions}}
-	std::future{{if .ReturnType}}<{{typeDeclaration .ReturnType}}>{{end}} {{snake .Name}}({{range $i, $param := .Parameters}}{{if $i}}, {{end}}{{typeDeclaration $param.Type}} {{snake $param.Name}}{{end}});
+	std::future<{{if .ReturnType}}{{typeDeclaration .ReturnType}}{{else}}void{{end}}> {{snake .Name}}({{range $i, $param := .Parameters}}{{if $i}}, {{end}}{{typeDeclaration $param.Type}} {{snake $param.Name}}{{end}});
 
 	{{end}}
 };
@@ -448,10 +448,10 @@ NanoPack::RpcServer::MethodCallResult {{if $.Namespace}}{{$.Namespace}}::{{end}}
 		{{- if isTriviallyCopyable .ReturnType -}}
 		{{snake .Name}}({{range $i, $param := .Parameters}}{{if $i}}, {{end}}{{snake $param.Name}}{{end}});
 		{{- else -}}
-		std::move({{snake .Name}}({{range $i, $param := .Parameters}}{{if $i}}, {{end}}{{snake $param.Name}}{{end}}));
+		std::move({{snake .Name}}({{range $i, $param := .Parameters}}{{if $i}}, {{end}}{{if isTriviallyCopyable $param.Type}}{{snake $param.Name}}{{else}}std::move({{snake $param.Name}}){{end}}{{end}}));
 		{{- end -}}
 	{{- else -}}
-	{{snake .Name}}({{range $i, $param := .Parameters}}{{if $i}}, {{end}}{{snake $param.Name}}{{end}});
+	{{snake .Name}}({{range $i, $param := .Parameters}}{{if $i}}, {{end}}{{if isTriviallyCopyable $param.Type}}{{snake $param.Name}}{{else}}std::move({{snake $param.Name}}){{end}}{{end}});
 	{{end}}
 	NanoPack::Writer writer({{if and .ReturnType (gt .ReturnType.ByteSize 0) }}6 + {{.ReturnType.ByteSize}}{{else}}6{{end}});
 	writer.append_uint8(NanoPack::RpcMessageType::Response);
@@ -464,7 +464,7 @@ NanoPack::RpcServer::MethodCallResult {{if $.Namespace}}{{$.Namespace}}::{{end}}
 {{end}}
 
 {{- range .Schema.DeclaredFunctions}}
-std::future{{if .ReturnType}}<{{typeDeclaration .ReturnType}}>{{end}} {{if $.Namespace}}{{$.Namespace}}::{{end}}{{$.Schema.Name}}ServiceClient::{{snake .Name}}({{range $i, $param := .Parameters}}{{if $i}}, {{end}}{{typeDeclaration $param.Type}} {{snake $param.Name}}{{end}}) {
+std::future<{{if .ReturnType}}{{typeDeclaration .ReturnType}}{{else}}void{{end}}> {{if $.Namespace}}{{$.Namespace}}::{{end}}{{$.Schema.Name}}ServiceClient::{{snake .Name}}({{range $i, $param := .Parameters}}{{if $i}}, {{end}}{{typeDeclaration $param.Type}} {{snake $param.Name}}{{end}}) {
 	NanoPack::Writer writer(9 + {{stringByteSize .Name}}{{if gt .ParametersByteSize 0}} + {{.ParametersByteSize}}{{end}});
 	const auto msg_id = new_message_id();
 	writer.append_uint8(NanoPack::RpcMessageType::Request);
