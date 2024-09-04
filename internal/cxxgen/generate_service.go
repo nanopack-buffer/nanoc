@@ -147,12 +147,18 @@ func generateServiceHeader(serviceSchema *npschema.Service, opts Options) error 
 		})
 	}
 
-	for p, _ := range libimp {
+	for p := range libimp {
 		info.LibraryImports = append(info.LibraryImports, p)
 	}
-	for p, _ := range relimp {
+	for p := range relimp {
 		info.RelativeImports = append(info.RelativeImports, p)
 	}
+
+	factoryHeaderPath, err := resolveMessageFactoryImportPath(opts.MessageFactoryPath, serviceSchema, opts.BaseDirectoryPath, opts.OutputDirectoryPath)
+	if err != nil {
+		return err
+	}
+	info.RelativeImports = append(info.RelativeImports, factoryHeaderPath)
 
 	tmpl, err := template.New(templateNameServiceHeaderFile).Funcs(funcs).Parse(serviceHeaderFile)
 	if err != nil {
