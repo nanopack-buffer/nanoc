@@ -18,6 +18,7 @@ func GenerateEnum(enumSchema *npschema.Enum, opts Options) error {
 		Namespace:        strings.Join(opts.Namespaces, cxxSymbolMemberOf),
 		Schema:           enumSchema,
 		BackingTypeName:  "",
+		IsIntType:        datatype.IsInt(enumSchema.ValueType),
 		MemberNames:      nil,
 		IncludeGuardName: fmt.Sprintf("%v_ENUM_NP_HXX", strcase.ToScreamingSnake(enumSchema.Name)),
 	}
