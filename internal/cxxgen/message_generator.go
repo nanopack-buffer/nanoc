@@ -21,6 +21,26 @@ func (g messageGenerator) TypeDeclaration(dataType datatype.DataType) string {
 	return dataType.Identifier
 }
 
+func (g messageGenerator) ParameterDeclaration(dataType datatype.DataType, paramName string) string {
+	if dataType.Schema == nil {
+		return "std::unique_ptr<NanoPack::Message> " + paramName
+	}
+	if ms, ok := dataType.Schema.(*npschema.Message); ok && ms.IsInherited {
+		return fmt.Sprintf("std::unique_ptr<%v> %v", dataType.Identifier, paramName)
+	}
+	return fmt.Sprintf("const %v &%v", dataType.Identifier, paramName)
+}
+
+func (g messageGenerator) RValue(dataType datatype.DataType, argName string) string {
+	if dataType.Schema == nil {
+		return fmt.Sprintf("std::move(%v)", argName)
+	}
+	if ms, ok := dataType.Schema.(*npschema.Message); ok && ms.IsInherited {
+		return fmt.Sprintf("std::move(%v)", argName)
+	}
+	return argName
+}
+
 func (g messageGenerator) ReadSizeExpression(dataType datatype.DataType, varName string) string {
 	return fmt.Sprintf("%v_byte_size", varName)
 }

@@ -26,6 +26,14 @@ func (g numberGenerator) TypeDeclaration(dataType datatype.DataType) string {
 	return cxxIntTypes[dataType.Kind]
 }
 
+func (g numberGenerator) ParameterDeclaration(dataType datatype.DataType, paramName string) string {
+	return cxxIntTypes[dataType.Kind] + " " + paramName
+}
+
+func (g numberGenerator) RValue(dataType datatype.DataType, argName string) string {
+	return argName
+}
+
 func (g numberGenerator) ReadSizeExpression(dataType datatype.DataType, varName string) string {
 	return fmt.Sprintf("%d", dataType.ByteSize)
 }

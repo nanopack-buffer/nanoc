@@ -2,18 +2,27 @@ package cxxgen
 
 import (
 	"fmt"
-	"github.com/iancoleman/strcase"
 	"nanoc/internal/datatype"
 	"nanoc/internal/generator"
 	"nanoc/internal/npschema"
+
+	"github.com/iancoleman/strcase"
 )
 
 type enumGenerator struct {
-	gm generator.MessageCodeGeneratorMap
+	gm cxxCodeFragmentGeneratorMap
 }
 
 func (g enumGenerator) TypeDeclaration(dataType datatype.DataType) string {
 	return dataType.Identifier
+}
+
+func (g enumGenerator) ParameterDeclaration(dataType datatype.DataType, paramName string) string {
+	return dataType.Identifier
+}
+
+func (g enumGenerator) RValue(dataType datatype.DataType, argName string) string {
+	return argName
 }
 
 func (g enumGenerator) ReadSizeExpression(dataType datatype.DataType, varName string) string {

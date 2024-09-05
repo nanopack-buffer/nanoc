@@ -36,7 +36,7 @@ func generateServiceHeader(serviceSchema *npschema.Service, opts Options) error 
 	}
 
 	ng := numberGenerator{}
-	gm := generator.MessageCodeGeneratorMap{
+	gm := cxxCodeFragmentGeneratorMap{
 		datatype.Int8:    ng,
 		datatype.Int32:   ng,
 		datatype.Int64:   ng,
@@ -66,6 +66,12 @@ func generateServiceHeader(serviceSchema *npschema.Service, opts Options) error 
 		"typeDeclaration": func(t datatype.DataType) string {
 			g := gm[t.Kind]
 			return g.TypeDeclaration(t)
+		},
+		"parameterDeclaration": func(param npschema.FunctionParameter) string {
+			return gm[param.Type.Kind].ParameterDeclaration(param.Type, strcase.ToSnake(param.Name))
+		},
+		"argument": func(param npschema.FunctionParameter) string {
+			return gm[param.Type.Kind].RValue(param.Type, strcase.ToSnake(param.Name))
 		},
 		"generateReadParamCode": func(fn *npschema.DeclaredFunction) string {
 			var sb strings.Builder
@@ -193,7 +199,7 @@ func generateServiceImpl(serviceSchema *npschema.Service, opts Options) error {
 	}
 
 	ng := numberGenerator{}
-	gm := generator.MessageCodeGeneratorMap{
+	gm := cxxCodeFragmentGeneratorMap{
 		datatype.Int8:    ng,
 		datatype.Int32:   ng,
 		datatype.Int64:   ng,
@@ -223,6 +229,12 @@ func generateServiceImpl(serviceSchema *npschema.Service, opts Options) error {
 		"typeDeclaration": func(t datatype.DataType) string {
 			g := gm[t.Kind]
 			return g.TypeDeclaration(t)
+		},
+		"parameterDeclaration": func(param npschema.FunctionParameter) string {
+			return gm[param.Type.Kind].ParameterDeclaration(param.Type, strcase.ToSnake(param.Name))
+		},
+		"rvalue": func(param npschema.FunctionParameter) string {
+			return gm[param.Type.Kind].RValue(param.Type, strcase.ToSnake(param.Name))
 		},
 		"generateReadParamCode": func(fn *npschema.DeclaredFunction) string {
 			var sb strings.Builder

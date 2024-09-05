@@ -10,12 +10,20 @@ import (
 )
 
 type arrayGenerator struct {
-	gm generator.MessageCodeGeneratorMap
+	gm cxxCodeFragmentGeneratorMap
 }
 
 func (g arrayGenerator) TypeDeclaration(dataType datatype.DataType) string {
 	ig := g.gm[dataType.ElemType.Kind]
 	return fmt.Sprintf("std::vector<%v>", ig.TypeDeclaration(*dataType.ElemType))
+}
+
+func (g arrayGenerator) ParameterDeclaration(dataType datatype.DataType, paramName string) string {
+	return fmt.Sprintf("const %v &%v", g.TypeDeclaration(dataType), paramName)
+}
+
+func (g arrayGenerator) RValue(dataType datatype.DataType, argName string) string {
+	return argName
 }
 
 func (g arrayGenerator) ReadSizeExpression(dataType datatype.DataType, varName string) string {

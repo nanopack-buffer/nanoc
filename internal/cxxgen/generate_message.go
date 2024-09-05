@@ -37,7 +37,7 @@ type Options struct {
 
 func GenerateMessageClass(msgSchema *npschema.Message, opts Options) error {
 	ng := numberGenerator{}
-	gm := generator.MessageCodeGeneratorMap{
+	gm := cxxCodeFragmentGeneratorMap{
 		datatype.Int8:    ng,
 		datatype.Int32:   ng,
 		datatype.Int64:   ng,
@@ -125,14 +125,14 @@ func GenerateMessageFactory(schemas []*npschema.Message, opts Options) error {
 	return nil
 }
 
-func findGeneratorForField(f npschema.MessageField, gm generator.MessageCodeGeneratorMap) generator.DataTypeMessageCodeGenerator {
+func findGeneratorForField(f npschema.MessageField, gm cxxCodeFragmentGeneratorMap) generator.DataTypeMessageCodeGenerator {
 	if f.IsSelfReferencing() {
 		return gm[f.Type.ElemType.Kind]
 	}
 	return gm[f.Type.Kind]
 }
 
-func generateMessageHeaderFile(msgSchema *npschema.Message, gm generator.MessageCodeGeneratorMap, opts Options) error {
+func generateMessageHeaderFile(msgSchema *npschema.Message, gm cxxCodeFragmentGeneratorMap, opts Options) error {
 	info := messageHeaderFileTemplateInfo{
 		Namespace:        strings.Join(opts.Namespaces, cxxSymbolMemberOf),
 		MessageName:      msgSchema.Name,
@@ -260,7 +260,7 @@ func generateMessageHeaderFile(msgSchema *npschema.Message, gm generator.Message
 	return nil
 }
 
-func generateMessageImplFile(msgSchema *npschema.Message, gm generator.MessageCodeGeneratorMap, opts Options) error {
+func generateMessageImplFile(msgSchema *npschema.Message, gm cxxCodeFragmentGeneratorMap, opts Options) error {
 	fname := filepath.Base(msgSchema.SchemaPath)
 	fname = strcase.ToSnake(strings.TrimSuffix(fname, symbol.SchemaFileExt)) + extImplFile
 

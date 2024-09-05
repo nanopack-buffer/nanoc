@@ -11,13 +11,21 @@ import (
 )
 
 type mapGenerator struct {
-	gm generator.MessageCodeGeneratorMap
+	gm cxxCodeFragmentGeneratorMap
 }
 
 func (g mapGenerator) TypeDeclaration(dataType datatype.DataType) string {
 	kg := g.gm[dataType.KeyType.Kind]
 	ig := g.gm[dataType.ElemType.Kind]
 	return fmt.Sprintf("std::unordered_map<%v, %v>", kg.TypeDeclaration(*dataType.KeyType), ig.TypeDeclaration(*dataType.ElemType))
+}
+
+func (g mapGenerator) ParameterDeclaration(dataType datatype.DataType, paramName string) string {
+	return "const " + g.TypeDeclaration(dataType) + " &" + paramName
+}
+
+func (g mapGenerator) RValue(dataType datatype.DataType, argName string) string {
+	return argName
 }
 
 func (g mapGenerator) ReadSizeExpression(dataType datatype.DataType, varName string) string {

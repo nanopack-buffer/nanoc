@@ -15,6 +15,14 @@ func (g stringGenerator) TypeDeclaration(dataType datatype.DataType) string {
 	return "std::string"
 }
 
+func (g stringGenerator) ParameterDeclaration(dataType datatype.DataType, paramName string) string {
+	return "const std::string &" + paramName
+}
+
+func (g stringGenerator) RValue(dataType datatype.DataType, argName string) string {
+	return argName
+}
+
 func (g stringGenerator) ReadSizeExpression(dataType datatype.DataType, varName string) string {
 	return varName + ".size() + 4"
 }

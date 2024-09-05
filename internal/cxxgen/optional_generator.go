@@ -11,12 +11,26 @@ import (
 )
 
 type optionalGenerator struct {
-	gm generator.MessageCodeGeneratorMap
+	gm cxxCodeFragmentGeneratorMap
 }
 
 func (g optionalGenerator) TypeDeclaration(dataType datatype.DataType) string {
 	ig := g.gm[dataType.ElemType.Kind]
 	return fmt.Sprintf("std::optional<%v>", ig.TypeDeclaration(*dataType.ElemType))
+}
+
+func (g optionalGenerator) ParameterDeclaration(dataType datatype.DataType, paramName string) string {
+	declr := g.TypeDeclaration(dataType)
+	// TODO: extremely hacky way to detect whether a data type needs unique ptr
+	// in order to determine whether a const should be inserted, but ig it works for now
+	if strings.Contains(declr, "std::unique_ptr") {
+		return fmt.Sprintf("%v &%v", declr, paramName)
+	}
+	return fmt.Sprintf("const %v &%v", declr, paramName)
+}
+
+func (g optionalGenerator) RValue(dataType datatype.DataType, argName string) string {
+	return argName
 }
 
 func (g optionalGenerator) ReadSizeExpression(dataType datatype.DataType, varName string) string {
@@ -77,7 +91,7 @@ func (g optionalGenerator) WriteVariableToBuffer(dataType datatype.DataType, var
 	return generator.Lines(
 		fmt.Sprintf("if (%v.has_value()) {", varName),
 		"    writer.append_uint8(1);",
-		fmt.Sprintf("    const auto %v_value = %v.value();", varName, varName),
+		fmt.Sprintf("    const auto %v_value = %v;", varName, ig.RValue(*dataType.ElemType, varName+".value()")),
 		ig.WriteVariableToBuffer(*dataType.ElemType, varName+"_value", ctx),
 		"} else {",
 		"    writer.append_uint8(0);",

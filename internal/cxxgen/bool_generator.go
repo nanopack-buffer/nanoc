@@ -15,6 +15,14 @@ func (g boolGenerator) TypeDeclaration(dataType datatype.DataType) string {
 	return "bool"
 }
 
+func (g boolGenerator) ParameterDeclaration(dataType datatype.DataType, paramName string) string {
+	return "bool " + paramName
+}
+
+func (g boolGenerator) RValue(dataType datatype.DataType, argName string) string {
+	return argName
+}
+
 func (g boolGenerator) ReadSizeExpression(dataType datatype.DataType, varName string) string {
 	return fmt.Sprintf("%d", dataType.ByteSize)
 }

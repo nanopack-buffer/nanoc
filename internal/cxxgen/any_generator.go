@@ -19,6 +19,14 @@ func (g anyGenerator) ReadSizeExpression(dataType datatype.DataType, varName str
 	return varName + ".size()"
 }
 
+func (g anyGenerator) ParameterDeclaration(dataType datatype.DataType, paramName string) string {
+	return "const NanoPack::Any &" + paramName
+}
+
+func (g anyGenerator) RValue(dataType datatype.DataType, argName string) string {
+	return argName
+}
+
 func (g anyGenerator) ConstructorFieldParameter(field npschema.MessageField) string {
 	return g.TypeDeclaration(field.Type) + " " + strcase.ToSnake(field.Name)
 }
