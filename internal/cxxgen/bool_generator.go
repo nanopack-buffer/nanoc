@@ -41,6 +41,13 @@ func (g boolGenerator) FieldDeclaration(field npschema.MessageField) string {
 }
 
 func (g boolGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
+	s := strcase.ToSnake(field.Name)
+	if field.Type.Kind == datatype.Optional {
+		return generator.Lines(
+			fmt.Sprintf("%v %v;", g.TypeDeclaration(field.Type), s),
+			fmt.Sprintf("reader.read_bool(ptr++, %v);", s),
+			fmt.Sprintf("this->%v = %v;", s, s))
+	}
 	return fmt.Sprintf("reader.read_bool(ptr++, %v);", strcase.ToSnake(field.Name))
 }
 
@@ -49,17 +56,40 @@ func (g boolGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName s
 	if !ctx.IsVariableInScope(varName) {
 		declr = fmt.Sprintf("%v %v;", g.TypeDeclaration(dataType), varName)
 	}
+
+	var rvalue string
+	if dataType.Kind == datatype.Optional {
+		rvalue = fmt.Sprintf("*%v", varName)
+	} else {
+		rvalue = varName
+	}
+
 	return generator.Lines(
 		declr,
-		fmt.Sprintf("reader.read_bool(ptr++, %v);", varName))
+		fmt.Sprintf("reader.read_bool(ptr++, %v);", rvalue))
 }
 
 func (g boolGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
+	s := strcase.ToSnake(field.Name)
+
+	var rvalue string
+	if field.Type.Kind == datatype.Optional {
+		rvalue = fmt.Sprintf("*%v", s)
+	} else {
+		rvalue = s
+	}
+
 	return generator.Lines(
 		fmt.Sprintf("writer.write_field_size(%d, %d, offset);", field.Number, field.Type.ByteSize),
-		fmt.Sprintf("writer.append_bool(%v);", strcase.ToSnake(field.Name)))
+		fmt.Sprintf("writer.append_bool(%v);", rvalue))
 }
 
 func (g boolGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
-	return fmt.Sprintf("writer.append_bool(%v);", varName)
+	var rvalue string
+	if dataType.Kind == datatype.Optional {
+		rvalue = fmt.Sprintf("*%v", varName)
+	} else {
+		rvalue = varName
+	}
+	return fmt.Sprintf("writer.append_bool(%v);", rvalue)
 }

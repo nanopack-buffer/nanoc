@@ -139,7 +139,7 @@ func (g optionalGenerator) WriteVariableToBuffer(dataType datatype.DataType, var
 		fmt.Sprintf("if (%v) {", ifExpr),
 		"    writer.append_uint8(1);",
 		fmt.Sprintf("    const auto %v_value = %v;", varName, rvalue),
-		ig.WriteVariableToBuffer(*dataType.ElemType, varName+"_value", ctx),
+		ig.WriteVariableToBuffer(dataType, varName+"_value", ctx),
 		"} else {",
 		"    writer.append_uint8(0);",
 		"}")

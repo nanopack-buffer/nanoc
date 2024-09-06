@@ -58,6 +58,13 @@ func (g numberGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx ge
 	case datatype.Enum:
 		return g.ReadValueFromBuffer(*field.Type.ElemType, s+"_raw_value", ctx)
 
+	case datatype.Optional:
+		return generator.Lines(
+			fmt.Sprintf("%v %v_value;", cxxIntTypes[field.Type.ElemType.Kind], s),
+			fmt.Sprintf("reader.read_%v(ptr, %v_value);", field.Type.ElemType.Identifier, s),
+			fmt.Sprintf("%v = %v_value;", s, s),
+			fmt.Sprintf("ptr += %d;", field.Type.ElemType.ByteSize))
+
 	default:
 		return generator.Lines(
 			fmt.Sprintf("reader.read_%v(ptr, %v);", field.Type.Identifier, s),
@@ -68,7 +75,7 @@ func (g numberGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx ge
 func (g numberGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
 	if dataType.Kind == datatype.Optional {
 		return generator.Lines(
-			fmt.Sprintf("%v %v_value;", cxxIntTypes[dataType.Kind], varName),
+			fmt.Sprintf("%v %v_value;", cxxIntTypes[dataType.ElemType.Kind], varName),
 			fmt.Sprintf("reader.read_%v(ptr, %v_value);", dataType.Identifier, varName),
 			fmt.Sprintf("%v = %v_value;", varName, varName),
 			fmt.Sprintf("ptr += %d;", dataType.ByteSize))
@@ -86,19 +93,32 @@ func (g numberGenerator) ReadValueFromBuffer(dataType datatype.DataType, varName
 }
 
 func (g numberGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
-	if field.Type.Kind == datatype.Enum {
+	switch field.Type.Kind {
+	case datatype.Enum:
 		return generator.Lines(
 			fmt.Sprintf("writer.write_field_size(%d, %d, offset);", field.Number, field.Type.ElemType.ByteSize),
 			fmt.Sprintf("writer.append_%v(%v.value());", field.Type.ElemType.Identifier, strcase.ToSnake(field.Name)))
+	case datatype.Optional:
+		return generator.Lines(
+			fmt.Sprintf("writer.write_field_size(%d, %d, offset);", field.Number, field.Type.ElemType.ByteSize),
+			fmt.Sprintf("writer.append_%v(*%v);", field.Type.ElemType.Identifier, strcase.ToSnake(field.Name)))
+
+	default:
+		return generator.Lines(
+			fmt.Sprintf("writer.write_field_size(%d, %d, offset);", field.Number, field.Type.ByteSize),
+			fmt.Sprintf("writer.append_%v(%v);", field.Type.Identifier, strcase.ToSnake(field.Name)))
 	}
-	return generator.Lines(
-		fmt.Sprintf("writer.write_field_size(%d, %d, offset);", field.Number, field.Type.ByteSize),
-		fmt.Sprintf("writer.append_%v(%v);", field.Type.Identifier, strcase.ToSnake(field.Name)))
 }
 
 func (g numberGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
-	if dataType.Kind == datatype.Enum {
+	switch dataType.Kind {
+	case datatype.Enum:
 		return fmt.Sprintf("writer.append_%v(%v.value());", dataType.ElemType.Identifier, varName)
+
+	case datatype.Optional:
+		return fmt.Sprintf("writer.append_%v(*%v);", dataType.ElemType.Identifier, varName)
+
+	default:
+		return fmt.Sprintf("writer.append_%v(%v);", dataType.Identifier, varName)
 	}
-	return fmt.Sprintf("writer.append_%v(%v);", dataType.Identifier, varName)
 }

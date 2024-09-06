@@ -82,11 +82,29 @@ func (g messageGenerator) FieldDeclaration(field npschema.MessageField) string {
 func (g messageGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx generator.CodeContext) string {
 	s := strcase.ToSnake(field.Name)
 
+	if field.Type.Kind == datatype.Optional {
+		var init string
+		var assign string
+		if field.Type.Schema == nil {
+			assign = generator.Lines(
+				fmt.Sprintf("size_t %v_bytes_read;", s),
+				fmt.Sprintf("%v = std::move(make_nanopack_message(reader, %v_bytes_read));", s, s),
+			)
+		} else {
+			init = fmt.Sprintf("%v = std::make_optional<%v>();", s, g.TypeDeclaration(*field.Type.ElemType))
+			assign = fmt.Sprintf("const size_t %v_bytes_read %v->read_from(reader);", s, s)
+		}
+		return generator.Lines(
+			"reader.buffer += ptr;",
+			init,
+			assign,
+			"reader.buffer = buf;",
+			fmt.Sprintf("ptr += %v_bytes_read;", s))
+	}
+
 	if field.Type.Schema == nil {
 		return generator.Lines(
 			"reader.buffer += ptr;",
-			fmt.Sprintf("size_t %v_bytes_read;", s),
-			fmt.Sprintf("%v = std::move(make_nanopack_message(reader, %v_bytes_read));", s, s),
 			"reader.buffer = buf;",
 			fmt.Sprintf("ptr += %v_bytes_read;", s))
 	}
@@ -131,7 +149,25 @@ func (g messageGenerator) ReadValueFromBuffer(dataType datatype.DataType, varNam
 	}
 
 	var read string
-	if dataType.Schema == nil {
+	if dataType.Kind == datatype.Optional {
+		var init string
+		var assign string
+		if dataType.ElemType.Schema == nil {
+			assign = generator.Lines(
+				fmt.Sprintf("size_t %v_bytes_read;", varName),
+				fmt.Sprintf("%v = std::move(make_nanopack_message(reader, %v_bytes_read));", varName, varName),
+			)
+		} else {
+			init = fmt.Sprintf("%v = std::make_optional<%v>();", varName, g.TypeDeclaration(*dataType.ElemType))
+			assign = fmt.Sprintf("const size_t %v_bytes_read = %v->read_from(reader);", varName, varName)
+		}
+		read = generator.Lines(
+			init,
+			"reader.buffer += ptr;",
+			assign,
+			"reader.buffer = buf;",
+		)
+	} else if dataType.Schema == nil {
 		read = generator.Lines(
 			fmt.Sprintf("size_t %v_bytes_read;", varName),
 			"reader.buffer += ptr;",
@@ -191,7 +227,7 @@ func (g messageGenerator) WriteFieldToBuffer(field npschema.MessageField, ctx ge
 }
 
 func (g messageGenerator) WriteVariableToBuffer(dataType datatype.DataType, varName string, ctx generator.CodeContext) string {
-	if dataType.Schema == nil {
+	if dataType.Kind == datatype.Optional || dataType.Schema == nil {
 		return fmt.Sprintf("const size_t %v_byte_size = %v->write_to(writer, writer.size());", varName, varName)
 	}
 	if ms, ok := dataType.Schema.(*npschema.Message); ok && ms.IsInherited {

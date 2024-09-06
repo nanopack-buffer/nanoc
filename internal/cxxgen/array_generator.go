@@ -67,7 +67,7 @@ func (g arrayGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx gen
 
 	var vecInit string
 	if field.Type.Kind == datatype.Optional {
-		vecInit = fmt.Sprintf("%v = std::move(%v())", s, g.TypeDeclaration(*field.Type.ElemType))
+		vecInit = fmt.Sprintf("%v = std::make_unique<%v>();", s, g.TypeDeclaration(*field.Type.ElemType))
 	}
 
 	var vecSizeDeclr string
