@@ -321,7 +321,7 @@ func generateMessageImplFile(msgSchema *npschema.Message, gm cxxCodeFragmentGene
 			if info.Namespace == "" {
 				funcName = fmt.Sprintf("%v::get_%v", info.MessageName, s)
 			} else {
-				funcName = fmt.Sprintf("%v::%v::get_%v()", info.Namespace, info.MessageName, s)
+				funcName = fmt.Sprintf("%v::%v::get_%v", info.Namespace, info.MessageName, s)
 			}
 
 			l := generator.Lines(

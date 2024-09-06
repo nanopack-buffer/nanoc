@@ -126,9 +126,9 @@ func (g messageGenerator) ReadFieldFromBuffer(field npschema.MessageField, ctx g
 
 	if field.Type.Schema.(*npschema.Message).IsInherited {
 		return generator.Lines(
-			fmt.Sprintf("%v = std::move(make_%v(reader));", s, strcase.ToSnake(ms.Name)),
+			fmt.Sprintf("size_t %v_bytes_read;", s),
 			"reader.buffer += ptr;",
-			fmt.Sprintf("const size_t %v_bytes_read = %v->read_from(reader);", s, s),
+			fmt.Sprintf("%v = std::move(make_%v(reader, %v_bytes_read));", s, strcase.ToSnake(ms.Name), s),
 			"reader.buffer = buf;",
 			fmt.Sprintf("ptr += %v_bytes_read;", s))
 	}
