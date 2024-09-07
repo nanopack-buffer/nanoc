@@ -18,7 +18,7 @@
         let
           pkgs = nixpkgsFor.${system};
         in
-        {
+        rec {
           nanoc = pkgs.buildGoModule {
             pname = "nanoc";
             version = "0.1.0";
@@ -33,8 +33,9 @@
               pkgs.swift-format
             ];
           };
-        }
-      );
+
+          default = nanoc;
+        });
 
       devShells = forAllSystems (system:
         let
@@ -42,7 +43,7 @@
         in
         {
           default = pkgs.mkShell {
-            buildInputs = [
+            packages = [
               pkgs.go
               pkgs.gotools
               # nanoc requires clang-format in clang-tools
@@ -56,7 +57,5 @@
             ];
           };
         });
-
-      defaultPackage = forAllSystems (system: self.packages.${system}.nanoc);
     };
 }
